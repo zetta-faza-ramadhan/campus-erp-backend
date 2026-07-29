@@ -2,7 +2,7 @@
 require("dotenv").config();
 
 // *************** IMPORT MODULE ***************
-const AppError = require("../utils/app_error.util");
+const AppError = require("./error.js");
 
 // *************** VALIDATE ENVIRONMENT VARIABLES ***************
 if (!process.env.MONGO_URI || !process.env.PORT) {
