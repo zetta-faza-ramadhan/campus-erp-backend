@@ -32,7 +32,7 @@ async function CreateApolloMiddleware(schema) {
         }
       }
 
-      // *************** Execute the GraphQL request ***************
+      // *************** Execute the GraphQL request
       const httpGraphQLRequest = {
         method: req.method.toUpperCase(),
         headers,
@@ -45,13 +45,13 @@ async function CreateApolloMiddleware(schema) {
         context: async () => ({}),
       });
 
-      // *************** Write response headers ***************
+      // *************** Write response headers
       for (const [key, value] of result.headers) {
         res.setHeader(key, value);
       }
       res.statusCode = result.status || 200;
 
-      // *************** Write response body ***************
+      // *************** Write response body
       if (result.body.kind === "complete") {
         res.send(result.body.string);
       } else {
