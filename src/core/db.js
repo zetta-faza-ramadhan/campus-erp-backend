@@ -10,7 +10,7 @@ const config = require("./config");
  * @returns {Promise<void>} Resolves when the connection is established.
  */
 async function ConnectDatabase() {
-  // Connect to MongoDB using Mongoose
+  // *************** Connect to MongoDB using Mongoose
   await mongoose.connect(config.db.uri);
 }
 

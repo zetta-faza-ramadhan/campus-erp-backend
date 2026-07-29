@@ -1,5 +1,5 @@
 // *************** IMPORT LIBRARY ***************
-const { ApolloServer, HeaderMap } = require('@apollo/server');
+const { ApolloServer, HeaderMap } = require("@apollo/server");
 
 /**
  * Creates and starts an Apollo Server, returning an Express middleware function.
@@ -24,11 +24,11 @@ async function CreateApolloMiddleware(schema) {
    */
   return async function apolloMiddleware(req, res, next) {
     try {
-      // *************** Convert Express headers to Apollo HeaderMap ***************
+      // *************** Convert Express headers to Apollo HeaderMap
       const headers = new HeaderMap();
       for (const [key, value] of Object.entries(req.headers)) {
         if (value !== undefined) {
-          headers.set(key, Array.isArray(value) ? value.join(', ') : value);
+          headers.set(key, Array.isArray(value) ? value.join(", ") : value);
         }
       }
 
@@ -37,7 +37,7 @@ async function CreateApolloMiddleware(schema) {
         method: req.method.toUpperCase(),
         headers,
         body: req.body,
-        search: req.url.split('?')[1] || '',
+        search: req.url.split("?")[1] || "",
       };
 
       const result = await server.executeHTTPGraphQLRequest({
@@ -52,10 +52,10 @@ async function CreateApolloMiddleware(schema) {
       res.statusCode = result.status || 200;
 
       // *************** Write response body ***************
-      if (result.body.kind === 'complete') {
+      if (result.body.kind === "complete") {
         res.send(result.body.string);
       } else {
-        res.send('');
+        res.send("");
       }
     } catch (err) {
       next(err);
