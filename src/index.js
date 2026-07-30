@@ -7,6 +7,7 @@ const config = require("./core/config");
 require("./core/db");
 const { CreateApolloMiddleware } = require("./core/apollo");
 const systemSchema = require("./features/system");
+const curriculumSchema = require("./features/academic/curriculum");
 
 // *************** INITIALIZE APPLICATION ***************
 const app = express();
@@ -21,7 +22,13 @@ app.use(express.json());
  * @returns {Promise<void>} Resolves when the server is listening.
  */
 async function StartServer() {
-  const graphqlMiddleware = await CreateApolloMiddleware(systemSchema);
+  const graphqlMiddleware = await CreateApolloMiddleware({
+    typeDefs: [systemSchema.typeDefs, curriculumSchema.typeDefs],
+    resolvers: {
+      Query: { ...systemSchema.resolvers.Query, ...curriculumSchema.resolvers.Query },
+      Mutation: { ...curriculumSchema.resolvers.Mutation },
+    },
+  });
   app.use("/graphql", graphqlMiddleware);
 
   app.listen(config.port, () => {
