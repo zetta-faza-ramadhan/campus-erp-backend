@@ -89,7 +89,7 @@ async function CreateBlockHelper(data) {
 async function UpdateBlockHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("block", id);
-  return await BlockModel.findByIdAndUpdate(id, fields, { new: true });
+  return await BlockModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
 }
 
 /**
@@ -126,7 +126,7 @@ async function CreateSubjectHelper(data) {
 async function UpdateSubjectHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("subject", id);
-  return await SubjectModel.findByIdAndUpdate(id, fields, { new: true });
+  return await SubjectModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
 }
 
 /**
@@ -163,7 +163,7 @@ async function CreateTestHelper(data) {
 async function UpdateTestHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("test", id);
-  return await TestModel.findByIdAndUpdate(id, fields, { new: true });
+  return await TestModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
 }
 
 /**

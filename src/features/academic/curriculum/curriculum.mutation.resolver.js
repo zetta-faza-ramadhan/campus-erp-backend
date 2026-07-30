@@ -6,9 +6,9 @@ const BlockModel = require("./curriculum.model.block");
 const SubjectModel = require("./curriculum.model.subject");
 const TestModel = require("./curriculum.model.test");
 const {
-  blockSchema,
-  subjectSchema,
-  testSchema,
+  blockSchema, updateBlockSchema,
+  subjectSchema, updateSubjectSchema,
+  testSchema, updateTestSchema,
 } = require("./curriculum.validator");
 const curriculumHelper = require("./curriculum.helper");
 
@@ -95,9 +95,9 @@ async function GetTests(_, args) {
  * @param {Object} args - Mutation arguments containing input.
  * @returns {Promise<Object>} The created block document.
  */
-async function CreateBlock(_, args) {
+async function CreateBlock(_, { input }) {
   try {
-    const { error, value } = blockSchema.validate(args.input);
+    const { error, value } = blockSchema.validate(input);
     if (error) NormalizeGqlError(error);
     return await curriculumHelper.CreateBlockHelper(value);
   } catch (err) {
@@ -112,9 +112,9 @@ async function CreateBlock(_, args) {
  * @param {Object} args - Mutation arguments containing input.
  * @returns {Promise<Object>} The updated block document.
  */
-async function UpdateBlock(_, args) {
+async function UpdateBlock(_, { input }) {
   try {
-    const { error, value } = blockSchema.validate(args.input);
+    const { error, value } = updateBlockSchema.validate(input);
     if (error) NormalizeGqlError(error);
     return await curriculumHelper.UpdateBlockHelper(value);
   } catch (err) {
@@ -129,9 +129,9 @@ async function UpdateBlock(_, args) {
  * @param {Object} args - Mutation arguments containing id.
  * @returns {Promise<boolean>} Whether the deletion was successful.
  */
-async function DeleteBlock(_, args) {
+async function DeleteBlock(_, { id }) {
   try {
-    return await curriculumHelper.DeleteBlockHelper(args.id);
+    return await curriculumHelper.DeleteBlockHelper(id);
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -144,9 +144,9 @@ async function DeleteBlock(_, args) {
  * @param {Object} args - Mutation arguments containing input.
  * @returns {Promise<Object>} The created subject document.
  */
-async function CreateSubject(_, args) {
+async function CreateSubject(_, { input }) {
   try {
-    const { error, value } = subjectSchema.validate(args.input);
+    const { error, value } = subjectSchema.validate(input);
     if (error) NormalizeGqlError(error);
     return await curriculumHelper.CreateSubjectHelper(value);
   } catch (err) {
@@ -161,9 +161,9 @@ async function CreateSubject(_, args) {
  * @param {Object} args - Mutation arguments containing input.
  * @returns {Promise<Object>} The updated subject document.
  */
-async function UpdateSubject(_, args) {
+async function UpdateSubject(_, { input }) {
   try {
-    const { error, value } = subjectSchema.validate(args.input);
+    const { error, value } = updateSubjectSchema.validate(input);
     if (error) NormalizeGqlError(error);
     return await curriculumHelper.UpdateSubjectHelper(value);
   } catch (err) {
@@ -178,9 +178,9 @@ async function UpdateSubject(_, args) {
  * @param {Object} args - Mutation arguments containing id.
  * @returns {Promise<boolean>} Whether the deletion was successful.
  */
-async function DeleteSubject(_, args) {
+async function DeleteSubject(_, { id }) {
   try {
-    return await curriculumHelper.DeleteSubjectHelper(args.id);
+    return await curriculumHelper.DeleteSubjectHelper(id);
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -193,9 +193,9 @@ async function DeleteSubject(_, args) {
  * @param {Object} args - Mutation arguments containing input.
  * @returns {Promise<Object>} The created test document.
  */
-async function CreateTest(_, args) {
+async function CreateTest(_, { input }) {
   try {
-    const { error, value } = testSchema.validate(args.input);
+    const { error, value } = testSchema.validate(input);
     if (error) NormalizeGqlError(error);
     return await curriculumHelper.CreateTestHelper(value);
   } catch (err) {
@@ -210,9 +210,9 @@ async function CreateTest(_, args) {
  * @param {Object} args - Mutation arguments containing input.
  * @returns {Promise<Object>} The updated test document.
  */
-async function UpdateTest(_, args) {
+async function UpdateTest(_, { input }) {
   try {
-    const { error, value } = testSchema.validate(args.input);
+    const { error, value } = updateTestSchema.validate(input);
     if (error) NormalizeGqlError(error);
     return await curriculumHelper.UpdateTestHelper(value);
   } catch (err) {
@@ -227,9 +227,9 @@ async function UpdateTest(_, args) {
  * @param {Object} args - Mutation arguments containing id.
  * @returns {Promise<boolean>} Whether the deletion was successful.
  */
-async function DeleteTest(_, args) {
+async function DeleteTest(_, { id }) {
   try {
-    return await curriculumHelper.DeleteTestHelper(args.id);
+    return await curriculumHelper.DeleteTestHelper(id);
   } catch (err) {
     NormalizeGqlError(err);
   }
