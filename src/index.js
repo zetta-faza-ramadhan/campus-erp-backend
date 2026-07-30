@@ -29,4 +29,5 @@ async function startServer() {
   });
 }
 
+// *************** Initialize the server
 startServer();
