@@ -36,6 +36,11 @@ function NormalizeGqlError(err) {
   });
 }
 
+// *************** FIELD RESOLVERS ***************
+function IdFieldResolver(parent) {
+  return parent._id.toString();
+}
+
 // *************** QUERY ***************
 
 /**
@@ -254,4 +259,7 @@ module.exports = {
     updateTest: UpdateTest,
     deleteTest: DeleteTest,
   },
+  Block: { id: IdFieldResolver },
+  Subject: { id: IdFieldResolver },
+  Test: { id: IdFieldResolver },
 };

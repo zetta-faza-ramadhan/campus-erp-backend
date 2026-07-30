@@ -25,8 +25,8 @@ async function StartServer() {
   const graphqlMiddleware = await CreateApolloMiddleware({
     typeDefs: [systemSchema.typeDefs, curriculumSchema.typeDefs],
     resolvers: {
+      ...curriculumSchema.resolvers,
       Query: { ...systemSchema.resolvers.Query, ...curriculumSchema.resolvers.Query },
-      Mutation: { ...curriculumSchema.resolvers.Mutation },
     },
   });
   app.use("/graphql", graphqlMiddleware);
