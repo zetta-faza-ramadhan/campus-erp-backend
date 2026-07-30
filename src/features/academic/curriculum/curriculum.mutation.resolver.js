@@ -20,6 +20,7 @@ const curriculumHelper = require("./curriculum.helper");
  * @throws {GraphQLError} A formatted GraphQL error.
  */
 function NormalizeGqlError(err) {
+  if (err instanceof GraphQLError) throw err;
   if (err.name === "ValidationError") {
     throw new GraphQLError(err.message, {
       extensions: { code: "VALIDATION_ERROR", status: 400 },
