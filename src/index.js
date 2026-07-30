@@ -20,7 +20,7 @@ app.use(express.json());
  *
  * @returns {Promise<void>} Resolves when the server is listening.
  */
-async function startServer() {
+async function StartServer() {
   const graphqlMiddleware = await CreateApolloMiddleware(systemSchema);
   app.use("/graphql", graphqlMiddleware);
 
@@ -30,4 +30,4 @@ async function startServer() {
 }
 
 // *************** Initialize the server
-startServer();
+StartServer();
