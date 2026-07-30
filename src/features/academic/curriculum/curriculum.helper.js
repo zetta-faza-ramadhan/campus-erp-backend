@@ -89,7 +89,9 @@ async function CreateBlockHelper(data) {
 async function UpdateBlockHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("block", id);
-  return await BlockModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
+  const updated = await BlockModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
+  if (!updated) throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
+  return updated;
 }
 
 /**
@@ -100,8 +102,9 @@ async function UpdateBlockHelper(data) {
  */
 async function DeleteBlockHelper(id) {
   await CheckEntityLocked("block", id);
-  const result = await BlockModel.findByIdAndDelete(id);
-  return result !== null;
+  const deleted = await BlockModel.findByIdAndDelete(id);
+  if (!deleted) throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
+  return deleted;
 }
 
 // *************** CRUD: SUBJECT ***************
@@ -126,7 +129,9 @@ async function CreateSubjectHelper(data) {
 async function UpdateSubjectHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("subject", id);
-  return await SubjectModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
+  const updated = await SubjectModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
+  if (!updated) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
+  return updated;
 }
 
 /**
@@ -137,8 +142,9 @@ async function UpdateSubjectHelper(data) {
  */
 async function DeleteSubjectHelper(id) {
   await CheckEntityLocked("subject", id);
-  const result = await SubjectModel.findByIdAndDelete(id);
-  return result !== null;
+  const deleted = await SubjectModel.findByIdAndDelete(id);
+  if (!deleted) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
+  return deleted;
 }
 
 // *************** CRUD: TEST ***************
@@ -163,7 +169,9 @@ async function CreateTestHelper(data) {
 async function UpdateTestHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("test", id);
-  return await TestModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
+  const updated = await TestModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
+  if (!updated) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
+  return updated;
 }
 
 /**
@@ -174,8 +182,9 @@ async function UpdateTestHelper(data) {
  */
 async function DeleteTestHelper(id) {
   await CheckEntityLocked("test", id);
-  const result = await TestModel.findByIdAndDelete(id);
-  return result !== null;
+  const deleted = await TestModel.findByIdAndDelete(id);
+  if (!deleted) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
+  return deleted;
 }
 
 // *************** EXPORT MODULE ***************
