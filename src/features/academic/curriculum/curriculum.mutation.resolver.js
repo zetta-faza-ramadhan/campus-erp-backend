@@ -1,5 +1,6 @@
 // *************** IMPORT LIBRARY ***************
 const { GraphQLError } = require("graphql");
+const Joi = require("joi");
 
 // *************** IMPORT MODULE ***************
 const {
@@ -19,7 +20,7 @@ const curriculumHelper = require("./curriculum.helper");
  */
 function NormalizeGqlError(err) {
   if (err instanceof GraphQLError) throw err;
-  if (err.name === "ValidationError") {
+  if (Joi.isError(err)) {
     throw new GraphQLError(err.message, {
       extensions: { code: "VALIDATION_ERROR", status: 400 },
     });
