@@ -13,16 +13,14 @@ const StudentGradesModel = require("./curriculum.model.student_grade");
  * @param {string} [exclude_id] - The ID of the subject being edited, excluded from the total.
  * @throws {AppError} If the total weightage exceeds 100%.
  */
-async function ValidateSubjectWeightage(block_id, new_weightage, exclude_id) {
+async function ValidateSubjectWeightage(block_id, new_weightage, candidate_id) {
   const filter = { block_id, deleted_at: null };
-  if (exclude_id) filter._id = { $ne: exclude_id };
+  // For updates, always exclude candidate_id (since we are simulating the new weightage at that spot)
+  if (candidate_id) filter._id = { $ne: candidate_id };
   const subjects = await SubjectModel.find(filter);
-  const totalWeightage = subjects.reduce(
-    (sum, subject) => sum + subject.weightage,
-    0,
-  );
-  const roundedTotal = Math.round(totalWeightage * 100) / 100;
-  if (roundedTotal + new_weightage > 100) {
+  const totalWeightage = subjects.reduce((sum, subject) => sum + subject.weightage, 0);
+  const capped = Math.round((totalWeightage + new_weightage) * 100) / 100;
+  if (capped > 100) {
     throw new AppError(
       "WEIGHTAGE_LIMIT_EXCEEDED",
       400,
@@ -189,7 +187,9 @@ async function CreateSubjectHelper(data) {
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateSubjectHelper(data) {
+
   const { id, ...fields } = data;
+  if (fields.block_id && typeof fields.block_id === "string") fields.block_id = new (require('mongoose').Types.ObjectId)(fields.block_id);
   await CheckEntityLocked("subject", id);
   const existing = await SubjectModel.findOne({ _id: id, deleted_at: null });
   if (!existing) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
@@ -249,6 +249,7 @@ async function CreateTestHelper(data) {
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateTestHelper(data) {
+  if (data.subject_id && typeof data.subject_id === "string") data.subject_id = new (require('mongoose').Types.ObjectId)(data.subject_id);
   const { id, ...fields } = data;
   await CheckEntityLocked("test", id);
   const existing = await TestModel.findOne({ _id: id, deleted_at: null });
