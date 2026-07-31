@@ -9,6 +9,7 @@ const {
   blockSchema, updateBlockSchema,
   subjectSchema, updateSubjectSchema,
   testSchema, updateTestSchema,
+  objectIdSchema,
 } = require("./curriculum.validator");
 const curriculumHelper = require("./curriculum.helper");
 
@@ -137,6 +138,8 @@ async function UpdateBlock(_, { input }) {
  */
 async function DeleteBlock(_, { id }) {
   try {
+    const { error } = objectIdSchema.validate(id);
+    if (error) NormalizeGqlError(error);
     return await curriculumHelper.DeleteBlockHelper(id);
   } catch (err) {
     NormalizeGqlError(err);
@@ -186,6 +189,8 @@ async function UpdateSubject(_, { input }) {
  */
 async function DeleteSubject(_, { id }) {
   try {
+    const { error } = objectIdSchema.validate(id);
+    if (error) NormalizeGqlError(error);
     return await curriculumHelper.DeleteSubjectHelper(id);
   } catch (err) {
     NormalizeGqlError(err);
@@ -235,6 +240,8 @@ async function UpdateTest(_, { input }) {
  */
 async function DeleteTest(_, { id }) {
   try {
+    const { error } = objectIdSchema.validate(id);
+    if (error) NormalizeGqlError(error);
     return await curriculumHelper.DeleteTestHelper(id);
   } catch (err) {
     NormalizeGqlError(err);

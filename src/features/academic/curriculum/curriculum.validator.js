@@ -61,9 +61,13 @@ const updateTestSchema = Joi.object({
   grading_rules: Joi.array().items(gradingRuleSchema),
 }).min(1);
 
+// *************** REUSABLE OBJECTID VALIDATION ***************
+const objectIdSchema = Joi.string().regex(OBJECT_ID_PATTERN).required();
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   blockSchema, updateBlockSchema,
   subjectSchema, updateSubjectSchema,
   testSchema, updateTestSchema,
+  objectIdSchema,
 };
