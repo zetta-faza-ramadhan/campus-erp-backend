@@ -1,3 +1,4 @@
+// *************** DEFINE GRAPHQL SCHEMA ***************
 const typeDefs = `#graphql
   type GradingRule {
     label: String!

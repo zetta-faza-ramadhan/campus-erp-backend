@@ -8,21 +8,23 @@ const SubjectModel = require("./curriculum.model.subject");
 const TestModel = require("./curriculum.model.test");
 const StudentGradesModel = require("./curriculum.model.student_grade");
 
+// *************** IMPORT HELPER FUNCTION ***************
+
 /**
  * Validates that the total weightage of subjects in a block does not exceed 100%.
  *
- * @param {string} block_id - The ID of the block.
- * @param {number} new_weightage - The weightage of the new subject to be added.
- * @param {string} [exclude_id] - The ID of the subject being edited, excluded from the total.
+ * @param {string} blockId - The ID of the block.
+ * @param {number} newWeightage - The weightage of the new subject to be added.
+ * @param {string} [excludeId] - The ID of the subject being edited, excluded from the total.
  * @throws {AppError} If the total weightage exceeds 100%.
  */
-async function ValidateSubjectWeightage(block_id, new_weightage, exclude_id) {
-  const filter = { block_id, deleted_at: null };
+async function ValidateSubjectWeightage(blockId, newWeightage, excludeId) {
+  const filter = { block_id: blockId, deleted_at: null };
   // *************** EXCLUDE THE EDITED RECORD FROM THE TOTAL
-  if (exclude_id) filter._id = { $ne: exclude_id };
+  if (excludeId) filter._id = { $ne: excludeId };
   const subjects = await SubjectModel.find(filter).select("weightage");
   const totalWeightage = subjects.reduce((sum, subject) => sum + subject.weightage, 0);
-  const capped = Math.round((totalWeightage + new_weightage) * 100) / 100;
+  const capped = Math.round((totalWeightage + newWeightage) * 100) / 100;
   if (capped > 100) {
     throw new AppError(
       "WEIGHTAGE_LIMIT_EXCEEDED",
@@ -35,18 +37,18 @@ async function ValidateSubjectWeightage(block_id, new_weightage, exclude_id) {
 /**
  * Validates that the total weightage of tests in a subject does not exceed 100%.
  *
- * @param {string} subject_id - The ID of the subject.
- * @param {number} new_weightage - The weightage of the new test to be added.
- * @param {string} [exclude_id] - The ID of the test being edited, excluded from the total.
+ * @param {string} subjectId - The ID of the subject.
+ * @param {number} newWeightage - The weightage of the new test to be added.
+ * @param {string} [excludeId] - The ID of the test being edited, excluded from the total.
  * @throws {AppError} If the total weightage exceeds 100%.
  */
-async function ValidateTestWeightage(subject_id, new_weightage, exclude_id) {
-  const filter = { subject_id, deleted_at: null };
+async function ValidateTestWeightage(subjectId, newWeightage, excludeId) {
+  const filter = { subject_id: subjectId, deleted_at: null };
   // *************** EXCLUDE THE EDITED RECORD FROM THE TOTAL
-  if (exclude_id) filter._id = { $ne: exclude_id };
+  if (excludeId) filter._id = { $ne: excludeId };
   const tests = await TestModel.find(filter).select("weightage");
   const totalWeightage = tests.reduce((sum, test) => sum + test.weightage, 0);
-  const capped = Math.round((totalWeightage + new_weightage) * 100) / 100;
+  const capped = Math.round((totalWeightage + newWeightage) * 100) / 100;
   if (capped > 100) {
     throw new AppError(
       "WEIGHTAGE_LIMIT_EXCEEDED",
@@ -90,21 +92,21 @@ async function GetBlocksHelper() {
 /**
  * Retrieves all active subjects belonging to a block.
  *
- * @param {string} block_id - The ID of the block.
+ * @param {string} blockId - The ID of the block.
  * @returns {Promise<Array>} List of active subject documents.
  */
-async function GetSubjectsHelper(block_id) {
-  return await SubjectModel.find({ block_id, deleted_at: null }).lean();
+async function GetSubjectsHelper(blockId) {
+  return await SubjectModel.find({ block_id: blockId, deleted_at: null }).lean();
 }
 
 /**
  * Retrieves all active tests belonging to a subject.
  *
- * @param {string} subject_id - The ID of the subject.
+ * @param {string} subjectId - The ID of the subject.
  * @returns {Promise<Array>} List of active test documents.
  */
-async function GetTestsHelper(subject_id) {
-  return await TestModel.find({ subject_id, deleted_at: null }).lean();
+async function GetTestsHelper(subjectId) {
+  return await TestModel.find({ subject_id: subjectId, deleted_at: null }).lean();
 }
 
 // *************** CRUD: BLOCK ***************
