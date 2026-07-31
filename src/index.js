@@ -7,12 +7,31 @@ const config = require("./core/config");
 require("./core/db");
 const { CreateApolloMiddleware } = require("./core/apollo");
 const systemSchema = require("./features/system");
+const curriculumSchema = require("./features/academic/curriculum");
 
 // *************** INITIALIZE APPLICATION ***************
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// *************** RESOLVER MERGE UTILITY ***************
+/**
+ * Merges resolver maps from multiple feature schemas so every root
+ * operation type (Query, Mutation, Subscription) and every type resolver
+ * is preserved. Feature-scoped resolvers can override core ones.
+ *
+ * @param {...Object} schemas - Feature schemas exposing { typeDefs, resolvers }.
+ * @returns {Object} A combined resolver map.
+ */
+function MergeResolvers(...schemas) {
+  return schemas.reduce((merged, schema) => {
+    for (const [key, value] of Object.entries(schema.resolvers)) {
+      merged[key] = { ...merged[key], ...value };
+    }
+    return merged;
+  }, {});
+}
 
 // *************** INITIALIZE AND MOUNT APOLLO SERVER ***************
 /**
@@ -21,7 +40,10 @@ app.use(express.json());
  * @returns {Promise<void>} Resolves when the server is listening.
  */
 async function StartServer() {
-  const graphqlMiddleware = await CreateApolloMiddleware(systemSchema);
+  const graphqlMiddleware = await CreateApolloMiddleware({
+    typeDefs: [systemSchema.typeDefs, curriculumSchema.typeDefs],
+    resolvers: MergeResolvers(systemSchema, curriculumSchema),
+  });
   app.use("/graphql", graphqlMiddleware);
 
   app.listen(config.port, () => {
