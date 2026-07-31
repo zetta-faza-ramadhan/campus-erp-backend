@@ -124,12 +124,12 @@ async function CreateBlockHelper(data) {
 /**
  * Updates an active block by ID.
  *
- * @param {Object} data - Payload containing id and fields to update.
+ * @param {Object} data - Payload containing _id and fields to update.
  * @returns {Promise<Object>} The updated block document.
  * @throws {AppError} 404 - Block not found.
  */
 async function UpdateBlockHelper(data) {
-  const { id, ...fields } = data;
+  const { _id: id, ...fields } = data;
   await CheckEntityLocked("block", id);
   const updated = await BlockModel.findOneAndUpdate(
     { _id: id, deleted_at: null },
@@ -187,13 +187,13 @@ async function CreateSubjectHelper(data) {
 /**
  * Updates an active subject by ID and re-validates weightage against its block.
  *
- * @param {Object} data - Payload containing id and fields to update.
+ * @param {Object} data - Payload containing _id and fields to update.
  * @returns {Promise<Object>} The updated subject document.
  * @throws {AppError} 404 - Subject not found.
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateSubjectHelper(data) {
-  const { id, ...fields } = data;
+  const { _id: id, ...fields } = data;
   if (fields.block_id && typeof fields.block_id === "string") fields.block_id = new Types.ObjectId(fields.block_id);
   await CheckEntityLocked("subject", id);
   const existing = await SubjectModel.findOne({ _id: id, deleted_at: null }).select("block_id weightage");
@@ -248,14 +248,14 @@ async function CreateTestHelper(data) {
 /**
  * Updates an active test by ID and re-validates weightage against its subject.
  *
- * @param {Object} data - Payload containing id and fields to update.
+ * @param {Object} data - Payload containing _id and fields to update.
  * @returns {Promise<Object>} The updated test document.
  * @throws {AppError} 404 - Test not found.
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateTestHelper(data) {
   if (data.subject_id && typeof data.subject_id === "string") data.subject_id = new Types.ObjectId(data.subject_id);
-  const { id, ...fields } = data;
+  const { _id: id, ...fields } = data;
   await CheckEntityLocked("test", id);
   const existing = await TestModel.findOne({ _id: id, deleted_at: null }).select("subject_id weightage");
   if (!existing) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");

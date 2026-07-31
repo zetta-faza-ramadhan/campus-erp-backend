@@ -7,14 +7,14 @@ const typeDefs = `#graphql
   }
 
   type Block {
-    id: ID!
+    _id: ID!
     name: String!
     academic_year: String!
     grading_rules: [GradingRule!]!
   }
 
   type Subject {
-    id: ID!
+    _id: ID!
     name: String!
     block_id: ID!
     weightage: Float!
@@ -22,7 +22,7 @@ const typeDefs = `#graphql
   }
 
   type Test {
-    id: ID!
+    _id: ID!
     name: String!
     subject_id: ID!
     weightage: Float!
@@ -36,7 +36,7 @@ const typeDefs = `#graphql
   }
 
   input UpdateBlockInput {
-    id: ID!
+    _id: ID!
     name: String
     academic_year: String
     grading_rules: [GradingRuleInput!]
@@ -50,7 +50,7 @@ const typeDefs = `#graphql
   }
 
   input UpdateSubjectInput {
-    id: ID!
+    _id: ID!
     name: String
     block_id: ID
     weightage: Float
@@ -65,7 +65,7 @@ const typeDefs = `#graphql
   }
 
   input UpdateTestInput {
-    id: ID!
+    _id: ID!
     name: String
     subject_id: ID
     weightage: Float
@@ -87,13 +87,13 @@ const typeDefs = `#graphql
   type Mutation {
     createBlock(input: CreateBlockInput!): Block!
     updateBlock(input: UpdateBlockInput!): Block!
-    deleteBlock(id: ID!): Block!
+    deleteBlock(_id: ID!): Block!
     createSubject(input: CreateSubjectInput!): Subject!
     updateSubject(input: UpdateSubjectInput!): Subject!
-    deleteSubject(id: ID!): Subject!
+    deleteSubject(_id: ID!): Subject!
     createTest(input: CreateTestInput!): Test!
     updateTest(input: UpdateTestInput!): Test!
-    deleteTest(id: ID!): Test!
+    deleteTest(_id: ID!): Test!
   }
 `;
 

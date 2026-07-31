@@ -64,7 +64,7 @@ module.exports = {
     getSubjects: GetSubjects,
     getTests: GetTests,
   },
-  Block: { id: IdFieldResolver },
-  Subject: { id: IdFieldResolver },
-  Test: { id: IdFieldResolver },
+  Block: { _id: IdFieldResolver },
+  Subject: { _id: IdFieldResolver },
+  Test: { _id: IdFieldResolver },
 };

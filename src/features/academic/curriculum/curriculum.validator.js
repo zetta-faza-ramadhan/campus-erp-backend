@@ -19,7 +19,7 @@ const blockSchema = Joi.object({
 });
 
 const updateBlockSchema = Joi.object({
-  id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
+  _id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   name: Joi.string(),
   academic_year: Joi.string(),
   grading_rules: Joi.array().items(gradingRuleSchema),
@@ -36,7 +36,7 @@ const subjectSchema = Joi.object({
 });
 
 const updateSubjectSchema = Joi.object({
-  id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
+  _id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   name: Joi.string(),
   block_id: Joi.string().regex(OBJECT_ID_PATTERN),
   weightage: Joi.number().greater(0).max(100),
@@ -54,7 +54,7 @@ const testSchema = Joi.object({
 });
 
 const updateTestSchema = Joi.object({
-  id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
+  _id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   name: Joi.string(),
   subject_id: Joi.string().regex(OBJECT_ID_PATTERN),
   weightage: Joi.number().greater(0).max(100),
