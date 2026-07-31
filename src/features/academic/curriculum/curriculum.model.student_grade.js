@@ -7,31 +7,31 @@ const Schema = mongoose.Schema;
 // *************** DEFINE STUDENT GRADE SCHEMA ***************
 const StudentGradeSchema = new Schema(
   {
-    // *************** Reference to the block this grade belongs to
+    // Reference to the block this grade belongs to
     block_id: {
       type: Schema.Types.ObjectId,
       ref: "Block",
       required: true,
     },
-    // *************** Reference to the subject this grade belongs to
+    // Reference to the subject this grade belongs to
     subject_id: {
       type: Schema.Types.ObjectId,
       ref: "Subject",
       required: true,
     },
-    // *************** Reference to the test this grade belongs to
+    // Reference to the test this grade belongs to
     test_id: {
       type: Schema.Types.ObjectId,
       ref: "Test",
       required: true,
     },
-    // *************** Reference to the student receiving this grade
+    // Reference to the student receiving this grade
     student_id: {
       type: Schema.Types.ObjectId,
       ref: "Student",
       required: true,
     },
-    // *************** The numeric score achieved by the student
+    // The numeric score achieved by the student
     score: {
       type: Number,
       required: true,
