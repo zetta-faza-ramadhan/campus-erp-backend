@@ -181,21 +181,26 @@ async function CreateSubjectHelper(data) {
 }
 
 /**
- * Updates an active subject by ID.
+ * Updates an active subject by ID and re-validates weightage against its block.
  *
  * @param {Object} data - Payload containing id and fields to update.
  * @returns {Promise<Object>} The updated subject document.
  * @throws {AppError} 404 - Subject not found.
+ * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateSubjectHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("subject", id);
+  const existing = await SubjectModel.findOne({ _id: id, deleted_at: null });
+  if (!existing) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
+  const targetBlockId = fields.block_id ?? existing.block_id;
+  const targetWeightage = fields.weightage ?? existing.weightage;
+  await ValidateSubjectWeightage(targetBlockId, targetWeightage, id);
   const updated = await SubjectModel.findOneAndUpdate(
     { _id: id, deleted_at: null },
     fields,
     { returnDocument: "after" },
   );
-  if (!updated) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
   return updated;
 }
 
@@ -236,21 +241,26 @@ async function CreateTestHelper(data) {
 }
 
 /**
- * Updates an active test by ID.
+ * Updates an active test by ID and re-validates weightage against its subject.
  *
  * @param {Object} data - Payload containing id and fields to update.
  * @returns {Promise<Object>} The updated test document.
  * @throws {AppError} 404 - Test not found.
+ * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateTestHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("test", id);
+  const existing = await TestModel.findOne({ _id: id, deleted_at: null });
+  if (!existing) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
+  const targetSubjectId = fields.subject_id ?? existing.subject_id;
+  const targetWeightage = fields.weightage ?? existing.weightage;
+  await ValidateTestWeightage(targetSubjectId, targetWeightage, id);
   const updated = await TestModel.findOneAndUpdate(
     { _id: id, deleted_at: null },
     fields,
     { returnDocument: "after" },
   );
-  if (!updated) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
   return updated;
 }
 
