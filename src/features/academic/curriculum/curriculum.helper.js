@@ -13,7 +13,7 @@ const StudentGradesModel = require("./curriculum.model.student_grade");
  * @throws {AppError} If the total weightage exceeds 100%.
  */
 async function ValidateSubjectWeightage(block_id, new_weightage) {
-  const subjects = await SubjectModel.find({ block_id });
+  const subjects = await SubjectModel.find({ block_id, deleted_at: null });
   const totalWeightage = subjects.reduce(
     (sum, subject) => sum + subject.weightage,
     0,
@@ -36,7 +36,7 @@ async function ValidateSubjectWeightage(block_id, new_weightage) {
  * @throws {AppError} If the total weightage exceeds 100%.
  */
 async function ValidateTestWeightage(subject_id, new_weightage) {
-  const tests = await TestModel.find({ subject_id });
+  const tests = await TestModel.find({ subject_id, deleted_at: null });
   const totalWeightage = tests.reduce((sum, test) => sum + test.weightage, 0);
   const roundedTotal = Math.round(totalWeightage * 100) / 100;
   if (roundedTotal + new_weightage > 100) {
@@ -81,29 +81,52 @@ async function CreateBlockHelper(data) {
 }
 
 /**
- * Updates an existing block by ID.
+ * Updates an active block by ID.
  *
  * @param {Object} data - Payload containing id and fields to update.
- * @returns {Promise<Object|null>} The updated block document.
+ * @returns {Promise<Object>} The updated block document.
+ * @throws {AppError} 404 - Block not found.
  */
 async function UpdateBlockHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("block", id);
-  const updated = await BlockModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
+  const updated = await BlockModel.findOneAndUpdate(
+    { _id: id, deleted_at: null },
+    fields,
+    { returnDocument: "after" },
+  );
   if (!updated) throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
   return updated;
 }
 
 /**
- * Deletes a block by ID.
+ * Soft-deletes a block and cascades the deletion to its active subjects and tests.
  *
  * @param {string} id - The block ID.
- * @returns {Promise<boolean>} Whether the deletion was acknowledged.
+ * @returns {Promise<Object>} The soft-deleted block document.
+ * @throws {AppError} 404 - Block not found.
  */
 async function DeleteBlockHelper(id) {
   await CheckEntityLocked("block", id);
-  const deleted = await BlockModel.findByIdAndDelete(id);
+  const now = new Date();
+  const deleted = await BlockModel.findByIdAndUpdate(
+    id,
+    { deleted_at: now },
+    { returnDocument: "after" },
+  );
   if (!deleted) throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
+  const subjects = await SubjectModel.find(
+    { block_id: id, deleted_at: null },
+    { _id: 1 },
+  );
+  await SubjectModel.updateMany(
+    { block_id: id, deleted_at: null },
+    { deleted_at: now },
+  );
+  await TestModel.updateMany(
+    { subject_id: { $in: subjects.map((subject) => subject._id) } },
+    { deleted_at: now },
+  );
   return deleted;
 }
 
@@ -121,29 +144,44 @@ async function CreateSubjectHelper(data) {
 }
 
 /**
- * Updates an existing subject by ID.
+ * Updates an active subject by ID.
  *
  * @param {Object} data - Payload containing id and fields to update.
- * @returns {Promise<Object|null>} The updated subject document.
+ * @returns {Promise<Object>} The updated subject document.
+ * @throws {AppError} 404 - Subject not found.
  */
 async function UpdateSubjectHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("subject", id);
-  const updated = await SubjectModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
+  const updated = await SubjectModel.findOneAndUpdate(
+    { _id: id, deleted_at: null },
+    fields,
+    { returnDocument: "after" },
+  );
   if (!updated) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
   return updated;
 }
 
 /**
- * Deletes a subject by ID.
+ * Soft-deletes a subject and cascades the deletion to its active tests.
  *
  * @param {string} id - The subject ID.
- * @returns {Promise<boolean>} Whether the deletion was acknowledged.
+ * @returns {Promise<Object>} The soft-deleted subject document.
+ * @throws {AppError} 404 - Subject not found.
  */
 async function DeleteSubjectHelper(id) {
   await CheckEntityLocked("subject", id);
-  const deleted = await SubjectModel.findByIdAndDelete(id);
+  const now = new Date();
+  const deleted = await SubjectModel.findByIdAndUpdate(
+    id,
+    { deleted_at: now },
+    { returnDocument: "after" },
+  );
   if (!deleted) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
+  await TestModel.updateMany(
+    { subject_id: id, deleted_at: null },
+    { deleted_at: now },
+  );
   return deleted;
 }
 
@@ -161,28 +199,38 @@ async function CreateTestHelper(data) {
 }
 
 /**
- * Updates an existing test by ID.
+ * Updates an active test by ID.
  *
  * @param {Object} data - Payload containing id and fields to update.
- * @returns {Promise<Object|null>} The updated test document.
+ * @returns {Promise<Object>} The updated test document.
+ * @throws {AppError} 404 - Test not found.
  */
 async function UpdateTestHelper(data) {
   const { id, ...fields } = data;
   await CheckEntityLocked("test", id);
-  const updated = await TestModel.findByIdAndUpdate(id, fields, { returnDocument: "after" });
+  const updated = await TestModel.findOneAndUpdate(
+    { _id: id, deleted_at: null },
+    fields,
+    { returnDocument: "after" },
+  );
   if (!updated) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
   return updated;
 }
 
 /**
- * Deletes a test by ID.
+ * Soft-deletes a test by ID.
  *
  * @param {string} id - The test ID.
- * @returns {Promise<boolean>} Whether the deletion was acknowledged.
+ * @returns {Promise<Object>} The soft-deleted test document.
+ * @throws {AppError} 404 - Test not found.
  */
 async function DeleteTestHelper(id) {
   await CheckEntityLocked("test", id);
-  const deleted = await TestModel.findByIdAndDelete(id);
+  const deleted = await TestModel.findByIdAndUpdate(
+    id,
+    { deleted_at: new Date() },
+    { returnDocument: "after" },
+  );
   if (!deleted) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
   return deleted;
 }
