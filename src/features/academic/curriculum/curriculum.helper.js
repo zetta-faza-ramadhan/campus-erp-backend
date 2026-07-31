@@ -10,10 +10,13 @@ const StudentGradesModel = require("./curriculum.model.student_grade");
  *
  * @param {string} block_id - The ID of the block.
  * @param {number} new_weightage - The weightage of the new subject to be added.
+ * @param {string} [exclude_id] - The ID of the subject being edited, excluded from the total.
  * @throws {AppError} If the total weightage exceeds 100%.
  */
-async function ValidateSubjectWeightage(block_id, new_weightage) {
-  const subjects = await SubjectModel.find({ block_id, deleted_at: null });
+async function ValidateSubjectWeightage(block_id, new_weightage, exclude_id) {
+  const filter = { block_id, deleted_at: null };
+  if (exclude_id) filter._id = { $ne: exclude_id };
+  const subjects = await SubjectModel.find(filter);
   const totalWeightage = subjects.reduce(
     (sum, subject) => sum + subject.weightage,
     0,
@@ -33,10 +36,13 @@ async function ValidateSubjectWeightage(block_id, new_weightage) {
  *
  * @param {string} subject_id - The ID of the subject.
  * @param {number} new_weightage - The weightage of the new test to be added.
+ * @param {string} [exclude_id] - The ID of the test being edited, excluded from the total.
  * @throws {AppError} If the total weightage exceeds 100%.
  */
-async function ValidateTestWeightage(subject_id, new_weightage) {
-  const tests = await TestModel.find({ subject_id, deleted_at: null });
+async function ValidateTestWeightage(subject_id, new_weightage, exclude_id) {
+  const filter = { subject_id, deleted_at: null };
+  if (exclude_id) filter._id = { $ne: exclude_id };
+  const tests = await TestModel.find(filter);
   const totalWeightage = tests.reduce((sum, test) => sum + test.weightage, 0);
   const roundedTotal = Math.round(totalWeightage * 100) / 100;
   if (roundedTotal + new_weightage > 100) {
