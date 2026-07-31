@@ -2,9 +2,6 @@
 const { GraphQLError } = require("graphql");
 
 // *************** IMPORT MODULE ***************
-const BlockModel = require("./curriculum.model.block");
-const SubjectModel = require("./curriculum.model.subject");
-const TestModel = require("./curriculum.model.test");
 const {
   blockSchema, updateBlockSchema,
   subjectSchema, updateSubjectSchema,
@@ -51,7 +48,7 @@ function IdFieldResolver(parent) {
  */
 async function GetBlocks() {
   try {
-    return await BlockModel.find({ deleted_at: null }).lean();
+    return await curriculumHelper.GetBlocksHelper();
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -66,10 +63,9 @@ async function GetBlocks() {
  */
 async function GetSubjects(_, args) {
   try {
-    return await SubjectModel.find({
-      block_id: args.blockId,
-      deleted_at: null,
-    }).lean();
+    const { error } = objectIdSchema.validate(args.blockId);
+    if (error) NormalizeGqlError(error);
+    return await curriculumHelper.GetSubjectsHelper(args.blockId);
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -84,10 +80,9 @@ async function GetSubjects(_, args) {
  */
 async function GetTests(_, args) {
   try {
-    return await TestModel.find({
-      subject_id: args.subjectId,
-      deleted_at: null,
-    }).lean();
+    const { error } = objectIdSchema.validate(args.subjectId);
+    if (error) NormalizeGqlError(error);
+    return await curriculumHelper.GetTestsHelper(args.subjectId);
   } catch (err) {
     NormalizeGqlError(err);
   }

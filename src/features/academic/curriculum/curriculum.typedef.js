@@ -82,7 +82,7 @@ const typeDefs = `#graphql
     getSubjects(blockId: ID!): [Subject!]!
     getTests(subjectId: ID!): [Test!]!
   }
-  
+
   type Mutation {
     createBlock(input: CreateBlockInput!): Block!
     updateBlock(input: UpdateBlockInput!): Block!

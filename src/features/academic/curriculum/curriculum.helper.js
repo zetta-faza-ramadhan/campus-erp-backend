@@ -68,6 +68,37 @@ async function CheckEntityLocked(entityType, entityId) {
   }
 }
 
+// *************** QUERY ***************
+
+/**
+ * Retrieves all active blocks.
+ *
+ * @returns {Promise<Array>} List of active block documents.
+ */
+async function GetBlocksHelper() {
+  return await BlockModel.find({ deleted_at: null }).lean();
+}
+
+/**
+ * Retrieves all active subjects belonging to a block.
+ *
+ * @param {string} block_id - The ID of the block.
+ * @returns {Promise<Array>} List of active subject documents.
+ */
+async function GetSubjectsHelper(block_id) {
+  return await SubjectModel.find({ block_id, deleted_at: null }).lean();
+}
+
+/**
+ * Retrieves all active tests belonging to a subject.
+ *
+ * @param {string} subject_id - The ID of the subject.
+ * @returns {Promise<Array>} List of active test documents.
+ */
+async function GetTestsHelper(subject_id) {
+  return await TestModel.find({ subject_id, deleted_at: null }).lean();
+}
+
 // *************** CRUD: BLOCK ***************
 
 /**
@@ -240,6 +271,9 @@ module.exports = {
   ValidateSubjectWeightage,
   ValidateTestWeightage,
   CheckEntityLocked,
+  GetBlocksHelper,
+  GetSubjectsHelper,
+  GetTestsHelper,
   CreateBlockHelper,
   UpdateBlockHelper,
   DeleteBlockHelper,
