@@ -27,14 +27,14 @@ async function GetBlocks() {
  * Retrieves all subjects belonging to a block.
  *
  * @param {Object} _ - Unused parent object.
- * @param {Object} args - Query arguments containing blockId.
+ * @param {Object} args - Query arguments containing block_id.
  * @returns {Promise<Array>} List of subject documents.
  */
 async function GetSubjects(_, args) {
   try {
-    const { error } = objectIdSchema.validate(args.blockId);
+    const { error } = objectIdSchema.validate(args.block_id);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.GetSubjectsHelper(args.blockId);
+    return await curriculumHelper.GetSubjectsHelper(args.block_id);
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -44,14 +44,14 @@ async function GetSubjects(_, args) {
  * Retrieves all tests belonging to a subject.
  *
  * @param {Object} _ - Unused parent object.
- * @param {Object} args - Query arguments containing subjectId.
+ * @param {Object} args - Query arguments containing subject_id.
  * @returns {Promise<Array>} List of test documents.
  */
 async function GetTests(_, args) {
   try {
-    const { error } = objectIdSchema.validate(args.subjectId);
+    const { error } = objectIdSchema.validate(args.subject_id);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.GetTestsHelper(args.subjectId);
+    return await curriculumHelper.GetTestsHelper(args.subject_id);
   } catch (err) {
     NormalizeGqlError(err);
   }

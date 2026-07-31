@@ -79,8 +79,8 @@ const typeDefs = `#graphql
 
   type Query {
     getBlocks: [Block!]!
-    getSubjects(blockId: ID!): [Subject!]!
-    getTests(subjectId: ID!): [Test!]!
+    getSubjects(block_id: ID!): [Subject!]!
+    getTests(subject_id: ID!): [Test!]!
   }
 
   type Mutation {
