@@ -1,3 +1,6 @@
+// *************** IMPORT LIBRARY ***************
+const { Types } = require("mongoose");
+
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
 const BlockModel = require("./curriculum.model.block");
@@ -13,11 +16,11 @@ const StudentGradesModel = require("./curriculum.model.student_grade");
  * @param {string} [exclude_id] - The ID of the subject being edited, excluded from the total.
  * @throws {AppError} If the total weightage exceeds 100%.
  */
-async function ValidateSubjectWeightage(block_id, new_weightage, candidate_id) {
+async function ValidateSubjectWeightage(block_id, new_weightage, exclude_id) {
   const filter = { block_id, deleted_at: null };
-  // For updates, always exclude candidate_id (since we are simulating the new weightage at that spot)
-  if (candidate_id) filter._id = { $ne: candidate_id };
-  const subjects = await SubjectModel.find(filter);
+  // *************** EXCLUDE THE EDITED RECORD FROM THE TOTAL
+  if (exclude_id) filter._id = { $ne: exclude_id };
+  const subjects = await SubjectModel.find(filter).select("weightage");
   const totalWeightage = subjects.reduce((sum, subject) => sum + subject.weightage, 0);
   const capped = Math.round((totalWeightage + new_weightage) * 100) / 100;
   if (capped > 100) {
@@ -39,11 +42,12 @@ async function ValidateSubjectWeightage(block_id, new_weightage, candidate_id) {
  */
 async function ValidateTestWeightage(subject_id, new_weightage, exclude_id) {
   const filter = { subject_id, deleted_at: null };
+  // *************** EXCLUDE THE EDITED RECORD FROM THE TOTAL
   if (exclude_id) filter._id = { $ne: exclude_id };
-  const tests = await TestModel.find(filter);
+  const tests = await TestModel.find(filter).select("weightage");
   const totalWeightage = tests.reduce((sum, test) => sum + test.weightage, 0);
-  const roundedTotal = Math.round(totalWeightage * 100) / 100;
-  if (roundedTotal + new_weightage > 100) {
+  const capped = Math.round((totalWeightage + new_weightage) * 100) / 100;
+  if (capped > 100) {
     throw new AppError(
       "WEIGHTAGE_LIMIT_EXCEEDED",
       400,
@@ -187,11 +191,10 @@ async function CreateSubjectHelper(data) {
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateSubjectHelper(data) {
-
   const { id, ...fields } = data;
-  if (fields.block_id && typeof fields.block_id === "string") fields.block_id = new (require('mongoose').Types.ObjectId)(fields.block_id);
+  if (fields.block_id && typeof fields.block_id === "string") fields.block_id = new Types.ObjectId(fields.block_id);
   await CheckEntityLocked("subject", id);
-  const existing = await SubjectModel.findOne({ _id: id, deleted_at: null });
+  const existing = await SubjectModel.findOne({ _id: id, deleted_at: null }).select("block_id weightage");
   if (!existing) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
   const targetBlockId = fields.block_id ?? existing.block_id;
   const targetWeightage = fields.weightage ?? existing.weightage;
@@ -249,10 +252,10 @@ async function CreateTestHelper(data) {
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateTestHelper(data) {
-  if (data.subject_id && typeof data.subject_id === "string") data.subject_id = new (require('mongoose').Types.ObjectId)(data.subject_id);
+  if (data.subject_id && typeof data.subject_id === "string") data.subject_id = new Types.ObjectId(data.subject_id);
   const { id, ...fields } = data;
   await CheckEntityLocked("test", id);
-  const existing = await TestModel.findOne({ _id: id, deleted_at: null });
+  const existing = await TestModel.findOne({ _id: id, deleted_at: null }).select("subject_id weightage");
   if (!existing) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
   const targetSubjectId = fields.subject_id ?? existing.subject_id;
   const targetWeightage = fields.weightage ?? existing.weightage;
