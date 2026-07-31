@@ -79,21 +79,21 @@ const typeDefs = `#graphql
   }
 
   type Query {
-    getBlocks: [Block!]!
-    getSubjects(block_id: ID!): [Subject!]!
-    getTests(subject_id: ID!): [Test!]!
+    GetBlocks: [Block!]!
+    GetSubjects(block_id: ID!): [Subject!]!
+    GetTests(subject_id: ID!): [Test!]!
   }
 
   type Mutation {
-    createBlock(input: CreateBlockInput!): Block!
-    updateBlock(input: UpdateBlockInput!): Block!
-    deleteBlock(_id: ID!): Block!
-    createSubject(input: CreateSubjectInput!): Subject!
-    updateSubject(input: UpdateSubjectInput!): Subject!
-    deleteSubject(_id: ID!): Subject!
-    createTest(input: CreateTestInput!): Test!
-    updateTest(input: UpdateTestInput!): Test!
-    deleteTest(_id: ID!): Test!
+    CreateBlock(input: CreateBlockInput!): Block!
+    UpdateBlock(input: UpdateBlockInput!): Block!
+    DeleteBlock(_id: ID!): Block!
+    CreateSubject(input: CreateSubjectInput!): Subject!
+    UpdateSubject(input: UpdateSubjectInput!): Subject!
+    DeleteSubject(_id: ID!): Subject!
+    CreateTest(input: CreateTestInput!): Test!
+    UpdateTest(input: UpdateTestInput!): Test!
+    DeleteTest(_id: ID!): Test!
   }
 `;
 

@@ -166,14 +166,14 @@ async function DeleteTest(_, { _id }) {
 // *************** EXPORT MODULE ***************
 module.exports = {
   Mutation: {
-    createBlock: CreateBlock,
-    updateBlock: UpdateBlock,
-    deleteBlock: DeleteBlock,
-    createSubject: CreateSubject,
-    updateSubject: UpdateSubject,
-    deleteSubject: DeleteSubject,
-    createTest: CreateTest,
-    updateTest: UpdateTest,
-    deleteTest: DeleteTest,
+    CreateBlock,
+    UpdateBlock,
+    DeleteBlock,
+    CreateSubject,
+    UpdateSubject,
+    DeleteSubject,
+    CreateTest,
+    UpdateTest,
+    DeleteTest,
   },
 };

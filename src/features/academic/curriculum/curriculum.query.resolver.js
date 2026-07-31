@@ -60,9 +60,9 @@ async function GetTests(_, args) {
 // *************** EXPORT MODULE ***************
 module.exports = {
   Query: {
-    getBlocks: GetBlocks,
-    getSubjects: GetSubjects,
-    getTests: GetTests,
+    GetBlocks,
+    GetSubjects,
+    GetTests,
   },
   Block: { _id: IdFieldResolver },
   Subject: { _id: IdFieldResolver },
