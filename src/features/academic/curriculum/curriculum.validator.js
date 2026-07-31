@@ -28,9 +28,7 @@ const updateBlockSchema = Joi.object({
 // *************** VALIDATION SCHEMA FOR SUBJECT ***************
 const subjectSchema = Joi.object({
   name: Joi.string().required(),
-  block_id: Joi.string()
-    .regex(OBJECT_ID_PATTERN)
-    .required(),
+  block_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   weightage: Joi.number().greater(0).max(100).required(),
   grading_rules: Joi.array().items(gradingRuleSchema).required(),
 });
@@ -46,9 +44,7 @@ const updateSubjectSchema = Joi.object({
 // *************** VALIDATION SCHEMA FOR TEST ***************
 const testSchema = Joi.object({
   name: Joi.string().required(),
-  subject_id: Joi.string()
-    .regex(OBJECT_ID_PATTERN)
-    .required(),
+  subject_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   weightage: Joi.number().greater(0).max(100).required(),
   grading_rules: Joi.array().items(gradingRuleSchema).required(),
 });
@@ -66,8 +62,11 @@ const objectIdSchema = Joi.string().regex(OBJECT_ID_PATTERN).required();
 
 // *************** EXPORT MODULE ***************
 module.exports = {
-  blockSchema, updateBlockSchema,
-  subjectSchema, updateSubjectSchema,
-  testSchema, updateTestSchema,
+  blockSchema,
+  updateBlockSchema,
+  subjectSchema,
+  updateSubjectSchema,
+  testSchema,
+  updateTestSchema,
   objectIdSchema,
 };

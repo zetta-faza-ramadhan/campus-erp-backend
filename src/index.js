@@ -8,6 +8,8 @@ require("./core/db");
 const { CreateApolloMiddleware } = require("./core/apollo");
 const systemSchema = require("./features/system");
 const curriculumSchema = require("./features/academic/curriculum");
+const studentSchema = require("./features/users/student");
+const enrollmentSchema = require("./features/academic/enrollment");
 
 // *************** INITIALIZE APPLICATION ***************
 const app = express();
@@ -41,8 +43,18 @@ function MergeResolvers(...schemas) {
  */
 async function StartServer() {
   const graphqlMiddleware = await CreateApolloMiddleware({
-    typeDefs: [systemSchema.typeDefs, curriculumSchema.typeDefs],
-    resolvers: MergeResolvers(systemSchema, curriculumSchema),
+    typeDefs: [
+      systemSchema.typeDefs,
+      curriculumSchema.typeDefs,
+      studentSchema.typeDefs,
+      enrollmentSchema.typeDefs,
+    ],
+    resolvers: MergeResolvers(
+      systemSchema,
+      curriculumSchema,
+      studentSchema,
+      enrollmentSchema,
+    ),
   });
   app.use("/graphql", graphqlMiddleware);
 
