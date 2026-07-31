@@ -12,7 +12,7 @@ const StudentModel = require("./student.model");
  * @throws {AppError} 409 - Email or student number already registered.
  */
 async function CreateStudentHelper(data) {
-  // *************** ENSURE EMAIL AND STUDENT NUMBER ARE UNIQUE
+  // *************** Ensure email and student number are unique
   const existing = await StudentModel.findOne({
     $or: [{ email: data.email }, { student_number: data.student_number }],
   })
@@ -20,21 +20,21 @@ async function CreateStudentHelper(data) {
     .lean();
   if (existing) {
     if (existing.email === data.email) {
-      // *************** REJECT DUPLICATE EMAIL
+      // *************** Reject duplicate email
       throw new AppError(
         "EMAIL_ALREADY_EXISTS",
         409,
         "Email is already registered.",
       );
     }
-    // *************** REJECT DUPLICATE STUDENT NUMBER
+    // *************** Reject duplicate student number
     throw new AppError(
       "STUDENT_NUMBER_ALREADY_EXISTS",
       409,
       "Student number is already registered.",
     );
   }
-  // *************** INSERT THE NEW STUDENT
+  // *************** Insert the new student
   return await StudentModel.create(data);
 }
 

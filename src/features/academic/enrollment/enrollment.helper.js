@@ -16,7 +16,7 @@ const StudentModel = require("../../users/student/student.model");
  * @throws {AppError} 400 - Payload contains invalid or deleted student references.
  */
 async function EnrollStudentsHelper(input) {
-  // *************** VALIDATE TARGET ACADEMIC YEAR
+  // *************** Validate target academic year
   const year = await AcademicYearModel.findOne({
     _id: input.academic_year_id,
     deleted_at: null,
@@ -36,7 +36,7 @@ async function EnrollStudentsHelper(input) {
     );
   }
 
-  // *************** VERIFY ALL STUDENT REFERENCES EXIST
+  // *************** Verify all student references exist
   const studentCount = await StudentModel.countDocuments({
     _id: { $in: input.student_ids },
     deleted_at: null,
@@ -49,13 +49,13 @@ async function EnrollStudentsHelper(input) {
     );
   }
 
-  // *************** ATOMICALLY ADD STUDENTS TO THE YEAR
+  // *************** Atomically add students to the year
   const updatedYear = await AcademicYearModel.findByIdAndUpdate(
     input.academic_year_id,
     { $addToSet: { student_ids: { $each: input.student_ids } } },
     { returnDocument: "after" },
   );
-  // *************** ATOMICALLY LINK THE YEAR TO EACH STUDENT
+  // *************** Atomically link the year to each student
   await StudentModel.updateMany(
     { _id: { $in: input.student_ids } },
     { $addToSet: { academic_year_ids: input.academic_year_id } },
