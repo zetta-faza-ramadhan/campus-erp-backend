@@ -48,14 +48,14 @@ async function UpdateBlock(_, { input }) {
  * Deletes a block by its ID.
  *
  * @param {Object} _ - Unused parent object.
- * @param {Object} args - Mutation arguments containing the block _id.
+ * @param {Object} args - Mutation arguments containing block_id.
  * @returns {Promise<Object>} The soft-deleted block document.
  */
-async function DeleteBlock(_, { _id: blockId }) {
+async function DeleteBlock(_, { block_id }) {
   try {
-    const { error } = objectIdSchema.validate(blockId);
+    const { error } = objectIdSchema.validate(block_id);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.DeleteBlockHelper(blockId);
+    return await curriculumHelper.DeleteBlockHelper(block_id);
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -99,14 +99,14 @@ async function UpdateSubject(_, { input }) {
  * Deletes a subject by its ID.
  *
  * @param {Object} _ - Unused parent object.
- * @param {Object} args - Mutation arguments containing the subject _id.
+ * @param {Object} args - Mutation arguments containing subject_id.
  * @returns {Promise<Object>} The soft-deleted subject document.
  */
-async function DeleteSubject(_, { _id: subjectId }) {
+async function DeleteSubject(_, { subject_id }) {
   try {
-    const { error } = objectIdSchema.validate(subjectId);
+    const { error } = objectIdSchema.validate(subject_id);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.DeleteSubjectHelper(subjectId);
+    return await curriculumHelper.DeleteSubjectHelper(subject_id);
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -150,14 +150,14 @@ async function UpdateTest(_, { input }) {
  * Deletes a test by its ID.
  *
  * @param {Object} _ - Unused parent object.
- * @param {Object} args - Mutation arguments containing the test _id.
+ * @param {Object} args - Mutation arguments containing test_id.
  * @returns {Promise<Object>} The soft-deleted test document.
  */
-async function DeleteTest(_, { _id: testId }) {
+async function DeleteTest(_, { test_id }) {
   try {
-    const { error } = objectIdSchema.validate(testId);
+    const { error } = objectIdSchema.validate(test_id);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.DeleteTestHelper(testId);
+    return await curriculumHelper.DeleteTestHelper(test_id);
   } catch (err) {
     NormalizeGqlError(err);
   }

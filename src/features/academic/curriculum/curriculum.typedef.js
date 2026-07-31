@@ -87,13 +87,13 @@ const typeDefs = `#graphql
   type Mutation {
     CreateBlock(input: CreateBlockInput!): Block!
     UpdateBlock(input: UpdateBlockInput!): Block!
-    DeleteBlock(_id: ID!): Block!
+    DeleteBlock(block_id: ID!): Block!
     CreateSubject(input: CreateSubjectInput!): Subject!
     UpdateSubject(input: UpdateSubjectInput!): Subject!
-    DeleteSubject(_id: ID!): Subject!
+    DeleteSubject(subject_id: ID!): Subject!
     CreateTest(input: CreateTestInput!): Test!
     UpdateTest(input: UpdateTestInput!): Test!
-    DeleteTest(_id: ID!): Test!
+    DeleteTest(test_id: ID!): Test!
   }
 `;
 
