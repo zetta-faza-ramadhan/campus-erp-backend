@@ -1,6 +1,10 @@
 // *************** IMPORT MODULE ***************
 const { NormalizeGqlError } = require("../../../core/graphql_error");
+
+// *************** IMPORT VALIDATOR ***************
 const { enrollStudentsSchema } = require("./enrollment.validator");
+
+// *************** IMPORT HELPER FUNCTION ***************
 const { EnrollStudentsHelper } = require("./enrollment.helper");
 
 // *************** MUTATION ***************
