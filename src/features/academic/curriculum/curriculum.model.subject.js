@@ -10,15 +10,15 @@ const Schema = mongoose.Schema;
 // *************** DEFINE SUBJECT SCHEMA ***************
 const SubjectSchema = new Schema(
   {
-    // *************** Official name of the subject
+    // Official name of the subject
     name: { type: String, required: true },
-    // *************** Reference to the parent block this subject belongs to
+    // Reference to the parent block this subject belongs to
     block_id: { type: Schema.Types.ObjectId, ref: "Block", required: true },
-    // *************** Percentage weightage of this subject within the block (value between 0 and 100)
+    // Percentage weightage of this subject within the block (value between 0 and 100)
     weightage: { type: Number, required: true },
-    // *************** Set of grading rules specific to this subject
+    // Set of grading rules specific to this subject
     grading_rules: [GradingRuleSchema],
-    // *************** null means active, Date means deleted
+    // null means active, Date means deleted
     deleted_at: { type: Date, default: null },
   },
   {

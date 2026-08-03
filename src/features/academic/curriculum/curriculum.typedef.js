@@ -1,5 +1,7 @@
 // *************** DEFINE GRAPHQL SCHEMA ***************
 const typeDefs = `#graphql
+  scalar DateTime
+
   type GradingRule {
     label: String!
     operator: String!
@@ -7,26 +9,35 @@ const typeDefs = `#graphql
   }
 
   type Block {
-    id: ID!
+    _id: ID!
     name: String!
     academic_year: String!
     grading_rules: [GradingRule!]!
+    created_at: DateTime!
+    updated_at: DateTime!
+    deleted_at: DateTime
   }
 
   type Subject {
-    id: ID!
+    _id: ID!
     name: String!
     block_id: ID!
     weightage: Float!
     grading_rules: [GradingRule!]!
+    created_at: DateTime!
+    updated_at: DateTime!
+    deleted_at: DateTime
   }
 
   type Test {
-    id: ID!
+    _id: ID!
     name: String!
     subject_id: ID!
     weightage: Float!
     grading_rules: [GradingRule!]!
+    created_at: DateTime!
+    updated_at: DateTime!
+    deleted_at: DateTime
   }
 
   input CreateBlockInput {
@@ -36,7 +47,7 @@ const typeDefs = `#graphql
   }
 
   input UpdateBlockInput {
-    id: ID!
+    _id: ID!
     name: String
     academic_year: String
     grading_rules: [GradingRuleInput!]
@@ -50,7 +61,7 @@ const typeDefs = `#graphql
   }
 
   input UpdateSubjectInput {
-    id: ID!
+    _id: ID!
     name: String
     block_id: ID
     weightage: Float
@@ -65,7 +76,7 @@ const typeDefs = `#graphql
   }
 
   input UpdateTestInput {
-    id: ID!
+    _id: ID!
     name: String
     subject_id: ID
     weightage: Float
@@ -79,21 +90,21 @@ const typeDefs = `#graphql
   }
 
   type Query {
-    getBlocks: [Block!]!
-    getSubjects(block_id: ID!): [Subject!]!
-    getTests(subject_id: ID!): [Test!]!
+    GetBlocks: [Block!]!
+    GetSubjects(block_id: ID!): [Subject!]!
+    GetTests(subject_id: ID!): [Test!]!
   }
 
   type Mutation {
-    createBlock(input: CreateBlockInput!): Block!
-    updateBlock(input: UpdateBlockInput!): Block!
-    deleteBlock(id: ID!): Block!
-    createSubject(input: CreateSubjectInput!): Subject!
-    updateSubject(input: UpdateSubjectInput!): Subject!
-    deleteSubject(id: ID!): Subject!
-    createTest(input: CreateTestInput!): Test!
-    updateTest(input: UpdateTestInput!): Test!
-    deleteTest(id: ID!): Test!
+    CreateBlock(input: CreateBlockInput!): Block!
+    UpdateBlock(input: UpdateBlockInput!): Block!
+    DeleteBlock(block_id: ID!): Block!
+    CreateSubject(input: CreateSubjectInput!): Subject!
+    UpdateSubject(input: UpdateSubjectInput!): Subject!
+    DeleteSubject(subject_id: ID!): Subject!
+    CreateTest(input: CreateTestInput!): Test!
+    UpdateTest(input: UpdateTestInput!): Test!
+    DeleteTest(test_id: ID!): Test!
   }
 `;
 
