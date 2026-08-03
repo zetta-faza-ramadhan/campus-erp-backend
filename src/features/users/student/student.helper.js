@@ -35,7 +35,22 @@ async function CreateStudentHelper(data) {
     );
   }
   // *************** Insert the new student
-  return await StudentModel.create(data);
+  try {
+    return await StudentModel.create(data);
+  } catch (err) {
+    // *************** Translate concurrent duplicate-key hit into a 409
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      throw new AppError(
+        field === "email"
+          ? "EMAIL_ALREADY_EXISTS"
+          : "STUDENT_NUMBER_ALREADY_EXISTS",
+        409,
+        "Already registered.",
+      );
+    }
+    throw err;
+  }
 }
 
 // *************** EXPORT MODULE ***************
