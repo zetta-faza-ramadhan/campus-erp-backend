@@ -1,6 +1,9 @@
 // *************** IMPORT LIBRARY ***************
 const { ApolloServer, HeaderMap } = require("@apollo/server");
 
+// *************** IMPORT MODULE ***************
+const { DateTime } = require("./scalars");
+
 /**
  * Creates and starts an Apollo Server, returning an Express middleware function.
  *
@@ -10,7 +13,10 @@ const { ApolloServer, HeaderMap } = require("@apollo/server");
 async function CreateApolloMiddleware(schema) {
   const server = new ApolloServer({
     typeDefs: schema.typeDefs,
-    resolvers: schema.resolvers,
+    resolvers: {
+      ...schema.resolvers,
+      DateTime,
+    },
   });
   await server.start();
   return (req, res, next) => ApolloMiddleware(req, res, next, server);

@@ -1,5 +1,7 @@
 // *************** DEFINE GRAPHQL SCHEMA ***************
 const typeDefs = `#graphql
+  scalar DateTime
+
   type GradingRule {
     label: String!
     operator: String!
@@ -11,6 +13,9 @@ const typeDefs = `#graphql
     name: String!
     academic_year: String!
     grading_rules: [GradingRule!]!
+    created_at: DateTime!
+    updated_at: DateTime!
+    deleted_at: DateTime
   }
 
   type Subject {
@@ -19,6 +24,9 @@ const typeDefs = `#graphql
     block_id: ID!
     weightage: Float!
     grading_rules: [GradingRule!]!
+    created_at: DateTime!
+    updated_at: DateTime!
+    deleted_at: DateTime
   }
 
   type Test {
@@ -27,6 +35,9 @@ const typeDefs = `#graphql
     subject_id: ID!
     weightage: Float!
     grading_rules: [GradingRule!]!
+    created_at: DateTime!
+    updated_at: DateTime!
+    deleted_at: DateTime
   }
 
   input CreateBlockInput {
