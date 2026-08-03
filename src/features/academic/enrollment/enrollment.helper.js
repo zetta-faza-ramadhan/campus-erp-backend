@@ -36,12 +36,15 @@ async function EnrollStudentsHelper(input) {
     );
   }
 
+  // *************** Collapse duplicate IDs into a unique set
+  const studentIds = [...new Set(input.student_ids)];
+
   // *************** Verify all student references exist
   const studentCount = await StudentModel.countDocuments({
-    _id: { $in: input.student_ids },
+    _id: { $in: studentIds },
     deleted_at: null,
   });
-  if (studentCount !== input.student_ids.length) {
+  if (studentCount !== studentIds.length) {
     throw new AppError(
       "INVALID_STUDENT_REFERENCE",
       400,
@@ -52,12 +55,12 @@ async function EnrollStudentsHelper(input) {
   // *************** Atomically add students to the year
   const updatedYear = await AcademicYearModel.findByIdAndUpdate(
     input.academic_year_id,
-    { $addToSet: { student_ids: { $each: input.student_ids } } },
+    { $addToSet: { student_ids: { $each: studentIds } } },
     { returnDocument: "after" },
   );
   // *************** Atomically link the year to each student
   await StudentModel.updateMany(
-    { _id: { $in: input.student_ids } },
+    { _id: { $in: studentIds } },
     { $addToSet: { academic_year_ids: input.academic_year_id } },
   );
   return updatedYear;
