@@ -142,16 +142,17 @@ async function UpdateBlockHelper(data) {
 
 /**
  * Soft-deletes a block and cascades the deletion to its active subjects and tests.
+ * Only an active (non-deleted) block may be deleted; a second delete returns 404.
  *
- * @param {string} id - The block ID.
+ * @param {string} _id - The block ID.
  * @returns {Promise<Object>} The soft-deleted block document.
- * @throws {AppError} 404 - Block not found.
+ * @throws {AppError} 404 - Block not found or already deleted.
  */
 async function DeleteBlockHelper(_id) {
   await CheckEntityLocked("block", _id);
   const now = new Date();
-  const deleted = await BlockModel.findByIdAndUpdate(
-    _id,
+  const deleted = await BlockModel.findOneAndUpdate(
+    { _id, deleted_at: null },
     { deleted_at: now },
     { returnDocument: "after" },
   );
@@ -180,6 +181,12 @@ async function DeleteBlockHelper(_id) {
  * @returns {Promise<Object>} The created subject document.
  */
 async function CreateSubjectHelper(data) {
+  // *************** Ensure parent block exists and is active
+  const block = await BlockModel.findOne({
+    _id: data.block_id,
+    deleted_at: null,
+  });
+  if (!block) throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
   await ValidateSubjectWeightage(data.block_id, data.weightage);
   return await SubjectModel.create(data);
 }
@@ -211,16 +218,17 @@ async function UpdateSubjectHelper(data) {
 
 /**
  * Soft-deletes a subject and cascades the deletion to its active tests.
+ * Only an active (non-deleted) subject may be deleted; a second delete returns 404.
  *
- * @param {string} id - The subject ID.
+ * @param {string} _id - The subject ID.
  * @returns {Promise<Object>} The soft-deleted subject document.
- * @throws {AppError} 404 - Subject not found.
+ * @throws {AppError} 404 - Subject not found or already deleted.
  */
 async function DeleteSubjectHelper(_id) {
   await CheckEntityLocked("subject", _id);
   const now = new Date();
-  const deleted = await SubjectModel.findByIdAndUpdate(
-    _id,
+  const deleted = await SubjectModel.findOneAndUpdate(
+    { _id, deleted_at: null },
     { deleted_at: now },
     { returnDocument: "after" },
   );
@@ -241,6 +249,12 @@ async function DeleteSubjectHelper(_id) {
  * @returns {Promise<Object>} The created test document.
  */
 async function CreateTestHelper(data) {
+  // *************** Ensure parent subject exists and is active
+  const subject = await SubjectModel.findOne({
+    _id: data.subject_id,
+    deleted_at: null,
+  });
+  if (!subject) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
   await ValidateTestWeightage(data.subject_id, data.weightage);
   return await TestModel.create(data);
 }
@@ -254,8 +268,8 @@ async function CreateTestHelper(data) {
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateTestHelper(data) {
-  if (data.subject_id && typeof data.subject_id === "string") data.subject_id = new Types.ObjectId(data.subject_id);
   const { _id, ...fields } = data;
+  if (fields.subject_id && typeof fields.subject_id === "string") fields.subject_id = new Types.ObjectId(fields.subject_id);
   await CheckEntityLocked("test", _id);
   const existing = await TestModel.findOne({ _id, deleted_at: null }).select("subject_id weightage");
   if (!existing) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
@@ -272,15 +286,16 @@ async function UpdateTestHelper(data) {
 
 /**
  * Soft-deletes a test by ID.
+ * Only an active (non-deleted) test may be deleted; a second delete returns 404.
  *
- * @param {string} id - The test ID.
+ * @param {string} _id - The test ID.
  * @returns {Promise<Object>} The soft-deleted test document.
- * @throws {AppError} 404 - Test not found.
+ * @throws {AppError} 404 - Test not found or already deleted.
  */
 async function DeleteTestHelper(_id) {
   await CheckEntityLocked("test", _id);
-  const deleted = await TestModel.findByIdAndUpdate(
-    _id,
+  const deleted = await TestModel.findOneAndUpdate(
+    { _id, deleted_at: null },
     { deleted_at: new Date() },
     { returnDocument: "after" },
   );
