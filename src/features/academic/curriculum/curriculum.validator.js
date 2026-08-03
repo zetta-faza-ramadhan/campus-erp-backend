@@ -23,9 +23,7 @@ const gradingRuleSchema = Joi.object({
 function requireAtLeastOneNonIdField(value, helpers) {
   const keys = Object.keys(value).filter((key) => key !== "_id");
   if (keys.length === 0) {
-    return helpers.error("any.invalid", {
-      message: "At least one update field must be provided.",
-    });
+    return helpers.message("At least one update field must be provided.");
   }
   return value;
 }

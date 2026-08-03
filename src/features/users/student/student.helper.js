@@ -1,6 +1,29 @@
+// *************** IMPORT LIBRARY ***************
+const { Types } = require("mongoose");
+
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
 const StudentModel = require("./student.model");
+const AcademicYearModel = require("../../academic/enrollment/academic_year.model");
+
+// *************** GLOBAL VARIABLES ***************
+// *************** Reusable field selection applied early in the aggregation pipeline.
+const STUDENT_PROJECT_FIELDS = {
+  first_name: 1,
+  last_name: 1,
+  email: 1,
+  student_number: 1,
+  registration_date: 1,
+  academic_year_ids: 1,
+  deleted_at: 1,
+  created_at: 1,
+  updated_at: 1,
+};
+// *************** Default pagination applied when no page/limit is provided by the client.
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
+// *************** Hard cap on page size to keep large $in / result sets bounded.
+const MAX_LIMIT = 100;
 
 // *************** CRUD: STUDENT ***************
 
@@ -53,5 +76,88 @@ async function CreateStudentHelper(data) {
   }
 }
 
+// *************** QUERY: STUDENT ***************
+
+/**
+ * Retrieves students enrolled in an academic year with pagination and search.
+ *
+ * Ensures the academic year exists before querying, applies search to the
+ * student's first/last name, and returns page metadata alongside the records.
+ *
+ * @param {Object} data - Validated payload with academic_year_id, page, limit, search.
+ * @returns {Promise<Object>} Paginated response { total_count, current_page, total_pages, data }.
+ * @throws {AppError} 404 - Academic year not found.
+ */
+async function GetStudentsByAcademicYearHelper(data) {
+  // *************** Validate the target academic year exists
+  const year = await AcademicYearModel.findOne({
+    _id: data.academic_year_id,
+    deleted_at: null,
+  })
+    .select("_id name")
+    .lean();
+  if (!year) {
+    throw new AppError(
+      "ACADEMIC_YEAR_NOT_FOUND",
+      404,
+      "Academic year not found.",
+    );
+  }
+
+  // *************** Resolve pagination defaults
+  const page = data.page ?? DEFAULT_PAGE;
+  const limit = Math.min(data.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+  const skip = (page - 1) * limit;
+
+  // *************** Normalize the academic year id to an ObjectId
+  const academicYearId = new Types.ObjectId(data.academic_year_id);
+
+  // *************** Stage 1: $match - enrolled in the year, active, optional search
+  const match = {
+    academic_year_ids: academicYearId,
+    deleted_at: null,
+  };
+  // *************** Apply optional search on first/last name
+  if (data.search) {
+    // *************** Escape regex metacharacters so search is literal
+    const term = data.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    match.$or = [
+      { first_name: { $regex: term, $options: "i" } },
+      { last_name: { $regex: term, $options: "i" } },
+    ];
+  }
+
+  // *************** Stage 2: $facet - metadata (count) and data (page slice)
+  const pipeline = [
+    { $match: match },
+    { $sort: { registration_date: -1, _id: 1 } },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+          { $project: STUDENT_PROJECT_FIELDS },
+        ],
+      },
+    },
+  ];
+
+  // *************** Execute the single aggregation pipeline
+  const [result] = await StudentModel.aggregate(pipeline);
+  const total = result.metadata[0]?.total ?? 0;
+
+  // *************** Return paginated payload
+  return {
+    total_count: total,
+    current_page: page,
+    total_pages: Math.ceil(total / limit),
+    data: result.data,
+  };
+}
+
 // *************** EXPORT MODULE ***************
-module.exports = { CreateStudentHelper };
+module.exports = {
+  CreateStudentHelper,
+  GetStudentsByAcademicYearHelper,
+};

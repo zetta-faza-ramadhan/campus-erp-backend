@@ -13,6 +13,7 @@ const typeDefs = `#graphql
     updated_at: DateTime!
     deleted_at: DateTime
     academic_year_ids: [ID!]!
+    academic_years: [AcademicYear!]! 
   }
 
   input CreateStudentInput {
@@ -22,9 +23,28 @@ const typeDefs = `#graphql
     student_number: String!
   }
 
+  type Query {
+    GetStudentsByAcademicYear(input: GetStudentsByAcademicYearInput!): PaginatedStudentResponse!
+  }
+
   type Mutation {
     CreateStudent(input: CreateStudentInput!): Student!
   }
+
+  type PaginatedStudentResponse {
+    total_count: Int!
+    current_page: Int!
+    total_pages: Int!
+    data: [Student!]!
+  }
+
+  input GetStudentsByAcademicYearInput {
+    academic_year_id: ID!
+    page: Int
+    limit: Int
+    search: String
+  }
+
 `;
 
 // *************** EXPORT MODULE ***************
