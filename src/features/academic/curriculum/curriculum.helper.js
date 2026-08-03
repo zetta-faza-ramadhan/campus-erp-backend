@@ -129,10 +129,10 @@ async function CreateBlockHelper(data) {
  * @throws {AppError} 404 - Block not found.
  */
 async function UpdateBlockHelper(data) {
-  const { _id: id, ...fields } = data;
-  await CheckEntityLocked("block", id);
+  const { _id, ...fields } = data;
+  await CheckEntityLocked("block", _id);
   const updated = await BlockModel.findOneAndUpdate(
-    { _id: id, deleted_at: null },
+    { _id, deleted_at: null },
     fields,
     { returnDocument: "after" },
   );
@@ -147,21 +147,21 @@ async function UpdateBlockHelper(data) {
  * @returns {Promise<Object>} The soft-deleted block document.
  * @throws {AppError} 404 - Block not found.
  */
-async function DeleteBlockHelper(id) {
-  await CheckEntityLocked("block", id);
+async function DeleteBlockHelper(_id) {
+  await CheckEntityLocked("block", _id);
   const now = new Date();
   const deleted = await BlockModel.findByIdAndUpdate(
-    id,
+    _id,
     { deleted_at: now },
     { returnDocument: "after" },
   );
   if (!deleted) throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
   const subjects = await SubjectModel.find(
-    { block_id: id, deleted_at: null },
+    { block_id: _id, deleted_at: null },
     { _id: 1 },
   );
   await SubjectModel.updateMany(
-    { block_id: id, deleted_at: null },
+    { block_id: _id, deleted_at: null },
     { deleted_at: now },
   );
   await TestModel.updateMany(
@@ -193,16 +193,16 @@ async function CreateSubjectHelper(data) {
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
 async function UpdateSubjectHelper(data) {
-  const { _id: id, ...fields } = data;
+  const { _id, ...fields } = data;
   if (fields.block_id && typeof fields.block_id === "string") fields.block_id = new Types.ObjectId(fields.block_id);
-  await CheckEntityLocked("subject", id);
-  const existing = await SubjectModel.findOne({ _id: id, deleted_at: null }).select("block_id weightage");
+  await CheckEntityLocked("subject", _id);
+  const existing = await SubjectModel.findOne({ _id, deleted_at: null }).select("block_id weightage");
   if (!existing) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
   const targetBlockId = fields.block_id ?? existing.block_id;
   const targetWeightage = fields.weightage ?? existing.weightage;
-  await ValidateSubjectWeightage(targetBlockId, targetWeightage, id);
+  await ValidateSubjectWeightage(targetBlockId, targetWeightage, _id);
   const updated = await SubjectModel.findOneAndUpdate(
-    { _id: id, deleted_at: null },
+    { _id, deleted_at: null },
     fields,
     { returnDocument: "after" },
   );
@@ -216,17 +216,17 @@ async function UpdateSubjectHelper(data) {
  * @returns {Promise<Object>} The soft-deleted subject document.
  * @throws {AppError} 404 - Subject not found.
  */
-async function DeleteSubjectHelper(id) {
-  await CheckEntityLocked("subject", id);
+async function DeleteSubjectHelper(_id) {
+  await CheckEntityLocked("subject", _id);
   const now = new Date();
   const deleted = await SubjectModel.findByIdAndUpdate(
-    id,
+    _id,
     { deleted_at: now },
     { returnDocument: "after" },
   );
   if (!deleted) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
   await TestModel.updateMany(
-    { subject_id: id, deleted_at: null },
+    { subject_id: _id, deleted_at: null },
     { deleted_at: now },
   );
   return deleted;
@@ -255,15 +255,15 @@ async function CreateTestHelper(data) {
  */
 async function UpdateTestHelper(data) {
   if (data.subject_id && typeof data.subject_id === "string") data.subject_id = new Types.ObjectId(data.subject_id);
-  const { _id: id, ...fields } = data;
-  await CheckEntityLocked("test", id);
-  const existing = await TestModel.findOne({ _id: id, deleted_at: null }).select("subject_id weightage");
+  const { _id, ...fields } = data;
+  await CheckEntityLocked("test", _id);
+  const existing = await TestModel.findOne({ _id, deleted_at: null }).select("subject_id weightage");
   if (!existing) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
   const targetSubjectId = fields.subject_id ?? existing.subject_id;
   const targetWeightage = fields.weightage ?? existing.weightage;
-  await ValidateTestWeightage(targetSubjectId, targetWeightage, id);
+  await ValidateTestWeightage(targetSubjectId, targetWeightage, _id);
   const updated = await TestModel.findOneAndUpdate(
-    { _id: id, deleted_at: null },
+    { _id, deleted_at: null },
     fields,
     { returnDocument: "after" },
   );
@@ -277,10 +277,10 @@ async function UpdateTestHelper(data) {
  * @returns {Promise<Object>} The soft-deleted test document.
  * @throws {AppError} 404 - Test not found.
  */
-async function DeleteTestHelper(id) {
-  await CheckEntityLocked("test", id);
+async function DeleteTestHelper(_id) {
+  await CheckEntityLocked("test", _id);
   const deleted = await TestModel.findByIdAndUpdate(
-    id,
+    _id,
     { deleted_at: new Date() },
     { returnDocument: "after" },
   );
