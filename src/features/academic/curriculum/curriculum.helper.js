@@ -206,6 +206,16 @@ async function UpdateSubjectHelper(data) {
   const existing = await SubjectModel.findOne({ _id, deleted_at: null }).select("block_id weightage");
   if (!existing) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
   const targetBlockId = fields.block_id ?? existing.block_id;
+  if (fields.block_id) {
+    // *************** Ensure the target parent block exists and is active
+    const targetBlock = await BlockModel.findOne({
+      _id: targetBlockId,
+      deleted_at: null,
+    });
+    if (!targetBlock) {
+      throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
+    }
+  }
   const targetWeightage = fields.weightage ?? existing.weightage;
   await ValidateSubjectWeightage(targetBlockId, targetWeightage, _id);
   const updated = await SubjectModel.findOneAndUpdate(
@@ -274,6 +284,16 @@ async function UpdateTestHelper(data) {
   const existing = await TestModel.findOne({ _id, deleted_at: null }).select("subject_id weightage");
   if (!existing) throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
   const targetSubjectId = fields.subject_id ?? existing.subject_id;
+  if (fields.subject_id) {
+    // *************** Ensure the target parent subject exists and is active
+    const targetSubject = await SubjectModel.findOne({
+      _id: targetSubjectId,
+      deleted_at: null,
+    });
+    if (!targetSubject) {
+      throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
+    }
+  }
   const targetWeightage = fields.weightage ?? existing.weightage;
   await ValidateTestWeightage(targetSubjectId, targetWeightage, _id);
   const updated = await TestModel.findOneAndUpdate(
