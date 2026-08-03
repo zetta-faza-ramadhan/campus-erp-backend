@@ -23,7 +23,10 @@ const AcademicYearSchema = new Schema(
     block_ids: {
       type: [Schema.Types.ObjectId],
       ref: "Block",
-      required: true,
+      validate: {
+        validator: (v) => v.length > 0,
+        message: "block_ids must not be empty",
+      },
     },
     // Students enrolled in this academic year
     student_ids: {
