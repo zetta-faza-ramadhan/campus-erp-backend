@@ -7,6 +7,9 @@ const { GetStudentsByAcademicYearSchema } = require("./student.validator");
 // *************** IMPORT HELPER FUNCTION ***************
 const { GetStudentsByAcademicYearHelper } = require("./student.helper");
 
+// *************** IMPORT LOADER ***************
+const { AcademicYearsFieldResolver } = require("../../../loaders/academic_year.loader");
+
 // *************** FIELD RESOLVERS ***************
 /**
  * Converts the MongoDB ObjectId _id to a string for the GraphQL ID scalar.
@@ -16,19 +19,6 @@ const { GetStudentsByAcademicYearHelper } = require("./student.helper");
  */
 function IdFieldResolver(parent) {
   return parent._id.toString();
-}
-
-/**
- * Resolves the AcademicYear documents a student belongs to.
- *
- * @param {Object} parent - The Student parent document.
- * @param {Object} _ - Unused query arguments.
- * @param {Object} context - GraphQL context containing per-request loaders.
- * @returns {Promise<Array<Object|null>>} Batch-loaded academic years in order.
- */
-function AcademicYearsFieldResolver(parent, _, context) {
-  // *************** Batch load via per-request DataLoader (avoids N+1)
-  return context.loaders.academicYearLoader.loadMany(parent.academic_year_ids);
 }
 
 // *************** QUERY ***************
