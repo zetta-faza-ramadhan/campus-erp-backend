@@ -35,7 +35,7 @@ const typeDefs = `#graphql
     total_count: Int!
     current_page: Int!
     total_pages: Int!
-    data: [Student!]!
+    data: [Student]!
   }
 
   input GetStudentsByAcademicYearInput {
