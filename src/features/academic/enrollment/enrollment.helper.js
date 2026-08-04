@@ -28,7 +28,7 @@ async function EnrollStudentsHelper(input) {
       "Academic year not found.",
     );
   }
-  if (year.status !== "active") {
+  if (year.status !== "ACTIVE") {
     throw new AppError(
       "ACADEMIC_YEAR_CLOSED",
       400,

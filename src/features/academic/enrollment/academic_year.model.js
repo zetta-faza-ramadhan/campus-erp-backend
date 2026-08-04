@@ -16,8 +16,8 @@ const AcademicYearSchema = new Schema(
     // Lifecycle status controlling enrollment eligibility
     status: {
       type: String,
-      enum: ["active", "completed", "archived"],
-      default: "active",
+      enum: ["ACTIVE", "COMPLETED", "ARCHIVED"],
+      default: "ACTIVE",
     },
     // Curriculum blocks offered during this academic year
     block_ids: {
