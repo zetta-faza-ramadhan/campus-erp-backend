@@ -8,7 +8,7 @@ const { GetStudentsByAcademicYearSchema } = require("./student.validator");
 const { GetStudentsByAcademicYearHelper } = require("./student.helper");
 
 // *************** IMPORT LOADER ***************
-const { AcademicYearsFieldResolver } = require("../../../loaders/academic_year.loader");
+const { AcademicYearsFieldResolver } = require("./student.loader.resolver");
 
 // *************** FIELD RESOLVERS ***************
 /**
