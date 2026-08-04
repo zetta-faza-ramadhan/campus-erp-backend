@@ -34,15 +34,15 @@ const MAX_LIMIT = 100;
  * @returns {Promise<Object>} The created student document.
  * @throws {AppError} 409 - Email or student number already registered.
  */
-async function CreateStudentHelper(data) {
+async function CreateStudentHelper({ first_name, last_name, email, student_number }) {
   // *************** Ensure email and student number are unique
   const existing = await StudentModel.findOne({
-    $or: [{ email: data.email }, { student_number: data.student_number }],
+    $or: [{ email }, { student_number }],
   })
     .select("_id email student_number")
     .lean();
   if (existing) {
-    if (existing.email === data.email) {
+    if (existing.email === email) {
       // *************** Reject duplicate email
       throw new AppError(
         "EMAIL_ALREADY_EXISTS",
@@ -59,7 +59,7 @@ async function CreateStudentHelper(data) {
   }
   // *************** Insert the new student
   try {
-    return await StudentModel.create(data);
+    return await StudentModel.create({ first_name, last_name, email, student_number });
   } catch (err) {
     // *************** Translate concurrent duplicate-key hit into a 409
     if (err.code === 11000) {
@@ -88,10 +88,10 @@ async function CreateStudentHelper(data) {
  * @returns {Promise<Object>} Paginated response { total_count, current_page, total_pages, data }.
  * @throws {AppError} 404 - Academic year not found.
  */
-async function GetStudentsByAcademicYearHelper(data) {
+async function GetStudentsByAcademicYearHelper({ academic_year_id, page, limit, search }) {
   // *************** Validate the target academic year exists
   const year = await AcademicYearModel.findOne({
-    _id: data.academic_year_id,
+    _id: academic_year_id,
     deleted_at: null,
   })
     .select("_id name")
@@ -105,12 +105,12 @@ async function GetStudentsByAcademicYearHelper(data) {
   }
 
   // *************** Resolve pagination defaults
-  const page = data.page ?? DEFAULT_PAGE;
-  const limit = Math.min(data.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+  page = page ?? DEFAULT_PAGE;
+  limit = Math.min(limit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const skip = (page - 1) * limit;
 
   // *************** Normalize the academic year id to an ObjectId
-  const academicYearId = new Types.ObjectId(data.academic_year_id);
+  const academicYearId = new Types.ObjectId(academic_year_id);
 
   // *************** Stage 1: $match - enrolled in the year, active, optional search
   const match = {
@@ -118,9 +118,9 @@ async function GetStudentsByAcademicYearHelper(data) {
     deleted_at: null,
   };
   // *************** Apply optional search on first/last name
-  if (data.search) {
+  if (search) {
     // *************** Escape regex metacharacters so search is literal
-    const term = data.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const term = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     match.$or = [
       { first_name: { $regex: term, $options: "i" } },
       { last_name: { $regex: term, $options: "i" } },

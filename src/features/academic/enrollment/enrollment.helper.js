@@ -15,10 +15,10 @@ const StudentModel = require("../../users/student/student.model");
  * @throws {AppError} 400 - Academic year is closed to new enrollments.
  * @throws {AppError} 400 - Payload contains invalid or deleted student references.
  */
-async function EnrollStudentsHelper(input) {
+async function EnrollStudentsHelper({ academic_year_id, student_ids }) {
   // *************** Validate target academic year
   const year = await AcademicYearModel.findOne({
-    _id: input.academic_year_id,
+    _id: academic_year_id,
     deleted_at: null,
   }).lean();
   if (!year) {
@@ -37,7 +37,7 @@ async function EnrollStudentsHelper(input) {
   }
 
   // *************** Collapse duplicate IDs into a unique set
-  const studentIds = [...new Set(input.student_ids)];
+  const studentIds = [...new Set(student_ids)];
 
   // *************** Verify all student references exist
   const studentCount = await StudentModel.countDocuments({
@@ -54,14 +54,14 @@ async function EnrollStudentsHelper(input) {
 
   // *************** Atomically add students to the year
   const updatedYear = await AcademicYearModel.findByIdAndUpdate(
-    input.academic_year_id,
+    academic_year_id,
     { $addToSet: { student_ids: { $each: studentIds } } },
     { returnDocument: "after" },
   );
   // *************** Atomically link the year to each student
   await StudentModel.updateMany(
     { _id: { $in: studentIds } },
-    { $addToSet: { academic_year_ids: input.academic_year_id } },
+    { $addToSet: { academic_year_ids: academic_year_id } },
   );
   return updatedYear;
 }

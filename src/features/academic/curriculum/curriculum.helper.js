@@ -117,8 +117,8 @@ async function GetTestsHelper(subjectId) {
  * @param {Object} data - Validated block input payload.
  * @returns {Promise<Object>} The created block document.
  */
-async function CreateBlockHelper(data) {
-  return await BlockModel.create(data);
+async function CreateBlockHelper({ name, academic_year, grading_rules }) {
+  return await BlockModel.create({ name, academic_year, grading_rules });
 }
 
 /**
@@ -128,8 +128,10 @@ async function CreateBlockHelper(data) {
  * @returns {Promise<Object>} The updated block document.
  * @throws {AppError} 404 - Block not found.
  */
-async function UpdateBlockHelper(data) {
-  const { _id, ...fields } = data;
+async function UpdateBlockHelper({ _id, name, academic_year, grading_rules }) {
+  const fields = Object.fromEntries(
+    Object.entries({ name, academic_year, grading_rules }).filter(([, v]) => v !== undefined)
+  );
   await CheckEntityLocked("block", _id);
   const updated = await BlockModel.findOneAndUpdate(
     { _id, deleted_at: null },
@@ -180,15 +182,15 @@ async function DeleteBlockHelper(_id) {
  * @param {Object} data - Validated subject input payload.
  * @returns {Promise<Object>} The created subject document.
  */
-async function CreateSubjectHelper(data) {
+async function CreateSubjectHelper({ name, block_id, weightage, grading_rules }) {
   // *************** Ensure parent block exists and is active
   const block = await BlockModel.findOne({
-    _id: data.block_id,
+    _id: block_id,
     deleted_at: null,
   });
   if (!block) throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
-  await ValidateSubjectWeightage(data.block_id, data.weightage);
-  return await SubjectModel.create(data);
+  await ValidateSubjectWeightage(block_id, weightage);
+  return await SubjectModel.create({ name, block_id, weightage, grading_rules });
 }
 
 /**
@@ -199,8 +201,10 @@ async function CreateSubjectHelper(data) {
  * @throws {AppError} 404 - Subject not found.
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
-async function UpdateSubjectHelper(data) {
-  const { _id, ...fields } = data;
+async function UpdateSubjectHelper({ _id, name, block_id, weightage, grading_rules }) {
+  const fields = Object.fromEntries(
+    Object.entries({ name, block_id, weightage, grading_rules }).filter(([, v]) => v !== undefined)
+  );
   if (fields.block_id && typeof fields.block_id === "string") fields.block_id = new Types.ObjectId(fields.block_id);
   await CheckEntityLocked("subject", _id);
   const existing = await SubjectModel.findOne({ _id, deleted_at: null }).select("block_id weightage");
@@ -258,15 +262,15 @@ async function DeleteSubjectHelper(_id) {
  * @param {Object} data - Validated test input payload.
  * @returns {Promise<Object>} The created test document.
  */
-async function CreateTestHelper(data) {
+async function CreateTestHelper({ name, subject_id, weightage, grading_rules }) {
   // *************** Ensure parent subject exists and is active
   const subject = await SubjectModel.findOne({
-    _id: data.subject_id,
+    _id: subject_id,
     deleted_at: null,
   });
   if (!subject) throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
-  await ValidateTestWeightage(data.subject_id, data.weightage);
-  return await TestModel.create(data);
+  await ValidateTestWeightage(subject_id, weightage);
+  return await TestModel.create({ name, subject_id, weightage, grading_rules });
 }
 
 /**
@@ -277,8 +281,10 @@ async function CreateTestHelper(data) {
  * @throws {AppError} 404 - Test not found.
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
-async function UpdateTestHelper(data) {
-  const { _id, ...fields } = data;
+async function UpdateTestHelper({ _id, name, subject_id, weightage, grading_rules }) {
+  const fields = Object.fromEntries(
+    Object.entries({ name, subject_id, weightage, grading_rules }).filter(([, v]) => v !== undefined)
+  );
   if (fields.subject_id && typeof fields.subject_id === "string") fields.subject_id = new Types.ObjectId(fields.subject_id);
   await CheckEntityLocked("test", _id);
   const existing = await TestModel.findOne({ _id, deleted_at: null }).select("subject_id weightage");
