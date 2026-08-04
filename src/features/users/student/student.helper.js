@@ -30,14 +30,14 @@ const MAX_LIMIT = 100;
 /**
  * Creates a new student after ensuring the email and student number are unique.
  *
- * @param {Object} data - Validated student input payload.
+ * @param {Object} input - Validated student input payload.
  * @returns {Promise<Object>} The created student document.
  * @throws {AppError} 409 - Email or student number already registered.
  */
-async function CreateStudentHelper({ first_name, last_name, email, student_number }) {
+async function CreateStudentHelper({ firstName, lastName, email, studentNumber }) {
   // *************** Ensure email and student number are unique
   const existing = await StudentModel.findOne({
-    $or: [{ email }, { student_number }],
+    $or: [{ email }, { student_number: studentNumber }],
   })
     .select("_id email student_number")
     .lean();
@@ -59,7 +59,12 @@ async function CreateStudentHelper({ first_name, last_name, email, student_numbe
   }
   // *************** Insert the new student
   try {
-    return await StudentModel.create({ first_name, last_name, email, student_number });
+    return await StudentModel.create({
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      student_number: studentNumber,
+    });
   } catch (err) {
     // *************** Translate concurrent duplicate-key hit into a 409
     if (err.code === 11000) {
@@ -84,14 +89,14 @@ async function CreateStudentHelper({ first_name, last_name, email, student_numbe
  * Ensures the academic year exists before querying, applies search to the
  * student's first/last name, and returns page metadata alongside the records.
  *
- * @param {Object} data - Validated payload with academic_year_id, page, limit, search.
+ * @param {Object} input - Validated payload with academicYearId, page, limit, search.
  * @returns {Promise<Object>} Paginated response { total_count, current_page, total_pages, data }.
  * @throws {AppError} 404 - Academic year not found.
  */
-async function GetStudentsByAcademicYearHelper({ academic_year_id, page, limit, search }) {
+async function GetStudentsByAcademicYearHelper({ academicYearId, page, limit, search }) {
   // *************** Validate the target academic year exists
   const year = await AcademicYearModel.findOne({
-    _id: academic_year_id,
+    _id: academicYearId,
     deleted_at: null,
   })
     .select("_id name")
@@ -110,11 +115,11 @@ async function GetStudentsByAcademicYearHelper({ academic_year_id, page, limit, 
   const skip = (page - 1) * limit;
 
   // *************** Normalize the academic year id to an ObjectId
-  const academicYearId = new Types.ObjectId(academic_year_id);
+  const normalizedAcademicYearId = new Types.ObjectId(academicYearId);
 
   // *************** Stage 1: $match - enrolled in the year, active, optional search
   const match = {
-    academic_year_ids: academicYearId,
+    academic_year_ids: normalizedAcademicYearId,
     deleted_at: null,
   };
   // *************** Apply optional search on first/last name

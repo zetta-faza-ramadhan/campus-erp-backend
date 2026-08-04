@@ -17,10 +17,10 @@ const typeDefs = `#graphql
   }
 
   input CreateStudentInput {
-    first_name: String!
-    last_name: String!
+    firstName: String!
+    lastName: String!
     email: String!
-    student_number: String!
+    studentNumber: String!
   }
 
   type Query {
@@ -39,7 +39,7 @@ const typeDefs = `#graphql
   }
 
   input GetStudentsByAcademicYearInput {
-    academic_year_id: ID!
+    academicYearId: ID!
     page: Int
     limit: Int
     search: String
