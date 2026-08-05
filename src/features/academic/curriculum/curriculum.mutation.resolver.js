@@ -1,9 +1,12 @@
 // *************** IMPORT MODULE ***************
 const { NormalizeGqlError } = require("../../../core/graphql_error");
 const {
-  blockSchema, updateBlockSchema,
-  subjectSchema, updateSubjectSchema,
-  testSchema, updateTestSchema,
+  blockSchema,
+  updateBlockSchema,
+  subjectSchema,
+  updateSubjectSchema,
+  testSchema,
+  updateTestSchema,
   objectIdSchema,
 } = require("./curriculum.validator");
 const curriculumHelper = require("./curriculum.helper");
@@ -21,7 +24,12 @@ async function CreateBlock(_, { input }) {
   try {
     const { error, value } = blockSchema.validate(input);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.CreateBlockHelper(value);
+    const { name, academic_year, grading_rules } = value;
+    return await curriculumHelper.CreateBlockHelper({
+      name,
+      academicYear: academic_year,
+      gradingRules: grading_rules,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -38,7 +46,13 @@ async function UpdateBlock(_, { input }) {
   try {
     const { error, value } = updateBlockSchema.validate(input);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.UpdateBlockHelper(value);
+    const { _id, name, academic_year, grading_rules } = value;
+    return await curriculumHelper.UpdateBlockHelper({
+      _id,
+      name,
+      academicYear: academic_year,
+      gradingRules: grading_rules,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -72,7 +86,13 @@ async function CreateSubject(_, { input }) {
   try {
     const { error, value } = subjectSchema.validate(input);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.CreateSubjectHelper(value);
+    const { name, block_id, weightage, grading_rules } = value;
+    return await curriculumHelper.CreateSubjectHelper({
+      name,
+      blockId: block_id,
+      weightage,
+      gradingRules: grading_rules,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -89,7 +109,14 @@ async function UpdateSubject(_, { input }) {
   try {
     const { error, value } = updateSubjectSchema.validate(input);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.UpdateSubjectHelper(value);
+    const { _id, name, block_id, weightage, grading_rules } = value;
+    return await curriculumHelper.UpdateSubjectHelper({
+      _id,
+      name,
+      blockId: block_id,
+      weightage,
+      gradingRules: grading_rules,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -123,7 +150,13 @@ async function CreateTest(_, { input }) {
   try {
     const { error, value } = testSchema.validate(input);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.CreateTestHelper(value);
+    const { name, subject_id, weightage, grading_rules } = value;
+    return await curriculumHelper.CreateTestHelper({
+      name,
+      subjectId: subject_id,
+      weightage,
+      gradingRules: grading_rules,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -140,7 +173,14 @@ async function UpdateTest(_, { input }) {
   try {
     const { error, value } = updateTestSchema.validate(input);
     if (error) NormalizeGqlError(error);
-    return await curriculumHelper.UpdateTestHelper(value);
+    const { _id, name, subject_id, weightage, grading_rules } = value;
+    return await curriculumHelper.UpdateTestHelper({
+      _id,
+      name,
+      subjectId: subject_id,
+      weightage,
+      gradingRules: grading_rules,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }

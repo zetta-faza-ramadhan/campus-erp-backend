@@ -20,7 +20,11 @@ async function EnrollStudentsToYear(_, { input }) {
   try {
     const { error, value } = enrollStudentsSchema.validate(input);
     if (error) NormalizeGqlError(error);
-    return await EnrollStudentsHelper(value);
+    const { academic_year_id, student_ids } = value;
+    return await EnrollStudentsHelper({
+      academicYearId: academic_year_id,
+      studentIds: student_ids,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }

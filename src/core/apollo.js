@@ -3,6 +3,7 @@ const { ApolloServer, HeaderMap } = require("@apollo/server");
 
 // *************** IMPORT MODULE ***************
 const { DateTime } = require("./scalars");
+const { CreateAllLoaders } = require("../loaders");
 
 /**
  * Creates and starts an Apollo Server, returning an Express middleware function.
@@ -48,7 +49,10 @@ async function ApolloMiddleware(req, res, next, server) {
     };
     const result = await server.executeHTTPGraphQLRequest({
       httpGraphQLRequest,
-      context: async () => ({}),
+      context: async () => ({
+        // *************** Per-request loaders (fresh cache per request)
+        loaders: CreateAllLoaders(),
+      }),
     });
     // *************** Write response headers
     for (const [key, value] of result.headers) {

@@ -9,16 +9,16 @@ const StudentModel = require("../../users/student/student.model");
  * Enrolls a batch of students into an active academic year using sequential,
  * atomic bi-directional array updates.
  *
- * @param {Object} input - Validated enrollment payload with academic_year_id and student_ids.
+ * @param {Object} input - Validated enrollment payload with academicYearId and studentIds.
  * @returns {Promise<Object>} The updated academic year document.
  * @throws {AppError} 404 - Academic year not found.
  * @throws {AppError} 400 - Academic year is closed to new enrollments.
  * @throws {AppError} 400 - Payload contains invalid or deleted student references.
  */
-async function EnrollStudentsHelper(input) {
+async function EnrollStudentsHelper({ academicYearId, studentIds }) {
   // *************** Validate target academic year
   const year = await AcademicYearModel.findOne({
-    _id: input.academic_year_id,
+    _id: academicYearId,
     deleted_at: null,
   }).lean();
   if (!year) {
@@ -28,7 +28,7 @@ async function EnrollStudentsHelper(input) {
       "Academic year not found.",
     );
   }
-  if (year.status !== "active") {
+  if (year.status !== "ACTIVE") {
     throw new AppError(
       "ACADEMIC_YEAR_CLOSED",
       400,
@@ -37,14 +37,14 @@ async function EnrollStudentsHelper(input) {
   }
 
   // *************** Collapse duplicate IDs into a unique set
-  const studentIds = [...new Set(input.student_ids)];
+  const uniqueStudentIds = [...new Set(studentIds)];
 
   // *************** Verify all student references exist
   const studentCount = await StudentModel.countDocuments({
-    _id: { $in: studentIds },
+    _id: { $in: uniqueStudentIds },
     deleted_at: null,
   });
-  if (studentCount !== studentIds.length) {
+  if (studentCount !== uniqueStudentIds.length) {
     throw new AppError(
       "INVALID_STUDENT_REFERENCE",
       400,
@@ -54,14 +54,14 @@ async function EnrollStudentsHelper(input) {
 
   // *************** Atomically add students to the year
   const updatedYear = await AcademicYearModel.findByIdAndUpdate(
-    input.academic_year_id,
-    { $addToSet: { student_ids: { $each: studentIds } } },
+    academicYearId,
+    { $addToSet: { student_ids: { $each: uniqueStudentIds } } },
     { returnDocument: "after" },
   );
   // *************** Atomically link the year to each student
   await StudentModel.updateMany(
-    { _id: { $in: studentIds } },
-    { $addToSet: { academic_year_ids: input.academic_year_id } },
+    { _id: { $in: uniqueStudentIds } },
+    { $addToSet: { academic_year_ids: academicYearId } },
   );
   return updatedYear;
 }
