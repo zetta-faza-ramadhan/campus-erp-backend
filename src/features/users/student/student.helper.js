@@ -93,6 +93,7 @@ async function CreateStudentHelper({ firstName, lastName, email, studentNumber }
  * @returns {Promise<Object>} Paginated response { total_count, current_page, total_pages, data }.
  * @throws {AppError} 404 - Academic year not found.
  */
+// *************** START: GetStudentsByAcademicYearHelper ***************
 async function GetStudentsByAcademicYearHelper({ academicYearId, page, limit, search }) {
   // *************** Resolve pagination defaults
   page = page ?? DEFAULT_PAGE;
@@ -163,6 +164,7 @@ async function GetStudentsByAcademicYearHelper({ academicYearId, page, limit, se
     data: result.data,
   };
 }
+// *************** END: GetStudentsByAcademicYearHelper ***************
 
 // *************** EXPORT MODULE ***************
 module.exports = {
