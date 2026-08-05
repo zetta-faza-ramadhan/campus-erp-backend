@@ -155,10 +155,11 @@ async function GetStudentsByAcademicYearHelper({ academicYearId, page, limit, se
   }
 
   // *************** Return paginated payload
+  const totalPages = Math.ceil(total / limit);
   return {
     total_count: total,
-    current_page: page,
-    total_pages: Math.ceil(total / limit),
+    current_page: total > 0 ? Math.min(page, totalPages) : 1,
+    total_pages: totalPages,
     data: result.data,
   };
 }
