@@ -94,21 +94,6 @@ async function CreateStudentHelper({ firstName, lastName, email, studentNumber }
  * @throws {AppError} 404 - Academic year not found.
  */
 async function GetStudentsByAcademicYearHelper({ academicYearId, page, limit, search }) {
-  // *************** Validate the target academic year exists
-  const year = await AcademicYearModel.findOne({
-    _id: academicYearId,
-    deleted_at: null,
-  })
-    .select("_id name")
-    .lean();
-  if (!year) {
-    throw new AppError(
-      "ACADEMIC_YEAR_NOT_FOUND",
-      404,
-      "Academic year not found.",
-    );
-  }
-
   // *************** Resolve pagination defaults
   page = page ?? DEFAULT_PAGE;
   limit = Math.min(limit ?? DEFAULT_LIMIT, MAX_LIMIT);
@@ -151,6 +136,23 @@ async function GetStudentsByAcademicYearHelper({ academicYearId, page, limit, se
   // *************** Execute the single aggregation pipeline
   const [result] = await StudentModel.aggregate(pipeline);
   const total = result.metadata[0]?.total ?? 0;
+
+  // *************** Defer existence check to empty-result path
+  if (total === 0) {
+    const year = await AcademicYearModel.findOne({
+      _id: academicYearId,
+      deleted_at: null,
+    })
+      .select("_id")
+      .lean();
+    if (!year) {
+      throw new AppError(
+        "ACADEMIC_YEAR_NOT_FOUND",
+        404,
+        "Academic year not found.",
+      );
+    }
+  }
 
   // *************** Return paginated payload
   return {
