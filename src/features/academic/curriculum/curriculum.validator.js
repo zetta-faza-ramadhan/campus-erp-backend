@@ -31,47 +31,47 @@ function requireAtLeastOneNonIdField(value, helpers) {
 // *************** VALIDATION SCHEMA FOR BLOCK ***************
 const blockSchema = Joi.object({
   name: Joi.string().required(),
-  academicYear: Joi.string().required(),
-  gradingRules: Joi.array().items(gradingRuleSchema).required(),
+  academic_year: Joi.string().required(),
+  grading_rules: Joi.array().items(gradingRuleSchema).required(),
 });
 
 const updateBlockSchema = Joi.object({
   _id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   name: Joi.string(),
-  academicYear: Joi.string(),
-  gradingRules: Joi.array().items(gradingRuleSchema),
+  academic_year: Joi.string(),
+  grading_rules: Joi.array().items(gradingRuleSchema),
 }).custom(requireAtLeastOneNonIdField);
 
 // *************** VALIDATION SCHEMA FOR SUBJECT ***************
 const subjectSchema = Joi.object({
   name: Joi.string().required(),
-  blockId: Joi.string().regex(OBJECT_ID_PATTERN).required(),
+  block_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   weightage: Joi.number().greater(0).max(100).required(),
-  gradingRules: Joi.array().items(gradingRuleSchema).required(),
+  grading_rules: Joi.array().items(gradingRuleSchema).required(),
 });
 
 const updateSubjectSchema = Joi.object({
   _id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   name: Joi.string(),
-  blockId: Joi.string().regex(OBJECT_ID_PATTERN),
+  block_id: Joi.string().regex(OBJECT_ID_PATTERN),
   weightage: Joi.number().greater(0).max(100),
-  gradingRules: Joi.array().items(gradingRuleSchema),
+  grading_rules: Joi.array().items(gradingRuleSchema),
 }).custom(requireAtLeastOneNonIdField);
 
 // *************** VALIDATION SCHEMA FOR TEST ***************
 const testSchema = Joi.object({
   name: Joi.string().required(),
-  subjectId: Joi.string().regex(OBJECT_ID_PATTERN).required(),
+  subject_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   weightage: Joi.number().greater(0).max(100).required(),
-  gradingRules: Joi.array().items(gradingRuleSchema).required(),
+  grading_rules: Joi.array().items(gradingRuleSchema).required(),
 });
 
 const updateTestSchema = Joi.object({
   _id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   name: Joi.string(),
-  subjectId: Joi.string().regex(OBJECT_ID_PATTERN),
+  subject_id: Joi.string().regex(OBJECT_ID_PATTERN),
   weightage: Joi.number().greater(0).max(100),
-  gradingRules: Joi.array().items(gradingRuleSchema),
+  grading_rules: Joi.array().items(gradingRuleSchema),
 }).custom(requireAtLeastOneNonIdField);
 
 // *************** REUSABLE OBJECTID VALIDATION ***************

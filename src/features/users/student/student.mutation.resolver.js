@@ -20,7 +20,13 @@ async function CreateStudent(_, { input }) {
   try {
     const { error, value } = studentSchema.validate(input);
     if (error) NormalizeGqlError(error);
-    return await CreateStudentHelper(value);
+    const { first_name, last_name, email, student_number } = value;
+    return await CreateStudentHelper({
+      firstName: first_name,
+      lastName: last_name,
+      email,
+      studentNumber: student_number,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }

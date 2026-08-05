@@ -16,8 +16,8 @@ const typeDefs = `#graphql
   }
 
   input EnrollStudentsInput {
-    academicYearId: ID!
-    studentIds: [ID!]!
+    academic_year_id: ID!
+    student_ids: [ID!]!
   }
 
   type Mutation {

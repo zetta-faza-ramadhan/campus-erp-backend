@@ -42,45 +42,45 @@ const typeDefs = `#graphql
 
   input CreateBlockInput {
     name: String!
-    academicYear: String!
-    gradingRules: [GradingRuleInput!]!
+    academic_year: String!
+    grading_rules: [GradingRuleInput!]!
   }
 
   input UpdateBlockInput {
     _id: ID!
     name: String
-    academicYear: String
-    gradingRules: [GradingRuleInput!]
+    academic_year: String
+    grading_rules: [GradingRuleInput!]
   }
 
   input CreateSubjectInput {
     name: String!
-    blockId: ID!
+    block_id: ID!
     weightage: Float!
-    gradingRules: [GradingRuleInput!]!
+    grading_rules: [GradingRuleInput!]!
   }
 
   input UpdateSubjectInput {
     _id: ID!
     name: String
-    blockId: ID
+    block_id: ID
     weightage: Float
-    gradingRules: [GradingRuleInput!]
+    grading_rules: [GradingRuleInput!]
   }
 
   input CreateTestInput {
     name: String!
-    subjectId: ID!
+    subject_id: ID!
     weightage: Float!
-    gradingRules: [GradingRuleInput!]!
+    grading_rules: [GradingRuleInput!]!
   }
 
   input UpdateTestInput {
     _id: ID!
     name: String
-    subjectId: ID
+    subject_id: ID
     weightage: Float
-    gradingRules: [GradingRuleInput!]
+    grading_rules: [GradingRuleInput!]
   }
 
   input GradingRuleInput {

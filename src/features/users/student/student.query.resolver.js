@@ -34,7 +34,13 @@ async function GetStudentsByAcademicYear(_, args) {
   try {
     const { error, value } = GetStudentsByAcademicYearSchema.validate(args.input);
     if (error) NormalizeGqlError(error);
-    return await GetStudentsByAcademicYearHelper(value);
+    const { academic_year_id, page, limit, search } = value;
+    return await GetStudentsByAcademicYearHelper({
+      academicYearId: academic_year_id,
+      page,
+      limit,
+      search,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }
