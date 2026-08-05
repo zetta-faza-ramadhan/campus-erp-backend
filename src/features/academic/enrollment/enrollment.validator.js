@@ -1,8 +1,8 @@
 // *************** IMPORT LIBRARY ***************
 const Joi = require("joi");
 
-// *************** GLOBAL VARIABLES ***************
-const OBJECT_ID_PATTERN = /^[a-fA-F0-9]{24}$/;
+// *************** IMPORT MODULE ***************
+const { OBJECT_ID_PATTERN } = require("../../../core/validators");
 
 // *************** VALIDATION SCHEMA FOR ENROLLMENT ***************
 const enrollStudentsSchema = Joi.object({

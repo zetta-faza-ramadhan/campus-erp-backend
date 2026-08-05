@@ -1,8 +1,8 @@
 // *************** IMPORT LIBRARY ***************
 const Joi = require("joi");
 
-// *************** GLOBAL VARIABLES ***************
-const OBJECT_ID_PATTERN = /^[a-fA-F0-9]{24}$/;
+// *************** IMPORT MODULE ***************
+const { OBJECT_ID_PATTERN, objectIdSchema } = require("../../../core/validators");
 
 // *************** VALIDATION SCHEMA FOR GRADINGRULE ***************
 const gradingRuleSchema = Joi.object({
@@ -73,9 +73,6 @@ const updateTestSchema = Joi.object({
   weightage: Joi.number().greater(0).max(100),
   grading_rules: Joi.array().items(gradingRuleSchema),
 }).custom(requireAtLeastOneNonIdField);
-
-// *************** REUSABLE OBJECTID VALIDATION ***************
-const objectIdSchema = Joi.string().regex(OBJECT_ID_PATTERN).required();
 
 // *************** EXPORT MODULE ***************
 module.exports = {
