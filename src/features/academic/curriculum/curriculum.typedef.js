@@ -96,15 +96,15 @@ const typeDefs = `#graphql
   }
 
   type Mutation {
-    CreateBlock(input: CreateBlockInput!): Block!
-    UpdateBlock(input: UpdateBlockInput!): Block!
-    DeleteBlock(block_id: ID!): Block!
-    CreateSubject(input: CreateSubjectInput!): Subject!
-    UpdateSubject(input: UpdateSubjectInput!): Subject!
-    DeleteSubject(subject_id: ID!): Subject!
-    CreateTest(input: CreateTestInput!): Test!
-    UpdateTest(input: UpdateTestInput!): Test!
-    DeleteTest(test_id: ID!): Test!
+    CreateBlock(input: CreateBlockInput!): Block! @auth(requires: ADMIN)
+    UpdateBlock(input: UpdateBlockInput!): Block! @auth(requires: ADMIN)
+    DeleteBlock(block_id: ID!): Block! @auth(requires: ADMIN)
+    CreateSubject(input: CreateSubjectInput!): Subject! @auth(requires: ADMIN)
+    UpdateSubject(input: UpdateSubjectInput!): Subject! @auth(requires: ADMIN)
+    DeleteSubject(subject_id: ID!): Subject! @auth(requires: ADMIN)
+    CreateTest(input: CreateTestInput!): Test! @auth(requires: ADMIN)
+    UpdateTest(input: UpdateTestInput!): Test! @auth(requires: ADMIN)
+    DeleteTest(test_id: ID!): Test! @auth(requires: ADMIN)
   }
 `;
 

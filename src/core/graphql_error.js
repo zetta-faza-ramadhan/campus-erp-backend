@@ -26,5 +26,25 @@ function NormalizeGqlError(err) {
   });
 }
 
+// *************** NORMALIZE CLIENT ERRORS ***************
+const CLIENT_ERROR_CODES = new Set(["BAD_USER_INPUT", "GRAPHQL_VALIDATION_FAILED"]);
+
+/**
+ * Stamps a consistent HTTP status on client-caused GraphQL errors.
+ * GraphQL variable coercion and validation failures carry no `status`
+ * extension; this aligns them with NormalizeGqlError's contract.
+ *
+ * @param {Object} body - Apollo HTTP response body ({ kind: "single", singleResult }).
+ */
+function NormalizeClientErrors(body) {
+  if (!body || body.kind !== "single" || !body.singleResult.errors) return;
+  for (const err of body.singleResult.errors) {
+    if (!err.extensions || err.extensions.status !== undefined) continue;
+    if (CLIENT_ERROR_CODES.has(err.extensions.code)) {
+      err.extensions.status = 400;
+    }
+  }
+}
+
 // *************** EXPORT MODULE ***************
-module.exports = { NormalizeGqlError };
+module.exports = { NormalizeGqlError, NormalizeClientErrors };

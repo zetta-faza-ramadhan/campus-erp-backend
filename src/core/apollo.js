@@ -1,9 +1,16 @@
 // *************** IMPORT LIBRARY ***************
 const { ApolloServer, HeaderMap } = require("@apollo/server");
+const { makeExecutableSchema } = require("@graphql-tools/schema");
 
 // *************** IMPORT MODULE ***************
+const config = require("./config");
 const { DateTime } = require("./scalars");
+const { NormalizeClientErrors } = require("./graphql_error");
 const { CreateAllLoaders } = require("../loaders");
+const {
+  AUTH_DIRECTIVE_SDL,
+  AuthDirectiveTransformer,
+} = require("../shared/directives/auth.directive");
 
 /**
  * Creates and starts an Apollo Server, returning an Express middleware function.
@@ -11,14 +18,35 @@ const { CreateAllLoaders } = require("../loaders");
  * @param {Object} schema - Object containing typeDefs and resolvers
  * @returns {Promise<Function>} Express middleware for the /graphql route
  */
+const NORMALIZE_CLIENT_ERROR_PLUGIN = {
+  async requestDidStart() {
+    return {
+      async willSendResponse({ response }) {
+        NormalizeClientErrors(response.body);
+      },
+    };
+  },
+};
+
 async function CreateApolloMiddleware(schema) {
-  const server = new ApolloServer({
-    typeDefs: schema.typeDefs,
+  // *************** Create executable schema with auth directive
+  let executableSchema = makeExecutableSchema({
+    typeDefs: [AUTH_DIRECTIVE_SDL, schema.typeDefs],
     resolvers: {
       ...schema.resolvers,
       DateTime,
     },
   });
+
+  // *************** Apply @auth directive transformer to the schema
+  executableSchema = AuthDirectiveTransformer(executableSchema);
+
+  const server = new ApolloServer({
+    schema: executableSchema,
+    nodeEnv: config.nodeEnv,
+    plugins: [NORMALIZE_CLIENT_ERROR_PLUGIN],
+  });
+
   await server.start();
   return (req, res, next) => ApolloMiddleware(req, res, next, server);
 }
@@ -50,6 +78,8 @@ async function ApolloMiddleware(req, res, next, server) {
     const result = await server.executeHTTPGraphQLRequest({
       httpGraphQLRequest,
       context: async () => ({
+        // *************** Attach user from request (if authenticated)
+        user: req.user,
         // *************** Per-request loaders (fresh cache per request)
         loaders: CreateAllLoaders(),
       }),
