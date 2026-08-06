@@ -2,7 +2,7 @@
 const { NormalizeGqlError } = require("../../../core/graphql_error");
 
 // *************** IMPORT VALIDATOR ***************
-const { studentSchema } = require("./student.validator");
+const { ValidateAndSanitizeCreateStudent } = require("./student.validator");
 
 // *************** IMPORT HELPER FUNCTION ***************
 const { CreateStudentHelper } = require("./student.helper");
@@ -18,15 +18,14 @@ const { CreateStudentHelper } = require("./student.helper");
  */
 async function CreateStudent(_, { input }) {
   try {
-    const { error, value } = studentSchema.validate(input);
-    if (error) NormalizeGqlError(error);
-    const { first_name, last_name, email, student_number } = value;
-    return await CreateStudentHelper({
-      firstName: first_name,
-      lastName: last_name,
-      email,
-      studentNumber: student_number,
+    ValidateAndSanitizeCreateStudent(input);
+    const result = await CreateStudentHelper({
+      firstName: input.first_name,
+      lastName: input.last_name,
+      email: input.email,
+      studentNumber: input.student_number,
     });
+    return result;
   } catch (err) {
     NormalizeGqlError(err);
   }

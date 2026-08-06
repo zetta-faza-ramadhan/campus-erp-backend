@@ -2,7 +2,7 @@
 const { NormalizeGqlError } = require("../../../core/graphql_error");
 
 // *************** IMPORT VALIDATOR ***************
-const { enrollStudentsSchema } = require("./enrollment.validator");
+const { ValidateAndSanitizeEnrollStudents } = require("./enrollment.validator");
 
 // *************** IMPORT HELPER FUNCTION ***************
 const { EnrollStudentsHelper } = require("./enrollment.helper");
@@ -18,13 +18,12 @@ const { EnrollStudentsHelper } = require("./enrollment.helper");
  */
 async function EnrollStudentsToYear(_, { input }) {
   try {
-    const { error, value } = enrollStudentsSchema.validate(input);
-    if (error) NormalizeGqlError(error);
-    const { academic_year_id, student_ids } = value;
-    return await EnrollStudentsHelper({
-      academicYearId: academic_year_id,
-      studentIds: student_ids,
+    ValidateAndSanitizeEnrollStudents(input);
+    const result = await EnrollStudentsHelper({
+      academicYearId: input.academic_year_id,
+      studentIds: input.student_ids,
     });
+    return result;
   } catch (err) {
     NormalizeGqlError(err);
   }

@@ -3,6 +3,9 @@ const Joi = require("joi");
 
 // *************** IMPORT MODULE ***************
 const { OBJECT_ID_PATTERN } = require("../../../core/validators");
+const {
+  ValidateInputWithJoi,
+} = require("../../../shared/validator/joi.validator");
 
 // *************** VALIDATION SCHEMA FOR STUDENT ***************
 const studentSchema = Joi.object({
@@ -20,5 +23,34 @@ const getStudentsByAcademicYearSchema = Joi.object({
   search: Joi.string().trim().allow("").optional(),
 });
 
+// *************** VALIDATE AND SANITIZE: STUDENT ***************
+/**
+ * Validates and sanitizes CreateStudent input.
+ *
+ * @param {Object} input - Raw input from the client.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeCreateStudent(input) {
+  return ValidateInputWithJoi({ schema: studentSchema, payload: input });
+}
+
+/**
+ * Validates and sanitizes GetStudentsByAcademicYear input.
+ *
+ * @param {Object} input - Raw input from the client.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeGetStudentsByAcademicYear(input) {
+  return ValidateInputWithJoi({
+    schema: getStudentsByAcademicYearSchema,
+    payload: input,
+  });
+}
+
 // *************** EXPORT MODULE ***************
-module.exports = { studentSchema, GetStudentsByAcademicYearSchema: getStudentsByAcademicYearSchema };
+module.exports = {
+  studentSchema,
+  GetStudentsByAcademicYearSchema: getStudentsByAcademicYearSchema,
+  ValidateAndSanitizeCreateStudent,
+  ValidateAndSanitizeGetStudentsByAcademicYear,
+};

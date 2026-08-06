@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const AppError = require("../../../core/error");
 const UserModel = require("../user/user.model");
 const config = require("../../../core/config");
+const { ValidateAndSanitizeLogin } = require("./auth.validator");
 
 // *************** GLOBAL VARIABLES ***************
 const JWT_SECRET = config.jwt.secret;
@@ -18,13 +19,16 @@ const DUMMY_PASSWORD_HASH =
 /**
  * Authenticates a user by email and password, returns a JWT.
  *
- * @param {Object} input - Validated login payload.
+ * @param {Object} input - Raw login payload (re-validated internally).
  * @param {string} input.email - User's email.
  * @param {string} input.password - User's plaintext password.
  * @returns {Promise<string>} Signed JWT token.
  * @throws {AppError} 401 - Invalid email or password.
  */
 async function LoginHelper({ email, password }) {
+  // *************** Validate input
+  ValidateAndSanitizeLogin({ email, password });
+
   // *************** Find user by email
   const user = await UserModel.findOne({ email, deleted_at: null })
     .select("email password role")

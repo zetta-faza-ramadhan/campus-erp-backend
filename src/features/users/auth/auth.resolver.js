@@ -2,7 +2,7 @@
 const { NormalizeGqlError } = require("../../../core/graphql_error");
 
 // *************** IMPORT VALIDATOR ***************
-const { loginSchema } = require("./auth.validator");
+const { ValidateAndSanitizeLogin } = require("./auth.validator");
 
 // *************** IMPORT HELPER FUNCTION ***************
 const { LoginHelper } = require("./auth.helper");
@@ -18,10 +18,11 @@ const { LoginHelper } = require("./auth.helper");
  */
 async function Login(_, { input }) {
   try {
-    const { error, value } = loginSchema.validate(input);
-    if (error) NormalizeGqlError(error);
-    const { email, password } = value;
-    return await LoginHelper({ email, password });
+    ValidateAndSanitizeLogin(input);
+    return await LoginHelper({
+      email: input.email,
+      password: input.password,
+    });
   } catch (err) {
     NormalizeGqlError(err);
   }

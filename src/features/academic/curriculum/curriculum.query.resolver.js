@@ -1,6 +1,13 @@
 // *************** IMPORT MODULE ***************
 const { NormalizeGqlError } = require("../../../core/graphql_error");
-const { objectIdSchema } = require("./curriculum.validator");
+
+// *************** IMPORT VALIDATOR ***************
+const {
+  ValidateAndSanitizeBlockId,
+  ValidateAndSanitizeSubjectId,
+} = require("./curriculum.validator");
+
+// *************** IMPORT HELPER FUNCTION ***************
 const curriculumHelper = require("./curriculum.helper");
 
 // *************** FIELD RESOLVERS ***************
@@ -17,7 +24,8 @@ function IdFieldResolver(parent) {
  */
 async function GetBlocks() {
   try {
-    return await curriculumHelper.GetBlocksHelper();
+    const result = await curriculumHelper.GetBlocksHelper();
+    return result;
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -30,11 +38,11 @@ async function GetBlocks() {
  * @param {Object} args - Query arguments containing block_id.
  * @returns {Promise<Array>} List of subject documents.
  */
-async function GetSubjects(_, args) {
+async function GetSubjects(_, { block_id }) {
   try {
-    const { error } = objectIdSchema.validate(args.block_id);
-    if (error) NormalizeGqlError(error);
-    return await curriculumHelper.GetSubjectsHelper(args.block_id);
+    ValidateAndSanitizeBlockId(block_id);
+    const result = await curriculumHelper.GetSubjectsHelper(block_id);
+    return result;
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -47,11 +55,11 @@ async function GetSubjects(_, args) {
  * @param {Object} args - Query arguments containing subject_id.
  * @returns {Promise<Array>} List of test documents.
  */
-async function GetTests(_, args) {
+async function GetTests(_, { subject_id }) {
   try {
-    const { error } = objectIdSchema.validate(args.subject_id);
-    if (error) NormalizeGqlError(error);
-    return await curriculumHelper.GetTestsHelper(args.subject_id);
+    ValidateAndSanitizeSubjectId(subject_id);
+    const result = await curriculumHelper.GetTestsHelper(subject_id);
+    return result;
   } catch (err) {
     NormalizeGqlError(err);
   }

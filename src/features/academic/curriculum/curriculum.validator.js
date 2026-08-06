@@ -2,7 +2,13 @@
 const Joi = require("joi");
 
 // *************** IMPORT MODULE ***************
-const { OBJECT_ID_PATTERN, objectIdSchema } = require("../../../core/validators");
+const {
+  OBJECT_ID_PATTERN,
+  objectIdSchema,
+} = require("../../../core/validators");
+const {
+  ValidateInputWithJoi,
+} = require("../../../shared/validator/joi.validator");
 
 // *************** VALIDATION SCHEMA FOR GRADINGRULE ***************
 const gradingRuleSchema = Joi.object({
@@ -74,6 +80,99 @@ const updateTestSchema = Joi.object({
   grading_rules: Joi.array().items(gradingRuleSchema),
 }).custom(requireAtLeastOneNonIdField);
 
+// *************** VALIDATE AND SANITIZE: BLOCK ***************
+/**
+ * Validates and sanitizes CreateBlock input.
+ *
+ * @param {Object} input - Raw input from the client.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeCreateBlock(input) {
+  return ValidateInputWithJoi({ schema: blockSchema, payload: input });
+}
+
+/**
+ * Validates and sanitizes UpdateBlock input.
+ *
+ * @param {Object} input - Raw input from the client.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeUpdateBlock(input) {
+  return ValidateInputWithJoi({ schema: updateBlockSchema, payload: input });
+}
+
+/**
+ * Validates and sanitizes a block ObjectId.
+ *
+ * @param {string} id - The block ID to validate.
+ * @returns {string} The validated block ID.
+ */
+function ValidateAndSanitizeBlockId(id) {
+  return ValidateInputWithJoi({ schema: objectIdSchema, payload: id });
+}
+
+// *************** VALIDATE AND SANITIZE: SUBJECT ***************
+/**
+ * Validates and sanitizes CreateSubject input.
+ *
+ * @param {Object} input - Raw input from the client.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeCreateSubject(input) {
+  return ValidateInputWithJoi({ schema: subjectSchema, payload: input });
+}
+
+/**
+ * Validates and sanitizes UpdateSubject input.
+ *
+ * @param {Object} input - Raw input from the client.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeUpdateSubject(input) {
+  return ValidateInputWithJoi({ schema: updateSubjectSchema, payload: input });
+}
+
+/**
+ * Validates and sanitizes a subject ObjectId.
+ *
+ * @param {string} id - The subject ID to validate.
+ * @returns {string} The validated subject ID.
+ */
+function ValidateAndSanitizeSubjectId(id) {
+  return ValidateInputWithJoi({ schema: objectIdSchema, payload: id });
+}
+
+// *************** VALIDATE AND SANITIZE: TEST ***************
+/**
+ * Validates and sanitizes CreateTest input.
+ *
+ * @param {Object} input - Raw input from the client.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeCreateTest(input) {
+  return ValidateInputWithJoi({ schema: testSchema, payload: input });
+}
+
+/**
+ * Validates and sanitizes UpdateTest input.
+ *
+ * @param {Object} input - Raw input from the client.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeUpdateTest(input) {
+  return ValidateInputWithJoi({ schema: updateTestSchema, payload: input });
+}
+
+/**
+ * Validates and sanitizes a test ObjectId.
+ *
+ * @param {string} id - The test ID to validate.
+ * @returns {string} The validated test ID.
+ */
+function ValidateAndSanitizeTestId(id) {
+  return ValidateInputWithJoi({ schema: objectIdSchema, payload: id });
+}
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   blockSchema,
@@ -83,4 +182,13 @@ module.exports = {
   testSchema,
   updateTestSchema,
   objectIdSchema,
+  ValidateAndSanitizeCreateBlock,
+  ValidateAndSanitizeUpdateBlock,
+  ValidateAndSanitizeBlockId,
+  ValidateAndSanitizeCreateSubject,
+  ValidateAndSanitizeUpdateSubject,
+  ValidateAndSanitizeSubjectId,
+  ValidateAndSanitizeCreateTest,
+  ValidateAndSanitizeUpdateTest,
+  ValidateAndSanitizeTestId,
 };
