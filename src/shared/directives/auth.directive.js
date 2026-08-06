@@ -34,6 +34,14 @@ const ROLE_HIERARCHY = {
  */
 function AuthDirectiveTransformer(schema, directiveName = "auth") {
   return mapSchema(schema, {
+    // *************** Field mapper: detect @auth and wrap the resolver
+    /**
+     * Walks every object field, reads the @auth directive, and wraps the field
+     * resolver when present.
+     *
+     * @param {Object} fieldConfig - The field's config (contains resolve).
+     * @returns {Object} The (possibly wrapped) fieldConfig.
+     */
     [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
       const authDirective = getDirective(
         schema,
@@ -46,6 +54,16 @@ function AuthDirectiveTransformer(schema, directiveName = "auth") {
       const { resolve = defaultFieldResolver } = fieldConfig;
 
       // *************** Override resolver with role check
+      /**
+       * Wrapped resolver that enforces authentication and authorization before
+       * delegating to the original resolver.
+       *
+       * @param {Object} source - The parent object.
+       * @param {Object} args - The field arguments.
+       * @param {Object} context - GraphQL context (contains user).
+       * @param {Object} info - GraphQL field information.
+       * @returns {Promise<*>} The result of the original resolver.
+       */
       fieldConfig.resolve = async (source, args, context, info) => {
         try {
           // *************** Check if user is authenticated

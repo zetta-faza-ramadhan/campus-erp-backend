@@ -7,21 +7,21 @@ const Schema = mongoose.Schema;
 // *************** DEFINE USER SCHEMA ***************
 const UserSchema = new Schema(
   {
-    // User's first name
+    // User's first name; displayed in UI, reports, and audit logs
     first_name: { type: String, required: true },
-    // User's last name
+    // User's last name; displayed in UI, reports, and audit logs
     last_name: { type: String, required: true },
     // Institutional email used for login and communication
     email: { type: String, required: true, unique: true },
-    // User's password (hashed)
+    // User's password (bcrypt-hashed); compared during Login mutation for authentication
     password: { type: String, required: true },
-    // User's role in the system (e.g., 'ADMIN', 'TEACHER')
+    // User's role in the system (ADMIN or TEACHER); determines access level via the @auth directive
     role: {
       type: String,
       required: true,
       enum: ["ADMIN", "TEACHER"],
     },
-    // null means active, Date means deleted
+    // Soft-delete timestamp; null means active, Date means deleted; queries filter on null to exclude deleted records
     deleted_at: { type: Date, default: null },
   },
   {

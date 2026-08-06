@@ -12,11 +12,13 @@ const {
   AuthDirectiveTransformer,
 } = require("../shared/directives/auth.directive");
 
+// *************** APOLLO PLUGIN ***************
 /**
- * Creates and starts an Apollo Server, returning an Express middleware function.
+ * Apollo Server plugin that stamps HTTP status 400 on client-side GraphQL
+ * errors (BAD_USER_INPUT, GRAPHQL_VALIDATION_FAILED) so clients can rely on
+ * a consistent status code.
  *
- * @param {Object} schema - Object containing typeDefs and resolvers
- * @returns {Promise<Function>} Express middleware for the /graphql route
+ * @type {Object} Apollo plugin object with a requestDidStart lifecycle hook.
  */
 const NORMALIZE_CLIENT_ERROR_PLUGIN = {
   async requestDidStart() {
@@ -28,6 +30,14 @@ const NORMALIZE_CLIENT_ERROR_PLUGIN = {
   },
 };
 
+// *************** CREATE APOLLO MIDDLEWARE ***************
+
+/**
+ * Creates and starts an Apollo Server, returning an Express middleware function.
+ *
+ * @param {Object} schema - Object containing typeDefs and resolvers
+ * @returns {Promise<Function>} Express middleware for the /graphql route
+ */
 async function CreateApolloMiddleware(schema) {
   // *************** Create executable schema with auth directive
   let executableSchema = makeExecutableSchema({
