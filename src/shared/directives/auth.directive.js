@@ -45,11 +45,16 @@ function AuthDirectiveTransformer(schema, directiveName = "auth") {
       const requiredRole = authDirective.requires || "ADMIN";
       const { resolve = defaultFieldResolver } = fieldConfig;
 
+      // *************** Override resolver with role check
       fieldConfig.resolve = async (source, args, context, info) => {
         try {
           // *************** Check if user is authenticated
           if (!context.user) {
-            throw new AppError("UNAUTHENTICATED", 401, "You must be logged in.");
+            throw new AppError(
+              "UNAUTHENTICATED",
+              401,
+              "You must be logged in.",
+            );
           }
 
           // *************** Check if user has the required role
