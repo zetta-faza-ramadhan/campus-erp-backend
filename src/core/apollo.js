@@ -5,30 +5,14 @@ const { makeExecutableSchema } = require("@graphql-tools/schema");
 // *************** IMPORT MODULE ***************
 const config = require("./config");
 const { DateTime } = require("./scalars");
-const { NormalizeClientErrors } = require("./graphql_error");
+const {
+  CreateNormalizeClientError,
+} = require("./graphql_error");
 const { CreateAllLoaders } = require("../loaders");
 const {
   AUTH_DIRECTIVE_SDL,
   AuthDirectiveTransformer,
 } = require("../shared/directives/auth.directive");
-
-// *************** APOLLO PLUGIN ***************
-/**
- * Apollo Server plugin that stamps HTTP status 400 on client-side GraphQL
- * errors (BAD_USER_INPUT, GRAPHQL_VALIDATION_FAILED) so clients can rely on
- * a consistent status code.
- *
- * @type {Object} Apollo plugin object with a requestDidStart lifecycle hook.
- */
-const NORMALIZE_CLIENT_ERROR_PLUGIN = {
-  async requestDidStart() {
-    return {
-      async willSendResponse({ response }) {
-        NormalizeClientErrors(response.body);
-      },
-    };
-  },
-};
 
 // *************** CREATE APOLLO MIDDLEWARE ***************
 
@@ -54,11 +38,31 @@ async function CreateApolloMiddleware(schema) {
   const server = new ApolloServer({
     schema: executableSchema,
     nodeEnv: config.nodeEnv,
-    plugins: [NORMALIZE_CLIENT_ERROR_PLUGIN],
+    plugins: [CreateNormalizeClientError()],
   });
 
   await server.start();
-  return (req, res, next) => ApolloMiddleware(req, res, next, server);
+  return ApolloExpressMiddleware(server);
+}
+
+/**
+ * Binds a started Apollo Server to an Express middleware closure.
+ *
+ * @param {ApolloServer} server - The started Apollo Server instance.
+ * @returns {Function} Express middleware for the /graphql route.
+ */
+function ApolloExpressMiddleware(server) {
+  /**
+   * Express middleware that delegates GraphQL handling to ApolloMiddleware.
+   *
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next middleware function.
+   */
+  function HandleRequest(req, res, next) {
+    return ApolloMiddleware(req, res, next, server);
+  }
+  return HandleRequest;
 }
 
 /**
@@ -68,6 +72,7 @@ async function CreateApolloMiddleware(schema) {
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
  * @param {ApolloServer} server - The started Apollo Server instance
+ * @returns {Promise<void>} Resolves when the response has been written.
  */
 async function ApolloMiddleware(req, res, next, server) {
   try {
@@ -87,12 +92,7 @@ async function ApolloMiddleware(req, res, next, server) {
     };
     const result = await server.executeHTTPGraphQLRequest({
       httpGraphQLRequest,
-      context: async () => ({
-        // *************** Attach user from request (if authenticated)
-        user: req.user,
-        // *************** Per-request loaders (fresh cache per request)
-        loaders: CreateAllLoaders(),
-      }),
+      context: BuildApolloContextForRequest(req),
     });
     // *************** Write response headers
     for (const [key, value] of result.headers) {
@@ -108,6 +108,29 @@ async function ApolloMiddleware(req, res, next, server) {
   } catch (err) {
     next(err);
   }
+}
+
+/**
+ * Builds the Apollo context for the current request.
+ *
+ * @param {Object} req - Express request object.
+ * @returns {Promise<Object>} Object containing the authenticated user and per-request loaders.
+ */
+function BuildApolloContextForRequest(req) {
+  /**
+   * Apollo context factory invoked per GraphQL operation.
+   *
+   * @returns {Promise<Object>} Object containing the user and per-request loaders.
+   */
+  async function BuildApolloContext() {
+    return {
+      // *************** Attach user from request (if authenticated)
+      user: req.user,
+      // *************** Per-request loaders (fresh cache per request)
+      loaders: CreateAllLoaders(),
+    };
+  }
+  return BuildApolloContext;
 }
 
 // *************** EXPORT MODULE ***************
