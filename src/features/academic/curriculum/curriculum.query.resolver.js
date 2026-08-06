@@ -11,6 +11,12 @@ const {
 const curriculumHelper = require("./curriculum.helper");
 
 // *************** FIELD RESOLVERS ***************
+/**
+ * Converts the MongoDB ObjectId _id to a string for the GraphQL ID scalar.
+ *
+ * @param {Object} parent - The parent document.
+ * @returns {string} The stringified _id.
+ */
 function IdFieldResolver(parent) {
   return parent._id.toString();
 }
