@@ -21,7 +21,7 @@ const typeDefs = `#graphql
   }
 
   type Mutation {
-    EnrollStudentsToYear(input: EnrollStudentsInput!): AcademicYear!
+    EnrollStudentsToYear(input: EnrollStudentsInput!): AcademicYear! @auth(requires: ADMIN)
   }
 `;
 

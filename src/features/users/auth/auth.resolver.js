@@ -2,30 +2,27 @@
 const { NormalizeGqlError } = require("../../../core/graphql_error");
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAndSanitizeCreateStudent } = require("./student.validator");
+const { ValidateAndSanitizeLogin } = require("./auth.validator");
 
 // *************** IMPORT HELPER FUNCTION ***************
-const { CreateStudentHelper } = require("./student.helper");
+const { LoginHelper } = require("./auth.helper");
 
 // *************** MUTATION ***************
 
 /**
- * Creates a new student.
+ * Authenticates a user and returns a JWT.
  *
  * @param {Object} _ - Unused parent object.
  * @param {Object} args - Mutation arguments containing input.
- * @returns {Promise<Object>} The created student document.
+ * @returns {Promise<string>} JWT token.
  */
-async function CreateStudent(_, { input }) {
+async function Login(_, { input }) {
   try {
-    const value = ValidateAndSanitizeCreateStudent(input);
-    const result = await CreateStudentHelper({
-      firstName: value.first_name,
-      lastName: value.last_name,
+    const value = ValidateAndSanitizeLogin(input);
+    return await LoginHelper({
       email: value.email,
-      studentNumber: value.student_number,
+      password: value.password,
     });
-    return result;
   } catch (err) {
     NormalizeGqlError(err);
   }
@@ -34,6 +31,6 @@ async function CreateStudent(_, { input }) {
 // *************** EXPORT MODULE ***************
 module.exports = {
   Mutation: {
-    CreateStudent,
+    Login,
   },
 };

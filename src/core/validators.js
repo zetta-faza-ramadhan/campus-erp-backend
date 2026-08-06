@@ -5,7 +5,7 @@ const Joi = require("joi");
 const OBJECT_ID_PATTERN = /^[a-fA-F0-9]{24}$/;
 
 // *************** REUSABLE OBJECTID VALIDATION ***************
-const objectIdSchema = Joi.string().regex(OBJECT_ID_PATTERN).required();
+const ObjectIdSchema = Joi.string().regex(OBJECT_ID_PATTERN).required();
 
 // *************** EXPORT MODULE ***************
-module.exports = { OBJECT_ID_PATTERN, objectIdSchema };
+module.exports = { OBJECT_ID_PATTERN, ObjectIdSchema };

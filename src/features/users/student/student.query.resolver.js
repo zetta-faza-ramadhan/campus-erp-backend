@@ -2,7 +2,9 @@
 const { NormalizeGqlError } = require("../../../core/graphql_error");
 
 // *************** IMPORT VALIDATOR ***************
-const { GetStudentsByAcademicYearSchema } = require("./student.validator");
+const {
+  ValidateAndSanitizeGetStudentsByAcademicYear,
+} = require("./student.validator");
 
 // *************** IMPORT HELPER FUNCTION ***************
 const { GetStudentsByAcademicYearHelper } = require("./student.helper");
@@ -30,17 +32,16 @@ function IdFieldResolver(parent) {
  * @param {Object} args - Query arguments containing input.
  * @returns {Promise<Object>} Paginated student response.
  */
-async function GetStudentsByAcademicYear(_, args) {
+async function GetStudentsByAcademicYear(_, { input }) {
   try {
-    const { error, value } = GetStudentsByAcademicYearSchema.validate(args.input);
-    if (error) NormalizeGqlError(error);
-    const { academic_year_id, page, limit, search } = value;
-    return await GetStudentsByAcademicYearHelper({
-      academicYearId: academic_year_id,
-      page,
-      limit,
-      search,
+    const value = ValidateAndSanitizeGetStudentsByAcademicYear(input);
+    const result = await GetStudentsByAcademicYearHelper({
+      academicYearId: value.academic_year_id,
+      page: value.page,
+      limit: value.limit,
+      search: value.search,
     });
+    return result;
   } catch (err) {
     NormalizeGqlError(err);
   }

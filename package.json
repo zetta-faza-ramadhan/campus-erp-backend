@@ -11,12 +11,16 @@
   "type": "commonjs",
   "dependencies": {
     "@apollo/server": "^5.5.1",
+    "@graphql-tools/schema": "^10.0.38",
+    "@graphql-tools/utils": "^11.2.2",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dataloader": "^2.2.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "graphql": "^16.14.2",
     "joi": "^18.2.3",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.8.1"
   }
 }

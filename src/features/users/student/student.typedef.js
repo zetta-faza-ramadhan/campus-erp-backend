@@ -28,7 +28,7 @@ const typeDefs = `#graphql
   }
 
   type Mutation {
-    CreateStudent(input: CreateStudentInput!): Student!
+    CreateStudent(input: CreateStudentInput!): Student! @auth(requires: ADMIN)
   }
 
   type PaginatedStudentResponse {
