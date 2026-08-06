@@ -5,7 +5,7 @@ const Joi = require("joi");
 const { ValidateInputWithJoi } = require("../../../shared/validator/joi.validator");
 
 // *************** VALIDATION SCHEMA FOR LOGIN ***************
-const loginSchema = Joi.object({
+const LoginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
 });
@@ -19,10 +19,10 @@ const loginSchema = Joi.object({
  */
 function ValidateAndSanitizeLogin(input) {
   return ValidateInputWithJoi({
-    schema: loginSchema,
+    schema: LoginSchema,
     payload: input,
   });
 }
 
 // *************** EXPORT MODULE ***************
-module.exports = { loginSchema, ValidateAndSanitizeLogin };
+module.exports = { LoginSchema, ValidateAndSanitizeLogin };

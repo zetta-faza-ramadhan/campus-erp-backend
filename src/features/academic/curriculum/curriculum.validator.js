@@ -4,14 +4,14 @@ const Joi = require("joi");
 // *************** IMPORT MODULE ***************
 const {
   OBJECT_ID_PATTERN,
-  objectIdSchema,
+  ObjectIdSchema,
 } = require("../../../core/validators");
 const {
   ValidateInputWithJoi,
 } = require("../../../shared/validator/joi.validator");
 
 // *************** VALIDATION SCHEMA FOR GRADINGRULE ***************
-const gradingRuleSchema = Joi.object({
+const GradingRuleSchema = Joi.object({
   label: Joi.string().required(),
   operator: Joi.string().valid(">", ">=", "<", "<=", "==").required(),
   threshold: Joi.number().required(),
@@ -35,49 +35,49 @@ function requireAtLeastOneNonIdField(value, helpers) {
 }
 
 // *************** VALIDATION SCHEMA FOR BLOCK ***************
-const blockSchema = Joi.object({
+const BlockSchema = Joi.object({
   name: Joi.string().required(),
   academic_year: Joi.string().required(),
-  grading_rules: Joi.array().items(gradingRuleSchema).required(),
+  grading_rules: Joi.array().items(GradingRuleSchema).required(),
 });
 
-const updateBlockSchema = Joi.object({
+const UpdateBlockSchema = Joi.object({
   _id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   name: Joi.string(),
   academic_year: Joi.string(),
-  grading_rules: Joi.array().items(gradingRuleSchema),
+  grading_rules: Joi.array().items(GradingRuleSchema),
 }).custom(requireAtLeastOneNonIdField);
 
 // *************** VALIDATION SCHEMA FOR SUBJECT ***************
-const subjectSchema = Joi.object({
+const SubjectSchema = Joi.object({
   name: Joi.string().required(),
   block_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   weightage: Joi.number().greater(0).max(100).required(),
-  grading_rules: Joi.array().items(gradingRuleSchema).required(),
+  grading_rules: Joi.array().items(GradingRuleSchema).required(),
 });
 
-const updateSubjectSchema = Joi.object({
+const UpdateSubjectSchema = Joi.object({
   _id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   name: Joi.string(),
   block_id: Joi.string().regex(OBJECT_ID_PATTERN),
   weightage: Joi.number().greater(0).max(100),
-  grading_rules: Joi.array().items(gradingRuleSchema),
+  grading_rules: Joi.array().items(GradingRuleSchema),
 }).custom(requireAtLeastOneNonIdField);
 
 // *************** VALIDATION SCHEMA FOR TEST ***************
-const testSchema = Joi.object({
+const TestSchema = Joi.object({
   name: Joi.string().required(),
   subject_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   weightage: Joi.number().greater(0).max(100).required(),
-  grading_rules: Joi.array().items(gradingRuleSchema).required(),
+  grading_rules: Joi.array().items(GradingRuleSchema).required(),
 });
 
-const updateTestSchema = Joi.object({
+const UpdateTestSchema = Joi.object({
   _id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   name: Joi.string(),
   subject_id: Joi.string().regex(OBJECT_ID_PATTERN),
   weightage: Joi.number().greater(0).max(100),
-  grading_rules: Joi.array().items(gradingRuleSchema),
+  grading_rules: Joi.array().items(GradingRuleSchema),
 }).custom(requireAtLeastOneNonIdField);
 
 // *************** VALIDATE AND SANITIZE: BLOCK ***************
@@ -88,7 +88,7 @@ const updateTestSchema = Joi.object({
  * @returns {Object} Sanitized and validated input.
  */
 function ValidateAndSanitizeCreateBlock(input) {
-  return ValidateInputWithJoi({ schema: blockSchema, payload: input });
+  return ValidateInputWithJoi({ schema: BlockSchema, payload: input });
 }
 
 /**
@@ -98,7 +98,7 @@ function ValidateAndSanitizeCreateBlock(input) {
  * @returns {Object} Sanitized and validated input.
  */
 function ValidateAndSanitizeUpdateBlock(input) {
-  return ValidateInputWithJoi({ schema: updateBlockSchema, payload: input });
+  return ValidateInputWithJoi({ schema: UpdateBlockSchema, payload: input });
 }
 
 /**
@@ -108,7 +108,7 @@ function ValidateAndSanitizeUpdateBlock(input) {
  * @returns {string} The validated block ID.
  */
 function ValidateAndSanitizeBlockId(id) {
-  return ValidateInputWithJoi({ schema: objectIdSchema, payload: id });
+  return ValidateInputWithJoi({ schema: ObjectIdSchema, payload: id });
 }
 
 // *************** VALIDATE AND SANITIZE: SUBJECT ***************
@@ -119,7 +119,7 @@ function ValidateAndSanitizeBlockId(id) {
  * @returns {Object} Sanitized and validated input.
  */
 function ValidateAndSanitizeCreateSubject(input) {
-  return ValidateInputWithJoi({ schema: subjectSchema, payload: input });
+  return ValidateInputWithJoi({ schema: SubjectSchema, payload: input });
 }
 
 /**
@@ -129,7 +129,7 @@ function ValidateAndSanitizeCreateSubject(input) {
  * @returns {Object} Sanitized and validated input.
  */
 function ValidateAndSanitizeUpdateSubject(input) {
-  return ValidateInputWithJoi({ schema: updateSubjectSchema, payload: input });
+  return ValidateInputWithJoi({ schema: UpdateSubjectSchema, payload: input });
 }
 
 /**
@@ -139,7 +139,7 @@ function ValidateAndSanitizeUpdateSubject(input) {
  * @returns {string} The validated subject ID.
  */
 function ValidateAndSanitizeSubjectId(id) {
-  return ValidateInputWithJoi({ schema: objectIdSchema, payload: id });
+  return ValidateInputWithJoi({ schema: ObjectIdSchema, payload: id });
 }
 
 // *************** VALIDATE AND SANITIZE: TEST ***************
@@ -150,7 +150,7 @@ function ValidateAndSanitizeSubjectId(id) {
  * @returns {Object} Sanitized and validated input.
  */
 function ValidateAndSanitizeCreateTest(input) {
-  return ValidateInputWithJoi({ schema: testSchema, payload: input });
+  return ValidateInputWithJoi({ schema: TestSchema, payload: input });
 }
 
 /**
@@ -160,7 +160,7 @@ function ValidateAndSanitizeCreateTest(input) {
  * @returns {Object} Sanitized and validated input.
  */
 function ValidateAndSanitizeUpdateTest(input) {
-  return ValidateInputWithJoi({ schema: updateTestSchema, payload: input });
+  return ValidateInputWithJoi({ schema: UpdateTestSchema, payload: input });
 }
 
 /**
@@ -170,18 +170,18 @@ function ValidateAndSanitizeUpdateTest(input) {
  * @returns {string} The validated test ID.
  */
 function ValidateAndSanitizeTestId(id) {
-  return ValidateInputWithJoi({ schema: objectIdSchema, payload: id });
+  return ValidateInputWithJoi({ schema: ObjectIdSchema, payload: id });
 }
 
 // *************** EXPORT MODULE ***************
 module.exports = {
-  blockSchema,
-  updateBlockSchema,
-  subjectSchema,
-  updateSubjectSchema,
-  testSchema,
-  updateTestSchema,
-  objectIdSchema,
+  BlockSchema,
+  UpdateBlockSchema,
+  SubjectSchema,
+  UpdateSubjectSchema,
+  TestSchema,
+  UpdateTestSchema,
+  ObjectIdSchema,
   ValidateAndSanitizeCreateBlock,
   ValidateAndSanitizeUpdateBlock,
   ValidateAndSanitizeBlockId,

@@ -8,7 +8,7 @@ const {
 } = require("../../../shared/validator/joi.validator");
 
 // *************** VALIDATION SCHEMA FOR STUDENT ***************
-const studentSchema = Joi.object({
+const StudentSchema = Joi.object({
   first_name: Joi.string().required(),
   last_name: Joi.string().required(),
   email: Joi.string().email().required(),
@@ -16,7 +16,7 @@ const studentSchema = Joi.object({
 });
 
 // *************** VALIDATION SCHEMA FOR GET STUDENTS BY ACADEMIC YEAR ***************
-const getStudentsByAcademicYearSchema = Joi.object({
+const GetStudentsByAcademicYearSchema = Joi.object({
   academic_year_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
@@ -31,7 +31,7 @@ const getStudentsByAcademicYearSchema = Joi.object({
  * @returns {Object} Sanitized and validated input.
  */
 function ValidateAndSanitizeCreateStudent(input) {
-  return ValidateInputWithJoi({ schema: studentSchema, payload: input });
+  return ValidateInputWithJoi({ schema: StudentSchema, payload: input });
 }
 
 /**
@@ -42,15 +42,15 @@ function ValidateAndSanitizeCreateStudent(input) {
  */
 function ValidateAndSanitizeGetStudentsByAcademicYear(input) {
   return ValidateInputWithJoi({
-    schema: getStudentsByAcademicYearSchema,
+    schema: GetStudentsByAcademicYearSchema,
     payload: input,
   });
 }
 
 // *************** EXPORT MODULE ***************
 module.exports = {
-  studentSchema,
-  GetStudentsByAcademicYearSchema: getStudentsByAcademicYearSchema,
+  StudentSchema,
+  GetStudentsByAcademicYearSchema,
   ValidateAndSanitizeCreateStudent,
   ValidateAndSanitizeGetStudentsByAcademicYear,
 };

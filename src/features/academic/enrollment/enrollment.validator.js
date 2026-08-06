@@ -8,7 +8,7 @@ const {
 } = require("../../../shared/validator/joi.validator");
 
 // *************** VALIDATION SCHEMA FOR ENROLLMENT ***************
-const enrollStudentsSchema = Joi.object({
+const EnrollStudentsSchema = Joi.object({
   academic_year_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   student_ids: Joi.array()
     .items(Joi.string().regex(OBJECT_ID_PATTERN))
@@ -24,8 +24,8 @@ const enrollStudentsSchema = Joi.object({
  * @returns {Object} Sanitized and validated input.
  */
 function ValidateAndSanitizeEnrollStudents(input) {
-  return ValidateInputWithJoi({ schema: enrollStudentsSchema, payload: input });
+  return ValidateInputWithJoi({ schema: EnrollStudentsSchema, payload: input });
 }
 
 // *************** EXPORT MODULE ***************
-module.exports = { enrollStudentsSchema, ValidateAndSanitizeEnrollStudents };
+module.exports = { EnrollStudentsSchema, ValidateAndSanitizeEnrollStudents };
