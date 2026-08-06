@@ -46,8 +46,8 @@ async function GetBlocks() {
  */
 async function GetSubjects(_, { block_id }) {
   try {
-    ValidateAndSanitizeBlockId(block_id);
-    const result = await curriculumHelper.GetSubjectsHelper(block_id);
+    const value = ValidateAndSanitizeBlockId(block_id);
+    const result = await curriculumHelper.GetSubjectsHelper(value);
     return result;
   } catch (err) {
     NormalizeGqlError(err);
@@ -63,8 +63,8 @@ async function GetSubjects(_, { block_id }) {
  */
 async function GetTests(_, { subject_id }) {
   try {
-    ValidateAndSanitizeSubjectId(subject_id);
-    const result = await curriculumHelper.GetTestsHelper(subject_id);
+    const value = ValidateAndSanitizeSubjectId(subject_id);
+    const result = await curriculumHelper.GetTestsHelper(value);
     return result;
   } catch (err) {
     NormalizeGqlError(err);

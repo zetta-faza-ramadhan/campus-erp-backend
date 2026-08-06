@@ -18,12 +18,12 @@ const { CreateStudentHelper } = require("./student.helper");
  */
 async function CreateStudent(_, { input }) {
   try {
-    ValidateAndSanitizeCreateStudent(input);
+    const value = ValidateAndSanitizeCreateStudent(input);
     const result = await CreateStudentHelper({
-      firstName: input.first_name,
-      lastName: input.last_name,
-      email: input.email,
-      studentNumber: input.student_number,
+      firstName: value.first_name,
+      lastName: value.last_name,
+      email: value.email,
+      studentNumber: value.student_number,
     });
     return result;
   } catch (err) {

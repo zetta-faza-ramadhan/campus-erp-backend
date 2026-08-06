@@ -18,10 +18,10 @@ const { LoginHelper } = require("./auth.helper");
  */
 async function Login(_, { input }) {
   try {
-    ValidateAndSanitizeLogin(input);
+    const value = ValidateAndSanitizeLogin(input);
     return await LoginHelper({
-      email: input.email,
-      password: input.password,
+      email: value.email,
+      password: value.password,
     });
   } catch (err) {
     NormalizeGqlError(err);

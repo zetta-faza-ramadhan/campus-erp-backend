@@ -28,11 +28,11 @@ const curriculumHelper = require("./curriculum.helper");
  */
 async function CreateBlock(_, { input }) {
   try {
-    ValidateAndSanitizeCreateBlock(input);
+    const value = ValidateAndSanitizeCreateBlock(input);
     const result = await curriculumHelper.CreateBlockHelper({
-      name: input.name,
-      academicYear: input.academic_year,
-      gradingRules: input.grading_rules,
+      name: value.name,
+      academicYear: value.academic_year,
+      gradingRules: value.grading_rules,
     });
     return result;
   } catch (err) {
@@ -49,12 +49,12 @@ async function CreateBlock(_, { input }) {
  */
 async function UpdateBlock(_, { input }) {
   try {
-    ValidateAndSanitizeUpdateBlock(input);
+    const value = ValidateAndSanitizeUpdateBlock(input);
     const result = await curriculumHelper.UpdateBlockHelper({
-      _id: input._id,
-      name: input.name,
-      academicYear: input.academic_year,
-      gradingRules: input.grading_rules,
+      _id: value._id,
+      name: value.name,
+      academicYear: value.academic_year,
+      gradingRules: value.grading_rules,
     });
     return result;
   } catch (err) {
@@ -71,8 +71,8 @@ async function UpdateBlock(_, { input }) {
  */
 async function DeleteBlock(_, { block_id }) {
   try {
-    ValidateAndSanitizeBlockId(block_id);
-    const result = await curriculumHelper.DeleteBlockHelper(block_id);
+    const value = ValidateAndSanitizeBlockId(block_id);
+    const result = await curriculumHelper.DeleteBlockHelper(value);
     return result;
   } catch (err) {
     NormalizeGqlError(err);
@@ -88,12 +88,12 @@ async function DeleteBlock(_, { block_id }) {
  */
 async function CreateSubject(_, { input }) {
   try {
-    ValidateAndSanitizeCreateSubject(input);
+    const value = ValidateAndSanitizeCreateSubject(input);
     const result = await curriculumHelper.CreateSubjectHelper({
-      name: input.name,
-      blockId: input.block_id,
-      weightage: input.weightage,
-      gradingRules: input.grading_rules,
+      name: value.name,
+      blockId: value.block_id,
+      weightage: value.weightage,
+      gradingRules: value.grading_rules,
     });
     return result;
   } catch (err) {
@@ -110,13 +110,13 @@ async function CreateSubject(_, { input }) {
  */
 async function UpdateSubject(_, { input }) {
   try {
-    ValidateAndSanitizeUpdateSubject(input);
+    const value = ValidateAndSanitizeUpdateSubject(input);
     const result = await curriculumHelper.UpdateSubjectHelper({
-      _id: input._id,
-      name: input.name,
-      blockId: input.block_id,
-      weightage: input.weightage,
-      gradingRules: input.grading_rules,
+      _id: value._id,
+      name: value.name,
+      blockId: value.block_id,
+      weightage: value.weightage,
+      gradingRules: value.grading_rules,
     });
     return result;
   } catch (err) {
@@ -133,8 +133,8 @@ async function UpdateSubject(_, { input }) {
  */
 async function DeleteSubject(_, { subject_id }) {
   try {
-    ValidateAndSanitizeSubjectId(subject_id);
-    const result = await curriculumHelper.DeleteSubjectHelper(subject_id);
+    const value = ValidateAndSanitizeSubjectId(subject_id);
+    const result = await curriculumHelper.DeleteSubjectHelper(value);
     return result;
   } catch (err) {
     NormalizeGqlError(err);
@@ -150,12 +150,12 @@ async function DeleteSubject(_, { subject_id }) {
  */
 async function CreateTest(_, { input }) {
   try {
-    ValidateAndSanitizeCreateTest(input);
+    const value = ValidateAndSanitizeCreateTest(input);
     const result = await curriculumHelper.CreateTestHelper({
-      name: input.name,
-      subjectId: input.subject_id,
-      weightage: input.weightage,
-      gradingRules: input.grading_rules,
+      name: value.name,
+      subjectId: value.subject_id,
+      weightage: value.weightage,
+      gradingRules: value.grading_rules,
     });
     return result;
   } catch (err) {
@@ -172,13 +172,13 @@ async function CreateTest(_, { input }) {
  */
 async function UpdateTest(_, { input }) {
   try {
-    ValidateAndSanitizeUpdateTest(input);
+    const value = ValidateAndSanitizeUpdateTest(input);
     const result = await curriculumHelper.UpdateTestHelper({
-      _id: input._id,
-      name: input.name,
-      subjectId: input.subject_id,
-      weightage: input.weightage,
-      gradingRules: input.grading_rules,
+      _id: value._id,
+      name: value.name,
+      subjectId: value.subject_id,
+      weightage: value.weightage,
+      gradingRules: value.grading_rules,
     });
     return result;
   } catch (err) {
@@ -195,8 +195,8 @@ async function UpdateTest(_, { input }) {
  */
 async function DeleteTest(_, { test_id }) {
   try {
-    ValidateAndSanitizeTestId(test_id);
-    const result = await curriculumHelper.DeleteTestHelper(test_id);
+    const value = ValidateAndSanitizeTestId(test_id);
+    const result = await curriculumHelper.DeleteTestHelper(value);
     return result;
   } catch (err) {
     NormalizeGqlError(err);

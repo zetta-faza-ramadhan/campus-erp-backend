@@ -18,10 +18,10 @@ const { EnrollStudentsHelper } = require("./enrollment.helper");
  */
 async function EnrollStudentsToYear(_, { input }) {
   try {
-    ValidateAndSanitizeEnrollStudents(input);
+    const value = ValidateAndSanitizeEnrollStudents(input);
     const result = await EnrollStudentsHelper({
-      academicYearId: input.academic_year_id,
-      studentIds: input.student_ids,
+      academicYearId: value.academic_year_id,
+      studentIds: value.student_ids,
     });
     return result;
   } catch (err) {

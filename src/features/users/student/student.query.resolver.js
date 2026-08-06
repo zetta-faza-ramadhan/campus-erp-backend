@@ -34,12 +34,12 @@ function IdFieldResolver(parent) {
  */
 async function GetStudentsByAcademicYear(_, { input }) {
   try {
-    ValidateAndSanitizeGetStudentsByAcademicYear(input);
+    const value = ValidateAndSanitizeGetStudentsByAcademicYear(input);
     const result = await GetStudentsByAcademicYearHelper({
-      academicYearId: input.academic_year_id,
-      page: input.page,
-      limit: input.limit,
-      search: input.search,
+      academicYearId: value.academic_year_id,
+      page: value.page,
+      limit: value.limit,
+      search: value.search,
     });
     return result;
   } catch (err) {
