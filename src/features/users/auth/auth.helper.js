@@ -10,7 +10,6 @@ const { ValidateAndSanitizeLogin } = require("./auth.validator");
 
 // *************** GLOBAL VARIABLES ***************
 const JWT_SECRET = config.jwt.secret;
-const JWT_EXPIRES_IN = config.jwt.expiresIn;
 const DUMMY_PASSWORD_HASH =
   "$2b$10$P4VVqjeWA2M5oUxL7aNqleheTH5JjCpr60KdRtrXFnEaZW2tZmcVe";
 
@@ -54,7 +53,7 @@ async function LoginHelper({ email, password }) {
   }
   // *************** Sign JWT with userId and role
   const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
+    expiresIn: "8h",
   });
   return token;
 }
