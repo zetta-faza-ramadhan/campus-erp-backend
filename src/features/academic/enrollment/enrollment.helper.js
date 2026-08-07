@@ -2,9 +2,9 @@
 const AppError = require("../../../core/error");
 const AcademicYearModel = require("./academic_year.model");
 const StudentModel = require("../../users/student/student.model");
-const {
-  ValidateAndSanitizeEnrollStudents,
-} = require("./enrollment.validator");
+
+// *************** IMPORT VALIDATOR ***************
+const { ValidateAndSanitizeEnrollStudents } = require("./enrollment.validator");
 
 // *************** ENROLLMENT ***************
 

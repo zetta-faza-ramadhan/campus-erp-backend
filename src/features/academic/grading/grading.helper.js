@@ -3,9 +3,9 @@ const AppError = require("../../../core/error");
 const TestModel = require("../curriculum/curriculum.model.test");
 const StudentModel = require("../../users/student/student.model");
 const StudentGradeModel = require("./student_grade.model");
-const {
-  ValidateAndSanitizeSubmitTestGrades,
-} = require("./grading.validator");
+
+// *************** IMPORT VALIDATOR ***************
+const { ValidateAndSanitizeSubmitTestGrades } = require("./grading.validator");
 
 // *************** START: Grading Helper Function ***************
 

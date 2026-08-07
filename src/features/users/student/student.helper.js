@@ -5,6 +5,8 @@ const { Types } = require("mongoose");
 const AppError = require("../../../core/error");
 const StudentModel = require("./student.model");
 const AcademicYearModel = require("../../academic/enrollment/academic_year.model");
+
+// *************** IMPORT VALIDATOR ***************
 const {
   ValidateAndSanitizeCreateStudent,
   ValidateAndSanitizeGetStudentsByAcademicYear,
@@ -38,7 +40,12 @@ const MAX_LIMIT = 100;
  * @returns {Promise<Object>} The created student document.
  * @throws {AppError} 409 - Email or student number already registered.
  */
-async function CreateStudentHelper({ firstName, lastName, email, studentNumber }) {
+async function CreateStudentHelper({
+  firstName,
+  lastName,
+  email,
+  studentNumber,
+}) {
   // *************** Validate input
   ValidateAndSanitizeCreateStudent({
     first_name: firstName,
@@ -106,7 +113,12 @@ async function CreateStudentHelper({ firstName, lastName, email, studentNumber }
  * @throws {AppError} 404 - Academic year not found.
  */
 // *************** START: GetStudentsByAcademicYearHelper ***************
-async function GetStudentsByAcademicYearHelper({ academicYearId, page, limit, search }) {
+async function GetStudentsByAcademicYearHelper({
+  academicYearId,
+  page,
+  limit,
+  search,
+}) {
   // *************** Validate input
   ValidateAndSanitizeGetStudentsByAcademicYear({
     academic_year_id: academicYearId,
