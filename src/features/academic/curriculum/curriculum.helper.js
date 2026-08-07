@@ -19,6 +19,7 @@ const {
   ValidateAndSanitizeCreateTest,
   ValidateAndSanitizeUpdateTest,
   ValidateAndSanitizeTestId,
+  ValidateAndSanitizeEntityLockParam,
 } = require("./curriculum.validator");
 
 // *************** IMPORT HELPER FUNCTION ***************
@@ -84,6 +85,8 @@ async function ValidateTestWeightage(subjectId, newWeightage, excludeId) {
  * @throws {AppError} If the entity is locked due to existing grades.
  */
 async function CheckEntityLocked(entityType, entityId) {
+  // *************** Validate the entity type and ID before any lookup
+  ValidateAndSanitizeEntityLockParam({ entityType, entityId });
   let testIds;
 
   // *************** Resolve the entity to its descendant test IDs
