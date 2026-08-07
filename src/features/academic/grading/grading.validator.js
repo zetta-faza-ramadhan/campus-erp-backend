@@ -18,6 +18,7 @@ const SubmitTestGradesSchema = Joi.object({
         score: Joi.number().min(0).max(100).required(),
       }),
     )
+    .unique("student_id")
     .min(1)
     .required(),
 });
