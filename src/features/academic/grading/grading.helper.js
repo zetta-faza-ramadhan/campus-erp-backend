@@ -50,7 +50,7 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
 
   // *************** Validate that every student exists and is not deleted
   for (const grade of grades) {
-    if (!validStudentIdSet.has(grade.student_id)) {
+    if (!validStudentIdSet.has(grade.student_id.toLowerCase())) {
       throw new AppError(
         "INVALID_STUDENT_REFERENCE",
         400,
