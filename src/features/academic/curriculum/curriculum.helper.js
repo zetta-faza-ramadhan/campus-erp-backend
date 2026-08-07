@@ -86,9 +86,12 @@ async function ValidateTestWeightage(subjectId, newWeightage, excludeId) {
 async function CheckEntityLocked(entityType, entityId) {
   let testIds;
 
+  // *************** Resolve the entity to its descendant test IDs
   if (entityType === "test") {
+    // *************** The test itself is the only descendant
     testIds = [entityId];
   } else if (entityType === "subject") {
+    // ***************  Collect all active tests under this subject
     const tests = await TestModel.find({
       subject_id: entityId,
       deleted_at: null,
@@ -97,6 +100,7 @@ async function CheckEntityLocked(entityType, entityId) {
       .lean();
     testIds = tests.map((test) => test._id);
   } else {
+    // *************** Collect all active subjects, then all active tests under those subjects
     const subjects = await SubjectModel.find({
       block_id: entityId,
       deleted_at: null,
@@ -112,10 +116,12 @@ async function CheckEntityLocked(entityType, entityId) {
     testIds = tests.map((test) => test._id);
   }
 
+  // *************** No descendant tests -> nothing can be locked by grades
   if (testIds.length === 0) {
     return;
   }
 
+  // *************** Entity is locked when any descendant test already has grades
   const gradeExists = await StudentGradeModel.exists({
     test_id: { $in: testIds },
   });

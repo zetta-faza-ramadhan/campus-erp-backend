@@ -13,6 +13,8 @@ const { SubmitTestGradesHelper } = require("./grading.helper");
 
 /**
  * Submits a batch of test grades for a given academic year and test.
+ * Transport-only: validates at the boundary, maps snake_case → camelCase,
+ * delegates to the business-logic helper, and normalizes any error.
  *
  * @param {Object} _ - Unused parent object.
  * @param {Object} args - Mutation arguments containing input.
@@ -20,7 +22,10 @@ const { SubmitTestGradesHelper } = require("./grading.helper");
  */
 async function SubmitTestGrades(_, { input }) {
   try {
+    // *************** Validate and sanitize at the transport boundary
     const value = ValidateAndSanitizeSubmitTestGrades(input);
+
+    // *************** Delegate to the helper with the sanitized values (snake_case → camelCase mapping happens here)
     const result = await SubmitTestGradesHelper({
       academicYearId: value.academic_year_id,
       testId: value.test_id,
@@ -28,6 +33,7 @@ async function SubmitTestGrades(_, { input }) {
     });
     return result;
   } catch (err) {
+    // *************** Normalize any thrown error into the standard GraphQL error shape
     NormalizeGqlError(err);
   }
 }
