@@ -95,28 +95,20 @@ async function CheckEntityLocked(entityType, entityId) {
     testIds = [entityId];
   } else if (entityType === "subject") {
     // ***************  Collect all active tests under this subject
-    const tests = await TestModel.find({
+    testIds = await TestModel.distinct("_id", {
       subject_id: entityId,
       deleted_at: null,
-    })
-      .select("_id")
-      .lean();
-    testIds = tests.map((test) => test._id);
+    });
   } else {
     // *************** Collect all active subjects, then all active tests under those subjects
-    const subjects = await SubjectModel.find({
+    const subjectIds = await SubjectModel.distinct("_id", {
       block_id: entityId,
       deleted_at: null,
-    })
-      .select("_id")
-      .lean();
-    const tests = await TestModel.find({
-      subject_id: { $in: subjects.map((subject) => subject._id) },
+    });
+    testIds = await TestModel.distinct("_id", {
+      subject_id: { $in: subjectIds },
       deleted_at: null,
-    })
-      .select("_id")
-      .lean();
-    testIds = tests.map((test) => test._id);
+    });
   }
 
   // *************** No descendant tests -> nothing can be locked by grades
