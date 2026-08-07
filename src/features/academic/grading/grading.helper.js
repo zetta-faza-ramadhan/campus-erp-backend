@@ -23,11 +23,15 @@ const { ValidateAndSanitizeSubmitTestGrades } = require("./grading.validator");
  */
 async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
   // *************** Validate input
-  ValidateAndSanitizeSubmitTestGrades({
+  const value = ValidateAndSanitizeSubmitTestGrades({
     academic_year_id: academicYearId,
     test_id: testId,
     grades,
   });
+
+  academicYearId = value.academic_year_id;
+  testId = value.test_id;
+  grades = value.grades;
 
   // *************** Verify the test exists
   const test = await TestModel.findOne({
