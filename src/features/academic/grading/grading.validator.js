@@ -14,7 +14,7 @@ const SubmitTestGradesSchema = Joi.object({
   grades: Joi.array()
     .items(
       Joi.object({
-        student_id: Joi.string().required().$regex(OBJECT_ID_PATTERN),
+        student_id: Joi.string().required().regex(OBJECT_ID_PATTERN),
         score: Joi.number().min(0).max(100).required(),
       }),
     )
