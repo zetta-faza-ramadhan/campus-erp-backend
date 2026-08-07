@@ -10,6 +10,7 @@ const systemSchema = require("./features/system");
 const curriculumSchema = require("./features/academic/curriculum");
 const studentSchema = require("./features/users/student");
 const enrollmentSchema = require("./features/academic/enrollment");
+const gradingSchema = require("./features/academic/grading");
 const authSchema = require("./features/users/auth");
 const AuthMiddleware = require("./shared/middlewares/auth.middleware");
 
@@ -51,6 +52,7 @@ async function StartServer() {
       curriculumSchema.typeDefs,
       studentSchema.typeDefs,
       enrollmentSchema.typeDefs,
+      gradingSchema.typeDefs,
       authSchema.typeDefs,
     ],
     resolvers: MergeResolvers(
@@ -58,6 +60,7 @@ async function StartServer() {
       curriculumSchema,
       studentSchema,
       enrollmentSchema,
+      gradingSchema,
       authSchema,
     ),
   });

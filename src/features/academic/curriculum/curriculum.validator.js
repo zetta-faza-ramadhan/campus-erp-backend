@@ -173,6 +173,28 @@ function ValidateAndSanitizeTestId(id) {
   return ValidateInputWithJoi({ schema: ObjectIdSchema, payload: id });
 }
 
+// *************** VALIDATE AND SANITIZE: ENTITY LOCK CHECK ***************
+const EntityTypeSchema = Joi.string()
+  .valid("block", "subject", "test")
+  .required();
+
+const EntityLockParamSchema = Joi.object({
+  entityType: EntityTypeSchema,
+  entityId: ObjectIdSchema,
+});
+
+/**
+ * Validates and sanitizes the parameters passed to a grade-lock check.
+ *
+ * @param {Object} input - Parameters containing the entity type and ID.
+ * @param {string} input.entityType - The entity type ('block', 'subject', or 'test').
+ * @param {string} input.entityId - The entity ID to validate.
+ * @returns {Object} Sanitized and validated parameters.
+ */
+function ValidateAndSanitizeEntityLockParam(input) {
+  return ValidateInputWithJoi({ schema: EntityLockParamSchema, payload: input });
+}
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   BlockSchema,
@@ -191,4 +213,5 @@ module.exports = {
   ValidateAndSanitizeCreateTest,
   ValidateAndSanitizeUpdateTest,
   ValidateAndSanitizeTestId,
+  ValidateAndSanitizeEntityLockParam,
 };
