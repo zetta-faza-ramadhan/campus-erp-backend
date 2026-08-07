@@ -41,19 +41,16 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
   // *************** Extract all student IDs into a flat array
   const extractedStudentIds = grades.map((grade) => grade.student_id);
 
-  // *************** Find all valid students in a single query
-  const validStudents = await StudentModel.find({
+  // *************** Find all valid, non-deleted students in a single query
+  const validStudentIds = await StudentModel.distinct("_id", {
     _id: { $in: extractedStudentIds },
-  })
-    .select("_id")
-    .lean();
+    deleted_at: null,
+  });
+  const validStudentIdSet = new Set(validStudentIds.map(String));
 
-  // *************** Validate that every student exists
+  // *************** Validate that every student exists and is not deleted
   for (const grade of grades) {
-    const exists = validStudents.find(
-      (student) => String(student._id) === grade.student_id,
-    );
-    if (!exists) {
+    if (!validStudentIdSet.has(grade.student_id)) {
       throw new AppError(
         "INVALID_STUDENT_REFERENCE",
         400,
