@@ -4,7 +4,7 @@ const cors = require("cors");
 
 // *************** IMPORT MODULE ***************
 const config = require("./core/config");
-require("./core/db");
+const dbConnection = require("./core/db");
 const { CreateApolloMiddleware } = require("./core/apollo");
 const systemSchema = require("./features/system");
 const curriculumSchema = require("./features/academic/curriculum");
@@ -13,6 +13,7 @@ const enrollmentSchema = require("./features/academic/enrollment");
 const gradingSchema = require("./features/academic/grading");
 const authSchema = require("./features/users/auth");
 const AuthMiddleware = require("./shared/middlewares/auth.middleware");
+const { InitializeGradeAuditorJob } = require("./jobs/missing_grades.job");
 
 // *************** INITIALIZE APPLICATION ***************
 const app = express();
@@ -46,6 +47,11 @@ function MergeResolvers(...schemas) {
  * @returns {Promise<void>} Resolves when the server is listening.
  */
 async function StartServer() {
+  // *************** Initialize grader audit job once the DB is connected
+  dbConnection.once("connected", () => {
+    InitializeGradeAuditorJob();
+  });
+
   const graphqlMiddleware = await CreateApolloMiddleware({
     typeDefs: [
       systemSchema.typeDefs,
@@ -71,5 +77,5 @@ async function StartServer() {
   });
 }
 
-// *************** Initialize the server
+// *************** Initialize the server ***************
 StartServer();

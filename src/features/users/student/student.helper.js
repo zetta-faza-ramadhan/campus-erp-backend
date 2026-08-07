@@ -25,11 +25,6 @@ const STUDENT_PROJECT_FIELDS = {
   created_at: 1,
   updated_at: 1,
 };
-// *************** Default pagination applied when no page/limit is provided by the client.
-const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 10;
-// *************** Hard cap on page size to keep large $in / result sets bounded.
-const MAX_LIMIT = 100;
 
 // *************** CRUD: STUDENT ***************
 
@@ -47,12 +42,16 @@ async function CreateStudentHelper({
   studentNumber,
 }) {
   // *************** Validate input
-  ValidateAndSanitizeCreateStudent({
+  const value = ValidateAndSanitizeCreateStudent({
     first_name: firstName,
     last_name: lastName,
     email,
     student_number: studentNumber,
   });
+  firstName = value.first_name;
+  lastName = value.last_name;
+  email = value.email;
+  studentNumber = value.student_number;
 
   // *************** Ensure email and student number are unique
   const existing = await StudentModel.findOne({
@@ -120,16 +119,18 @@ async function GetStudentsByAcademicYearHelper({
   search,
 }) {
   // *************** Validate input
-  ValidateAndSanitizeGetStudentsByAcademicYear({
+  const value = ValidateAndSanitizeGetStudentsByAcademicYear({
     academic_year_id: academicYearId,
     page,
     limit,
     search,
   });
+  academicYearId = value.academic_year_id;
+  page = value.page;
+  limit = value.limit;
+  search = value.search;
 
-  // *************** Resolve pagination defaults
-  page = page ?? DEFAULT_PAGE;
-  limit = Math.min(limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+  // *************** Resolve the $skip offset from the sanitized pagination
   const skip = (page - 1) * limit;
 
   // *************** Normalize the academic year id to an ObjectId

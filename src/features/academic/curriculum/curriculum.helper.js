@@ -86,7 +86,9 @@ async function ValidateTestWeightage(subjectId, newWeightage, excludeId) {
  */
 async function CheckEntityLocked(entityType, entityId) {
   // *************** Validate the entity type and ID before any lookup
-  ValidateAndSanitizeEntityLockParam({ entityType, entityId });
+  const value = ValidateAndSanitizeEntityLockParam({ entityType, entityId });
+  entityType = value.entityType;
+  entityId = value.entityId;
   let testIds;
 
   // *************** Resolve the entity to its descendant test IDs
@@ -147,7 +149,7 @@ async function GetBlocksHelper() {
  * @returns {Promise<Array>} List of active subject documents.
  */
 async function GetSubjectsHelper(blockId) {
-  ValidateAndSanitizeBlockId(blockId);
+  blockId = ValidateAndSanitizeBlockId(blockId);
   return await SubjectModel.find({
     block_id: blockId,
     deleted_at: null,
@@ -161,7 +163,7 @@ async function GetSubjectsHelper(blockId) {
  * @returns {Promise<Array>} List of active test documents.
  */
 async function GetTestsHelper(subjectId) {
-  ValidateAndSanitizeSubjectId(subjectId);
+  subjectId = ValidateAndSanitizeSubjectId(subjectId);
   return await TestModel.find({
     subject_id: subjectId,
     deleted_at: null,
@@ -177,11 +179,14 @@ async function GetTestsHelper(subjectId) {
  * @returns {Promise<Object>} The created block document.
  */
 async function CreateBlockHelper({ name, academicYear, gradingRules }) {
-  ValidateAndSanitizeCreateBlock({
+  const value = ValidateAndSanitizeCreateBlock({
     name,
     academic_year: academicYear,
     grading_rules: gradingRules,
   });
+  name = value.name;
+  academicYear = value.academic_year;
+  gradingRules = value.grading_rules;
   return await BlockModel.create({
     name,
     academic_year: academicYear,
@@ -197,12 +202,16 @@ async function CreateBlockHelper({ name, academicYear, gradingRules }) {
  * @throws {AppError} 404 - Block not found.
  */
 async function UpdateBlockHelper({ _id, name, academicYear, gradingRules }) {
-  ValidateAndSanitizeUpdateBlock({
+  const value = ValidateAndSanitizeUpdateBlock({
     _id,
     name,
     academic_year: academicYear,
     grading_rules: gradingRules,
   });
+  _id = value._id;
+  name = value.name;
+  academicYear = value.academic_year;
+  gradingRules = value.grading_rules;
   const fields = Object.fromEntries(
     Object.entries({
       name,
@@ -229,7 +238,7 @@ async function UpdateBlockHelper({ _id, name, academicYear, gradingRules }) {
  * @throws {AppError} 404 - Block not found or already deleted.
  */
 async function DeleteBlockHelper(_id) {
-  ValidateAndSanitizeBlockId(_id);
+  _id = ValidateAndSanitizeBlockId(_id);
   await CheckEntityLocked("block", _id);
   const now = new Date();
   const deleted = await BlockModel.findOneAndUpdate(
@@ -265,12 +274,16 @@ async function DeleteBlockHelper(_id) {
  * @returns {Promise<Object>} The created subject document.
  */
 async function CreateSubjectHelper({ name, blockId, weightage, gradingRules }) {
-  ValidateAndSanitizeCreateSubject({
+  const value = ValidateAndSanitizeCreateSubject({
     name,
     block_id: blockId,
     weightage,
     grading_rules: gradingRules,
   });
+  name = value.name;
+  blockId = value.block_id;
+  weightage = value.weightage;
+  gradingRules = value.grading_rules;
   // *************** Ensure parent block exists and is active
   const block = await BlockModel.findOne({
     _id: blockId,
@@ -301,13 +314,18 @@ async function UpdateSubjectHelper({
   weightage,
   gradingRules,
 }) {
-  ValidateAndSanitizeUpdateSubject({
+  const value = ValidateAndSanitizeUpdateSubject({
     _id,
     name,
     block_id: blockId,
     weightage,
     grading_rules: gradingRules,
   });
+  _id = value._id;
+  name = value.name;
+  blockId = value.block_id;
+  weightage = value.weightage;
+  gradingRules = value.grading_rules;
   const fields = Object.fromEntries(
     Object.entries({
       name,
@@ -354,7 +372,7 @@ async function UpdateSubjectHelper({
  * @throws {AppError} 404 - Subject not found or already deleted.
  */
 async function DeleteSubjectHelper(_id) {
-  ValidateAndSanitizeSubjectId(_id);
+  _id = ValidateAndSanitizeSubjectId(_id);
   await CheckEntityLocked("subject", _id);
   const now = new Date();
   const deleted = await SubjectModel.findOneAndUpdate(
@@ -380,12 +398,16 @@ async function DeleteSubjectHelper(_id) {
  * @returns {Promise<Object>} The created test document.
  */
 async function CreateTestHelper({ name, subjectId, weightage, gradingRules }) {
-  ValidateAndSanitizeCreateTest({
+  const value = ValidateAndSanitizeCreateTest({
     name,
     subject_id: subjectId,
     weightage,
     grading_rules: gradingRules,
   });
+  name = value.name;
+  subjectId = value.subject_id;
+  weightage = value.weightage;
+  gradingRules = value.grading_rules;
   // *************** Ensure parent subject exists and is active
   const subject = await SubjectModel.findOne({
     _id: subjectId,
@@ -417,13 +439,18 @@ async function UpdateTestHelper({
   weightage,
   gradingRules,
 }) {
-  ValidateAndSanitizeUpdateTest({
+  const value = ValidateAndSanitizeUpdateTest({
     _id,
     name,
     subject_id: subjectId,
     weightage,
     grading_rules: gradingRules,
   });
+  _id = value._id;
+  name = value.name;
+  subjectId = value.subject_id;
+  weightage = value.weightage;
+  gradingRules = value.grading_rules;
   const fields = Object.fromEntries(
     Object.entries({
       name,
@@ -469,7 +496,7 @@ async function UpdateTestHelper({
  * @throws {AppError} 404 - Test not found or already deleted.
  */
 async function DeleteTestHelper(_id) {
-  ValidateAndSanitizeTestId(_id);
+  _id = ValidateAndSanitizeTestId(_id);
   await CheckEntityLocked("test", _id);
   const deleted = await TestModel.findOneAndUpdate(
     { _id, deleted_at: null },

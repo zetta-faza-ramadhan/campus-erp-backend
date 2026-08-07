@@ -26,7 +26,9 @@ const DUMMY_PASSWORD_HASH =
  */
 async function LoginHelper({ email, password }) {
   // *************** Validate input
-  ValidateAndSanitizeLogin({ email, password });
+  const value = ValidateAndSanitizeLogin({ email, password });
+  email = value.email;
+  password = value.password;
 
   // *************** Find user by email
   const user = await UserModel.findOne({ email, deleted_at: null })

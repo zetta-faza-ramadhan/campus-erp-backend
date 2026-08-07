@@ -21,6 +21,8 @@
     "graphql": "^16.14.2",
     "joi": "^18.2.3",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.8.1"
+    "mongoose": "^9.8.1",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^9.0.4"
   }
 }

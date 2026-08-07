@@ -35,4 +35,15 @@ module.exports = {
   jwt: {
     secret: process.env.JWT_SECRET,
   },
+  smtp: {
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 2525,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.SMTP_FROM || "alert@campus.edu",
+  },
+  alertEmail: process.env.ALERT_EMAIL || "alert@campus.edu",
+
+  // *************** Schedule the missing-grade audit every minute
+  auditCron: "* * * * *",
 };

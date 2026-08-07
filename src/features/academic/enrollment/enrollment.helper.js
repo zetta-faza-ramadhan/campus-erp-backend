@@ -22,10 +22,12 @@ const { ValidateAndSanitizeEnrollStudents } = require("./enrollment.validator");
  */
 async function EnrollStudentsHelper({ academicYearId, studentIds }) {
   // *************** Validate input
-  ValidateAndSanitizeEnrollStudents({
+  const value = ValidateAndSanitizeEnrollStudents({
     academic_year_id: academicYearId,
     student_ids: studentIds,
   });
+  academicYearId = value.academic_year_id;
+  studentIds = value.student_ids;
 
   // *************** Validate target academic year
   const year = await AcademicYearModel.findOne({
