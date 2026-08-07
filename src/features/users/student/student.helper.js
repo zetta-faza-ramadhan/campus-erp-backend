@@ -5,6 +5,10 @@ const { Types } = require("mongoose");
 const AppError = require("../../../core/error");
 const StudentModel = require("./student.model");
 const AcademicYearModel = require("../../academic/enrollment/academic_year.model");
+const {
+  ValidateAndSanitizeCreateStudent,
+  ValidateAndSanitizeGetStudentsByAcademicYear,
+} = require("./student.validator");
 
 // *************** GLOBAL VARIABLES ***************
 // *************** Reusable field selection applied early in the aggregation pipeline.
@@ -30,11 +34,19 @@ const MAX_LIMIT = 100;
 /**
  * Creates a new student after ensuring the email and student number are unique.
  *
- * @param {Object} input - Validated student input payload.
+ * @param {Object} input - Raw student input payload (re-validated internally).
  * @returns {Promise<Object>} The created student document.
  * @throws {AppError} 409 - Email or student number already registered.
  */
 async function CreateStudentHelper({ firstName, lastName, email, studentNumber }) {
+  // *************** Validate input
+  ValidateAndSanitizeCreateStudent({
+    first_name: firstName,
+    last_name: lastName,
+    email,
+    student_number: studentNumber,
+  });
+
   // *************** Ensure email and student number are unique
   const existing = await StudentModel.findOne({
     $or: [{ email }, { student_number: studentNumber }],
@@ -89,12 +101,20 @@ async function CreateStudentHelper({ firstName, lastName, email, studentNumber }
  * Ensures the academic year exists before querying, applies search to the
  * student's first/last name, and returns page metadata alongside the records.
  *
- * @param {Object} input - Validated payload with academicYearId, page, limit, search.
+ * @param {Object} input - Raw payload with academicYearId, page, limit, search (re-validated internally).
  * @returns {Promise<Object>} Paginated response { total_count, current_page, total_pages, data }.
  * @throws {AppError} 404 - Academic year not found.
  */
 // *************** START: GetStudentsByAcademicYearHelper ***************
 async function GetStudentsByAcademicYearHelper({ academicYearId, page, limit, search }) {
+  // *************** Validate input
+  ValidateAndSanitizeGetStudentsByAcademicYear({
+    academic_year_id: academicYearId,
+    page,
+    limit,
+    search,
+  });
+
   // *************** Resolve pagination defaults
   page = page ?? DEFAULT_PAGE;
   limit = Math.min(limit ?? DEFAULT_LIMIT, MAX_LIMIT);

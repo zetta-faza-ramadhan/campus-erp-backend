@@ -2,6 +2,9 @@
 const AppError = require("../../../core/error");
 const AcademicYearModel = require("./academic_year.model");
 const StudentModel = require("../../users/student/student.model");
+const {
+  ValidateAndSanitizeEnrollStudents,
+} = require("./enrollment.validator");
 
 // *************** ENROLLMENT ***************
 
@@ -9,13 +12,21 @@ const StudentModel = require("../../users/student/student.model");
  * Enrolls a batch of students into an active academic year using sequential,
  * atomic bi-directional array updates.
  *
- * @param {Object} input - Validated enrollment payload with academicYearId and studentIds.
+ * @param {Object} input - Raw enrollment payload (re-validated internally).
+ * @param {string} input.academicYearId - The ID of the academic year.
+ * @param {Array<string>} input.studentIds - The IDs of students to enroll.
  * @returns {Promise<Object>} The updated academic year document.
  * @throws {AppError} 404 - Academic year not found.
  * @throws {AppError} 400 - Academic year is closed to new enrollments.
  * @throws {AppError} 400 - Payload contains invalid or deleted student references.
  */
 async function EnrollStudentsHelper({ academicYearId, studentIds }) {
+  // *************** Validate input
+  ValidateAndSanitizeEnrollStudents({
+    academic_year_id: academicYearId,
+    student_ids: studentIds,
+  });
+
   // *************** Validate target academic year
   const year = await AcademicYearModel.findOne({
     _id: academicYearId,

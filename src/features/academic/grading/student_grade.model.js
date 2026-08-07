@@ -7,34 +7,30 @@ const Schema = mongoose.Schema;
 // *************** DEFINE STUDENT GRADE SCHEMA ***************
 const StudentGradeSchema = new Schema(
   {
-    // Reference to the block this grade belongs to
-    block_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Block",
-      required: true,
-    },
-    // Reference to the subject this grade belongs to
-    subject_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Subject",
-      required: true,
-    },
-    // Reference to the test this grade belongs to
-    test_id: {
-      type: Schema.Types.ObjectId,
-      ref: "Test",
-      required: true,
-    },
     // Reference to the student receiving this grade
     student_id: {
       type: Schema.Types.ObjectId,
       ref: "Student",
       required: true,
     },
-    // The numeric score achieved by the student
+    // Reference to the test this score is for
+    test_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Test",
+      required: true,
+    },
+    // Reference to the academic year the grade was recorded in
+    academic_year_id: {
+      type: Schema.Types.ObjectId,
+      ref: "AcademicYear",
+      required: true,
+    },
+    // Numeric score achieved, 0-100
     score: {
       type: Number,
       required: true,
+      min: 0,
+      max: 100,
     },
   },
   {
@@ -43,13 +39,13 @@ const StudentGradeSchema = new Schema(
   },
 );
 
-StudentGradeSchema.index({ block_id: 1 });
-StudentGradeSchema.index({ subject_id: 1 });
-StudentGradeSchema.index({ test_id: 1 });
-StudentGradeSchema.index({ student_id: 1 });
+StudentGradeSchema.index(
+  { student_id: 1, test_id: 1, academic_year_id: 1 },
+  { unique: true },
+);
 
 // *************** DEFINE MODEL ***************
-const StudentGradesModel = mongoose.model("StudentGrade", StudentGradeSchema);
+const StudentGradeModel = mongoose.model("StudentGrade", StudentGradeSchema);
 
 // *************** EXPORT MODULE ***************
-module.exports = StudentGradesModel;
+module.exports = StudentGradeModel;
