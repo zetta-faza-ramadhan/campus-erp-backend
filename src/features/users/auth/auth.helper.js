@@ -1,6 +1,8 @@
 // *************** IMPORT LIBRARY ***************
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const Joi = require("joi");
+const { GraphQLError } = require("graphql");
 
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
@@ -25,39 +27,55 @@ const DUMMY_PASSWORD_HASH =
  * @throws {AppError} 401 - Invalid email or password.
  */
 async function LoginHelper({ email, password }) {
-  // *************** Validate input
-  const value = ValidateAndSanitizeLogin({ email, password });
-  email = value.email;
-  password = value.password;
+  try {
+    // *************** Validate input
+    const value = ValidateAndSanitizeLogin({ email, password });
+    email = value.email;
+    password = value.password;
 
-  // *************** Find user by email
-  const user = await UserModel.findOne({ email, deleted_at: null })
-    .select("email password role")
-    .lean();
-  if (!user) {
-    // *************** Equalize timing by hashing against a dummy password
-    await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+    // *************** Find user by email
+    const user = await UserModel.findOne({ email, deleted_at: null })
+      .select("email password role")
+      .lean();
+    if (!user) {
+      // *************** Equalize timing by hashing against a dummy password
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      throw new AppError(
+        "INVALID_CREDENTIALS",
+        401,
+        "Invalid email or password.",
+      );
+    }
+
+    // *************** Compare password with hash
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw new AppError(
+        "INVALID_CREDENTIALS",
+        401,
+        "Invalid email or password.",
+      );
+    }
+    // *************** Sign JWT with userId and role
+    const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, {
+      expiresIn: "8h",
+    });
+    return token;
+  } catch (err) {
+    if (
+      err instanceof AppError ||
+      err instanceof GraphQLError ||
+      Joi.isError(err) ||
+      err?.code === 11000
+    ) {
+      throw err;
+    }
     throw new AppError(
-      "INVALID_CREDENTIALS",
-      401,
-      "Invalid email or password.",
+      "INTERNAL_ERROR",
+      500,
+      "Unexpected internal error during login.",
     );
   }
-
-  // *************** Compare password with hash
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    throw new AppError(
-      "INVALID_CREDENTIALS",
-      401,
-      "Invalid email or password.",
-    );
-  }
-  // *************** Sign JWT with userId and role
-  const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, {
-    expiresIn: "8h",
-  });
-  return token;
 }
 // *************** END: LoginHelper ***************
 

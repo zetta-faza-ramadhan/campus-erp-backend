@@ -1,3 +1,7 @@
+// *************** IMPORT LIBRARY ***************
+const Joi = require("joi");
+const { GraphQLError } = require("graphql");
+
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
 const TestModel = require("../curriculum/curriculum.model.test");
@@ -22,58 +26,74 @@ const { ValidateAndSanitizeSubmitTestGrades } = require("./grading.validator");
  * @throws {AppError} 400 - Payload contains invalid student references.
  */
 async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
-  // *************** Validate input
-  const value = ValidateAndSanitizeSubmitTestGrades({
-    academic_year_id: academicYearId,
-    test_id: testId,
-    grades,
-  });
+  try {
+    // *************** Validate input
+    const value = ValidateAndSanitizeSubmitTestGrades({
+      academic_year_id: academicYearId,
+      test_id: testId,
+      grades,
+    });
 
-  academicYearId = value.academic_year_id;
-  testId = value.test_id;
-  grades = value.grades;
+    academicYearId = value.academic_year_id;
+    testId = value.test_id;
+    grades = value.grades;
 
-  // *************** Verify the test exists
-  const test = await TestModel.findOne({
-    _id: testId,
-    deleted_at: null,
-  }).lean();
-  if (!test) {
-    throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
-  }
-
-  // *************** Extract all student IDs into a flat array
-  const extractedStudentIds = grades.map((grade) => grade.student_id);
-
-  // *************** Find all valid, non-deleted students in a single query
-  const validStudentIds = await StudentModel.distinct("_id", {
-    _id: { $in: extractedStudentIds },
-    deleted_at: null,
-  });
-  const validStudentIdSet = new Set(validStudentIds.map(String));
-
-  // *************** Validate that every student exists and is not deleted
-  for (const grade of grades) {
-    if (!validStudentIdSet.has(grade.student_id.toLowerCase())) {
-      throw new AppError(
-        "INVALID_STUDENT_REFERENCE",
-        400,
-        "One or more student IDs are invalid or deleted.",
-      );
+    // *************** Verify the test exists
+    const test = await TestModel.findOne({
+      _id: testId,
+      deleted_at: null,
+    }).lean();
+    if (!test) {
+      throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
     }
+
+    // *************** Extract all student IDs into a flat array
+    const extractedStudentIds = grades.map((grade) => grade.student_id);
+
+    // *************** Find all valid, non-deleted students in a single query
+    const validStudentIds = await StudentModel.distinct("_id", {
+      _id: { $in: extractedStudentIds },
+      deleted_at: null,
+    });
+    const validStudentIdSet = new Set(validStudentIds.map(String));
+
+    // *************** Validate that every student exists and is not deleted
+    for (const grade of grades) {
+      if (!validStudentIdSet.has(grade.student_id.toLowerCase())) {
+        throw new AppError(
+          "INVALID_STUDENT_REFERENCE",
+          400,
+          "One or more student IDs are invalid or deleted.",
+        );
+      }
+    }
+
+    // *************** Transform grades for Mongoose, injecting the year and test
+    const mappedGrades = grades.map((grade) => ({
+      student_id: grade.student_id,
+      test_id: testId,
+      academic_year_id: academicYearId,
+      score: grade.score,
+    }));
+
+    // *************** Bulk insert all grades (E11000 duplicate-key re-thrown unchanged)
+    const insertedGrades = await StudentGradeModel.insertMany(mappedGrades);
+    return insertedGrades;
+  } catch (err) {
+    if (
+      err instanceof AppError ||
+      err instanceof GraphQLError ||
+      Joi.isError(err) ||
+      err?.code === 11000
+    ) {
+      throw err;
+    }
+    throw new AppError(
+      "INTERNAL_ERROR",
+      500,
+      "Unexpected internal error while submitting grades.",
+    );
   }
-
-  // *************** Transform grades for Mongoose, injecting the year and test
-  const mappedGrades = grades.map((grade) => ({
-    student_id: grade.student_id,
-    test_id: testId,
-    academic_year_id: academicYearId,
-    score: grade.score,
-  }));
-
-  // *************** Bulk insert all grades
-  const insertedGrades = await StudentGradeModel.insertMany(mappedGrades);
-  return insertedGrades;
 }
 
 // *************** END: Grading Helper Function ***************
