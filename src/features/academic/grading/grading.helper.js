@@ -1,9 +1,6 @@
-// *************** IMPORT LIBRARY ***************
-const Joi = require("joi");
-const { GraphQLError } = require("graphql");
-
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
+const { ReThrowHelperError } = require("../../../core/helper_error");
 const TestModel = require("../curriculum/curriculum.model.test");
 const StudentModel = require("../../users/student/student.model");
 const StudentGradeModel = require("./student_grade.model");
@@ -82,19 +79,7 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
     const insertedGrades = await StudentGradeModel.insertMany(mappedGrades);
     return insertedGrades;
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while submitting grades.",
-    );
+    ReThrowHelperError(err, "submitting grades");
   }
 }
 

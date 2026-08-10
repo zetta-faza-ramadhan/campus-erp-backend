@@ -1,10 +1,9 @@
 // *************** IMPORT LIBRARY ***************
 const { Types } = require("mongoose");
-const Joi = require("joi");
-const { GraphQLError } = require("graphql");
 
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
+const { ReThrowHelperError } = require("../../../core/helper_error");
 const BlockModel = require("./curriculum.model.block");
 const SubjectModel = require("./curriculum.model.subject");
 const TestModel = require("./curriculum.model.test");
@@ -51,19 +50,7 @@ async function ValidateSubjectWeightage(blockId, newWeightage, excludeId) {
       );
     }
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while validating subject weightage.",
-    );
+    ReThrowHelperError(err, "validating subject weightage");
   }
 }
 
@@ -91,19 +78,7 @@ async function ValidateTestWeightage(subjectId, newWeightage, excludeId) {
       );
     }
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while validating test weightage.",
-    );
+    ReThrowHelperError(err, "validating test weightage");
   }
 }
 
@@ -163,19 +138,7 @@ async function CheckEntityLocked(entityType, entityId) {
       );
     }
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while checking the entity lock.",
-    );
+    ReThrowHelperError(err, "checking the entity lock");
   }
 }
 
@@ -190,19 +153,7 @@ async function GetBlocksHelper() {
   try {
     return await BlockModel.find({ deleted_at: null }).lean();
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while fetching blocks.",
-    );
+    ReThrowHelperError(err, "fetching blocks");
   }
 }
 
@@ -220,19 +171,7 @@ async function GetSubjectsHelper(blockId) {
       deleted_at: null,
     }).lean();
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while fetching subjects.",
-    );
+    ReThrowHelperError(err, "fetching subjects");
   }
 }
 
@@ -250,19 +189,7 @@ async function GetTestsHelper(subjectId) {
       deleted_at: null,
     }).lean();
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while fetching tests.",
-    );
+    ReThrowHelperError(err, "fetching tests");
   }
 }
 
@@ -293,19 +220,7 @@ async function CreateBlockHelper({ name, academicYear, gradingRules }) {
       grading_rules: gradingRules,
     });
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while creating the block.",
-    );
+    ReThrowHelperError(err, "creating the block");
   }
 }
 
@@ -350,19 +265,7 @@ async function UpdateBlockHelper({ _id, name, academicYear, gradingRules }) {
     }
     return updated;
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while updating the block.",
-    );
+    ReThrowHelperError(err, "updating the block");
   }
 }
 
@@ -404,19 +307,7 @@ async function DeleteBlockHelper(_id) {
     );
     return deleted;
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while deleting the block.",
-    );
+    ReThrowHelperError(err, "deleting the block");
   }
 }
 
@@ -460,19 +351,7 @@ async function CreateSubjectHelper({ name, blockId, weightage, gradingRules }) {
       grading_rules: gradingRules,
     });
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while creating the subject.",
-    );
+    ReThrowHelperError(err, "creating the subject");
   }
 }
 
@@ -547,19 +426,7 @@ async function UpdateSubjectHelper({
     );
     return updated;
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while updating the subject.",
-    );
+    ReThrowHelperError(err, "updating the subject");
   }
 }
 
@@ -590,19 +457,7 @@ async function DeleteSubjectHelper(_id) {
     );
     return deleted;
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while deleting the subject.",
-    );
+    ReThrowHelperError(err, "deleting the subject");
   }
 }
 
@@ -646,19 +501,7 @@ async function CreateTestHelper({ name, subjectId, weightage, gradingRules }) {
       grading_rules: gradingRules,
     });
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while creating the test.",
-    );
+    ReThrowHelperError(err, "creating the test");
   }
 }
 
@@ -732,19 +575,7 @@ async function UpdateTestHelper({
     );
     return updated;
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while updating the test.",
-    );
+    ReThrowHelperError(err, "updating the test");
   }
 }
 
@@ -770,19 +601,7 @@ async function DeleteTestHelper(_id) {
     }
     return deleted;
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while deleting the test.",
-    );
+    ReThrowHelperError(err, "deleting the test");
   }
 }
 

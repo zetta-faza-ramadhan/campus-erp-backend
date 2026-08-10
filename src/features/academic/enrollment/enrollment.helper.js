@@ -1,9 +1,6 @@
-// *************** IMPORT LIBRARY ***************
-const Joi = require("joi");
-const { GraphQLError } = require("graphql");
-
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
+const { ReThrowHelperError } = require("../../../core/helper_error");
 const AcademicYearModel = require("./academic_year.model");
 const StudentModel = require("../../users/student/student.model");
 
@@ -83,19 +80,7 @@ async function EnrollStudentsHelper({ academicYearId, studentIds }) {
     );
     return updatedYear;
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while enrolling students.",
-    );
+    ReThrowHelperError(err, "enrolling students");
   }
 }
 

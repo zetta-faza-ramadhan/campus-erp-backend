@@ -1,10 +1,9 @@
 // *************** IMPORT LIBRARY ***************
 const { Types } = require("mongoose");
-const Joi = require("joi");
-const { GraphQLError } = require("graphql");
 
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
+const { ReThrowHelperError } = require("../../../core/helper_error");
 const StudentModel = require("./student.model");
 const AcademicYearModel = require("../../academic/enrollment/academic_year.model");
 
@@ -101,18 +100,7 @@ async function CreateStudentHelper({
         "Already registered.",
       );
     }
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err)
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while creating the student.",
-    );
+    ReThrowHelperError(err, "creating the student");
   }
 }
 
@@ -219,19 +207,7 @@ async function GetStudentsByAcademicYearHelper({
       data: result.data,
     };
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error while fetching students.",
-    );
+    ReThrowHelperError(err, "fetching students");
   }
 }
 // *************** END: GetStudentsByAcademicYearHelper ***************

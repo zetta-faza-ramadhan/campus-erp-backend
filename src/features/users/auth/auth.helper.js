@@ -1,11 +1,10 @@
 // *************** IMPORT LIBRARY ***************
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const Joi = require("joi");
-const { GraphQLError } = require("graphql");
 
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
+const { ReThrowHelperError } = require("../../../core/helper_error");
 const UserModel = require("../user/user.model");
 const config = require("../../../core/config");
 const { ValidateAndSanitizeLogin } = require("./auth.validator");
@@ -62,19 +61,7 @@ async function LoginHelper({ email, password }) {
     });
     return token;
   } catch (err) {
-    if (
-      err instanceof AppError ||
-      err instanceof GraphQLError ||
-      Joi.isError(err) ||
-      err?.code === 11000
-    ) {
-      throw err;
-    }
-    throw new AppError(
-      "INTERNAL_ERROR",
-      500,
-      "Unexpected internal error during login.",
-    );
+    ReThrowHelperError(err, "logging in");
   }
 }
 // *************** END: LoginHelper ***************
