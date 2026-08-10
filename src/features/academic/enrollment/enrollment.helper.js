@@ -16,7 +16,7 @@ const { ValidateAndSanitizeEnrollStudents } = require("./enrollment.validator");
  * Enrolls a batch of students into an active academic year using sequential,
  * atomic bi-directional array updates.
  *
- * @param {Object} input - Raw enrollment payload (re-validated internally).
+ * @param {Object} input - Raw enrollment payload.
  * @param {string} input.academicYearId - The ID of the academic year.
  * @param {Array<string>} input.studentIds - The IDs of students to enroll.
  * @returns {Promise<Object>} The updated academic year document.

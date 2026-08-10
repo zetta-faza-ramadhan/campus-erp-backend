@@ -20,7 +20,7 @@ const DUMMY_PASSWORD_HASH =
 /**
  * Authenticates a user by email and password, returns a JWT.
  *
- * @param {Object} input - Raw login payload (re-validated internally).
+ * @param {Object} input - Raw login payload.
  * @param {string} input.email - User's email.
  * @param {string} input.password - User's plaintext password.
  * @returns {Promise<string>} Signed JWT token.

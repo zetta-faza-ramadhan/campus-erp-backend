@@ -273,7 +273,10 @@ async function GetTestsHelper(subjectId) {
 /**
  * Creates a new block document.
  *
- * @param {Object} input - Raw block input payload (re-validated internally).
+ * @param {Object} input - Raw block input payload.
+ * @param {string} input.name - The block's name.
+ * @param {string} input.academicYear - The academic year this block belongs to.
+ * @param {Array<Object>} input.gradingRules - Array of grading rules { label, operator, threshold }.
  * @returns {Promise<Object>} The created block document.
  */
 async function CreateBlockHelper({ name, academicYear, gradingRules }) {
@@ -311,7 +314,11 @@ async function CreateBlockHelper({ name, academicYear, gradingRules }) {
 /**
  * Updates an active block by ID.
  *
- * @param {Object} input - Raw payload (re-validated internally) containing _id and fields to update.
+ * @param {Object} input - Raw block update payload.
+ * @param {string} input._id - The ID of the block to update.
+ * @param {string} input.name - The block's name.
+ * @param {string} input.academicYear - The academic year this block belongs to.
+ * @param {Array<Object>} input.gradingRules - Array of grading rules { label, operator, threshold }.
  * @returns {Promise<Object>} The updated block document.
  * @throws {AppError} 404 - Block not found.
  */
@@ -420,7 +427,11 @@ async function DeleteBlockHelper(_id) {
 /**
  * Creates a new subject after validating weightage against its block.
  *
- * @param {Object} input - Raw subject input payload (re-validated internally).
+ * @param {Object} input - Raw subject input payload.
+ * @param {string} input.name - The subject's name.
+ * @param {string} input.blockId - The ID of the parent block.
+ * @param {number} input.weightage - The subject's weightage contribution (0-100).
+ * @param {Array<Object>} input.gradingRules - Array of grading rules { label, operator, threshold }.
  * @returns {Promise<Object>} The created subject document.
  */
 async function CreateSubjectHelper({ name, blockId, weightage, gradingRules }) {
@@ -470,7 +481,12 @@ async function CreateSubjectHelper({ name, blockId, weightage, gradingRules }) {
 /**
  * Updates an active subject by ID and re-validates weightage against its block.
  *
- * @param {Object} input - Raw payload (re-validated internally) containing _id and fields to update.
+ * @param {Object} input - Raw subject update payload.
+ * @param {string} input._id - The ID of the subject to update.
+ * @param {string} input.name - The subject's name.
+ * @param {string} input.blockId - The ID of the parent block.
+ * @param {number} input.weightage - The subject's weightage contribution (0-100).
+ * @param {Array<Object>} input.gradingRules - Array of grading rules { label, operator, threshold }.
  * @returns {Promise<Object>} The updated subject document.
  * @throws {AppError} 404 - Subject not found.
  * @throws {AppError} 400 - Total weightage exceeds 100%.
@@ -597,7 +613,11 @@ async function DeleteSubjectHelper(_id) {
 /**
  * Creates a new test after validating weightage against its subject.
  *
- * @param {Object} input - Raw test input payload (re-validated internally).
+ * @param {Object} input - Raw test input payload.
+ * @param {string} input.name - The test's name.
+ * @param {string} input.subjectId - The ID of the parent subject.
+ * @param {number} input.weightage - The test's weightage contribution (0-100).
+ * @param {Array<Object>} input.gradingRules - Array of grading rules { label, operator, threshold }.
  * @returns {Promise<Object>} The created test document.
  */
 async function CreateTestHelper({ name, subjectId, weightage, gradingRules }) {
@@ -647,7 +667,12 @@ async function CreateTestHelper({ name, subjectId, weightage, gradingRules }) {
 /**
  * Updates an active test by ID and re-validates weightage against its subject.
  *
- * @param {Object} input - Raw payload (re-validated internally) containing _id and fields to update.
+ * @param {Object} input - Raw test update payload.
+ * @param {string} input._id - The ID of the test to update.
+ * @param {string} input.name - The test's name.
+ * @param {string} input.subjectId - The ID of the parent subject.
+ * @param {number} input.weightage - The test's weightage contribution (0-100).
+ * @param {Array<Object>} input.gradingRules - Array of grading rules { label, operator, threshold }.
  * @returns {Promise<Object>} The updated test document.
  * @throws {AppError} 404 - Test not found.
  * @throws {AppError} 400 - Total weightage exceeds 100%.

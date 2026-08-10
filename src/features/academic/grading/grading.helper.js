@@ -17,10 +17,12 @@ const { ValidateAndSanitizeSubmitTestGrades } = require("./grading.validator");
  * Validates a test and a batch of student references, then bulk-inserts
  * the grades all at once.
  *
- * @param {Object} input - Raw grading payload (re-validated internally).
+ * @param {Object} input - Raw grading payload.
  * @param {string} input.academicYearId - The ID of the academic year the grades belong to.
  * @param {string} input.testId - The ID of the test being graded.
- * @param {Array<Object>} input.grades - Array of { student_id, score } objects.
+ * @param {Array<Object>} input.grades - Array of grade entries.
+ * @param {string} input.grades[].student_id - The ID of the graded student.
+ * @param {number} input.grades[].score - The student's score on the test.
  * @returns {Promise<Array<Object>>} The inserted StudentGrade documents.
  * @throws {AppError} 404 - Test not found.
  * @throws {AppError} 400 - Payload contains invalid student references.

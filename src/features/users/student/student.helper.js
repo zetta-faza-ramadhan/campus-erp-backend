@@ -33,7 +33,11 @@ const STUDENT_PROJECT_FIELDS = {
 /**
  * Creates a new student after ensuring the email and student number are unique.
  *
- * @param {Object} input - Raw student input payload (re-validated internally).
+ * @param {Object} input - Raw student input payload.
+ * @param {string} input.firstName - The student's first name.
+ * @param {string} input.lastName - The student's last name.
+ * @param {string} input.email - The student's email address.
+ * @param {string} input.studentNumber - The student's registration number.
  * @returns {Promise<Object>} The created student document.
  * @throws {AppError} 409 - Email or student number already registered.
  */
@@ -120,7 +124,11 @@ async function CreateStudentHelper({
  * Ensures the academic year exists before querying, applies search to the
  * student's first/last name, and returns page metadata alongside the records.
  *
- * @param {Object} input - Raw payload with academicYearId, page, limit, search (re-validated internally).
+ * @param {Object} input - Raw query payload.
+ * @param {string} input.academicYearId - The ID of the academic year to filter students by.
+ * @param {number} input.page - The page number to fetch (1-based).
+ * @param {number} input.limit - The number of records per page.
+ * @param {string} input.search - Optional search term applied to first/last name.
  * @returns {Promise<Object>} Paginated response { total_count, current_page, total_pages, data }.
  * @throws {AppError} 404 - Academic year not found.
  */
