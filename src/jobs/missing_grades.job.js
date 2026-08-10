@@ -22,9 +22,17 @@ const ALERT_TYPE = "MISSING_GRADE_ALERT";
  * that has no matching StudentGrade yet, along with the details needed
  * to render and dispatch the alert email.
  *
+ * The pipeline is bounded to `batchSize` rows per call: the four expansion
+ * stages can produce a large intermediate working set (students × blocks ×
+ * subjects × tests), so the $limit caps the materialised result and
+ * allowDiskUse prevents the 100 MB aggregation memory limit from killing
+ * the job at scale. Unprocessed rows are picked up on the next tick because
+ * DispatchMissingGradeAlert durably records each alert in the log.
+ *
+ * @param {number} [batchSize] - Maximum missing-grade rows to return per call.
  * @returns {Promise<Array<Object>>} Missing-grade rows with student/test/year details.
  */
-async function QueryMissingGrades() {
+async function QueryMissingGrades(batchSize = config.auditBatchSize) {
   return AcademicYearModel.aggregate([
     // *************** Only keep active, non-deleted academic years
     { $match: { status: "ACTIVE", deleted_at: null } },
@@ -108,6 +116,9 @@ async function QueryMissingGrades() {
     // *************** Keep only rows that have no grade
     { $match: { grade: { $size: 0 } } },
 
+    // *************** Bound the working set handled by this tick
+    { $limit: batchSize },
+
     // *************** Resolve the student profile for the email body
     {
       $lookup: {
@@ -146,7 +157,7 @@ async function QueryMissingGrades() {
         subject_name: "$subjects.name",
       },
     },
-  ]);
+  ]).allowDiskUse(true);
 }
 
 // *************** START: Dispatch Alert ***************

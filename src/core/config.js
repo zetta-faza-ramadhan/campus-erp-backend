@@ -45,5 +45,7 @@ module.exports = {
   alertEmail: process.env.ALERT_EMAIL || "alert@campus.edu",
 
   // *************** Schedule the missing-grade audit every minute
-  auditCron: "* * * * *",
+  auditCron: process.env.AUDIT_CRON || "* * * * *",
+  // *************** Cap missing-grade rows handled per tick; the next tick resumes
+  auditBatchSize: Number(process.env.AUDIT_BATCH_SIZE) || 100,
 };
