@@ -237,7 +237,7 @@ async function RunMissingGradeAudit() {
           student_id: missing.student_id,
           test_id: missing.test_id,
           academic_year_id: missing.academic_year_id,
-          err: { message: err.message, code: err.code, stack: err.stack },
+          err,
         },
         "Missing grade alert failed",
       );
@@ -260,7 +260,7 @@ async function RunScheduledAudit() {
     logger.error(
       {
         operation: "missing_grades.scheduled_run",
-        err: { message: err.message, code: err.code, stack: err.stack },
+        err,
       },
       "Scheduled missing grade audit run failed",
     );
