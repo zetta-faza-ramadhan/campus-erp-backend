@@ -5,11 +5,9 @@ const cron = require("node-cron");
 const config = require("../core/config");
 const AcademicYearModel = require("../features/academic/enrollment/academic_year.model");
 const NotificationLogModel = require("../features/system/notifications/notification_log.model");
-
-// *************** IMPORT SERVICE ***************
 const { SendEmail } = require("../shared/services/email.service");
 
-// *************** IMPORT UTILITY ***************
+// *************** IMPORT VALIDATOR ***************
 const { EscapeHtml, SanitizeEmailSubject } = require("../shared/validator/email.validator");
 
 // *************** GLOBAL VARIABLES ***************
