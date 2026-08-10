@@ -3,6 +3,7 @@ const cron = require("node-cron");
 
 // *************** IMPORT MODULE ***************
 const config = require("../core/config");
+const logger = require("../core/logger");
 const AcademicYearModel = require("../features/academic/enrollment/academic_year.model");
 const NotificationLogModel = require("../features/system/notifications/notification_log.model");
 const { SendEmail } = require("../shared/services/email.service");
@@ -230,8 +231,15 @@ async function RunMissingGradeAudit() {
     try {
       await DispatchMissingGradeAlert(missing);
     } catch (err) {
-      console.error(
-        `[GradeAudit] Alert failed for ${missing.student_name}/${missing.test_name}: ${err.message}`,
+      logger.error(
+        {
+          operation: "missing_grades.alert",
+          student_id: missing.student_id,
+          test_id: missing.test_id,
+          academic_year_id: missing.academic_year_id,
+          err: { message: err.message, code: err.code, stack: err.stack },
+        },
+        "Missing grade alert failed",
       );
     }
   }
@@ -249,7 +257,13 @@ async function RunScheduledAudit() {
   try {
     await RunMissingGradeAudit();
   } catch (err) {
-    console.error(`[GradeAudit] Scheduled run failed: ${err.message}`);
+    logger.error(
+      {
+        operation: "missing_grades.scheduled_run",
+        err: { message: err.message, code: err.code, stack: err.stack },
+      },
+      "Scheduled missing grade audit run failed",
+    );
   }
 }
 
@@ -259,7 +273,7 @@ async function RunScheduledAudit() {
 function InitializeGradeAuditorJob() {
   // *************** Schedule the recurring run
   cron.schedule(config.auditCron, RunScheduledAudit, { noOverlap: true });
-  console.log(`[GradeAudit] Scheduled every "${config.auditCron}"`);
+  logger.info({ operation: "missing_grades.scheduler" }, "Audit scheduled");
 }
 // *************** END: Initialize the Audit Job ***************
 
