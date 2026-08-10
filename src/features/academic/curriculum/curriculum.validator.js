@@ -102,12 +102,12 @@ function ValidateAndSanitizeUpdateBlock(input) {
 }
 
 /**
- * Validates and sanitizes a block ObjectId.
+ * Validates and sanitizes an ObjectId used as an entity identifier.
  *
- * @param {string} id - The block ID to validate.
- * @returns {string} The validated block ID.
+ * @param {string} id - The entity ID to validate.
+ * @returns {string} The validated entity ID.
  */
-function ValidateAndSanitizeBlockId(id) {
+function ValidateAndSanitizeId(id) {
   return ValidateInputWithJoi({ schema: ObjectIdSchema, payload: id });
 }
 
@@ -132,16 +132,6 @@ function ValidateAndSanitizeUpdateSubject(input) {
   return ValidateInputWithJoi({ schema: UpdateSubjectSchema, payload: input });
 }
 
-/**
- * Validates and sanitizes a subject ObjectId.
- *
- * @param {string} id - The subject ID to validate.
- * @returns {string} The validated subject ID.
- */
-function ValidateAndSanitizeSubjectId(id) {
-  return ValidateInputWithJoi({ schema: ObjectIdSchema, payload: id });
-}
-
 // *************** VALIDATE AND SANITIZE: TEST ***************
 /**
  * Validates and sanitizes CreateTest input.
@@ -161,16 +151,6 @@ function ValidateAndSanitizeCreateTest(input) {
  */
 function ValidateAndSanitizeUpdateTest(input) {
   return ValidateInputWithJoi({ schema: UpdateTestSchema, payload: input });
-}
-
-/**
- * Validates and sanitizes a test ObjectId.
- *
- * @param {string} id - The test ID to validate.
- * @returns {string} The validated test ID.
- */
-function ValidateAndSanitizeTestId(id) {
-  return ValidateInputWithJoi({ schema: ObjectIdSchema, payload: id });
 }
 
 // *************** VALIDATE AND SANITIZE: ENTITY LOCK CHECK ***************
@@ -206,12 +186,10 @@ module.exports = {
   ObjectIdSchema,
   ValidateAndSanitizeCreateBlock,
   ValidateAndSanitizeUpdateBlock,
-  ValidateAndSanitizeBlockId,
   ValidateAndSanitizeCreateSubject,
   ValidateAndSanitizeUpdateSubject,
-  ValidateAndSanitizeSubjectId,
   ValidateAndSanitizeCreateTest,
   ValidateAndSanitizeUpdateTest,
-  ValidateAndSanitizeTestId,
+  ValidateAndSanitizeId,
   ValidateAndSanitizeEntityLockParam,
 };

@@ -3,8 +3,7 @@ const { NormalizeGqlError } = require("../../../core/graphql_error");
 
 // *************** IMPORT VALIDATOR ***************
 const {
-  ValidateAndSanitizeBlockId,
-  ValidateAndSanitizeSubjectId,
+  ValidateAndSanitizeId,
 } = require("./curriculum.validator");
 
 // *************** IMPORT HELPER FUNCTION ***************
@@ -46,7 +45,7 @@ async function GetBlocks() {
  */
 async function GetSubjects(_, { block_id }) {
   try {
-    const value = ValidateAndSanitizeBlockId(block_id);
+    const value = ValidateAndSanitizeId(block_id);
     const result = await curriculumHelper.GetSubjectsHelper(value);
     return result;
   } catch (err) {
@@ -63,7 +62,7 @@ async function GetSubjects(_, { block_id }) {
  */
 async function GetTests(_, { subject_id }) {
   try {
-    const value = ValidateAndSanitizeSubjectId(subject_id);
+    const value = ValidateAndSanitizeId(subject_id);
     const result = await curriculumHelper.GetTestsHelper(value);
     return result;
   } catch (err) {

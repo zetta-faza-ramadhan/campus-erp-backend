@@ -14,13 +14,11 @@ const StudentGradeModel = require("../grading/student_grade.model");
 const {
   ValidateAndSanitizeCreateBlock,
   ValidateAndSanitizeUpdateBlock,
-  ValidateAndSanitizeBlockId,
   ValidateAndSanitizeCreateSubject,
   ValidateAndSanitizeUpdateSubject,
-  ValidateAndSanitizeSubjectId,
   ValidateAndSanitizeCreateTest,
   ValidateAndSanitizeUpdateTest,
-  ValidateAndSanitizeTestId,
+  ValidateAndSanitizeId,
   ValidateAndSanitizeEntityLockParam,
 } = require("./curriculum.validator");
 
@@ -216,7 +214,7 @@ async function GetBlocksHelper() {
  */
 async function GetSubjectsHelper(blockId) {
   try {
-    blockId = ValidateAndSanitizeBlockId(blockId);
+    blockId = ValidateAndSanitizeId(blockId);
     return await SubjectModel.find({
       block_id: blockId,
       deleted_at: null,
@@ -246,7 +244,7 @@ async function GetSubjectsHelper(blockId) {
  */
 async function GetTestsHelper(subjectId) {
   try {
-    subjectId = ValidateAndSanitizeSubjectId(subjectId);
+    subjectId = ValidateAndSanitizeId(subjectId);
     return await TestModel.find({
       subject_id: subjectId,
       deleted_at: null,
@@ -378,7 +376,7 @@ async function UpdateBlockHelper({ _id, name, academicYear, gradingRules }) {
  */
 async function DeleteBlockHelper(_id) {
   try {
-    _id = ValidateAndSanitizeBlockId(_id);
+    _id = ValidateAndSanitizeId(_id);
     await CheckEntityLocked("block", _id);
     const now = new Date();
     const deleted = await BlockModel.findOneAndUpdate(
@@ -575,7 +573,7 @@ async function UpdateSubjectHelper({
  */
 async function DeleteSubjectHelper(_id) {
   try {
-    _id = ValidateAndSanitizeSubjectId(_id);
+    _id = ValidateAndSanitizeId(_id);
     await CheckEntityLocked("subject", _id);
     const now = new Date();
     const deleted = await SubjectModel.findOneAndUpdate(
@@ -760,7 +758,7 @@ async function UpdateTestHelper({
  */
 async function DeleteTestHelper(_id) {
   try {
-    _id = ValidateAndSanitizeTestId(_id);
+    _id = ValidateAndSanitizeId(_id);
     await CheckEntityLocked("test", _id);
     const deleted = await TestModel.findOneAndUpdate(
       { _id, deleted_at: null },
