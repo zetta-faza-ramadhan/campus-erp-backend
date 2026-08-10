@@ -226,17 +226,25 @@ async function RunMissingGradeAudit() {
 
 // *************** START: Initialize the Audit Job ***************
 /**
+ * Runs the scheduled audit and logs a failure instead of crashing the
+ * cron scheduler when an unexpected error occurs.
+ *
+ * @returns {Promise<void>}
+ */
+async function RunScheduledAudit() {
+  try {
+    await RunMissingGradeAudit();
+  } catch (err) {
+    console.error(`[GradeAudit] Scheduled run failed: ${err.message}`);
+  }
+}
+
+/**
  * Starts the recurring missing-grade audit on boot. Safe to call once.
  */
 function InitializeGradeAuditorJob() {
   // *************** Schedule the recurring run
-  cron.schedule(config.auditCron, async () => {
-    try {
-      await RunMissingGradeAudit();
-    } catch (err) {
-      console.error(`[GradeAudit] Scheduled run failed: ${err.message}`);
-    }
-  });
+  cron.schedule(config.auditCron, RunScheduledAudit);
   console.log(`[GradeAudit] Scheduled every "${config.auditCron}"`);
 }
 // *************** END: Initialize the Audit Job ***************
