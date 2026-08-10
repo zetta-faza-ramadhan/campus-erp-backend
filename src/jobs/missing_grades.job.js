@@ -220,11 +220,13 @@ async function DispatchMissingGradeAlert(missing) {
  * Runs the audit once: finds all missing grades and dispatches an alert for
  * each one. A failing alert must not block the others.
  *
+ * @param {number} [batchSize] - Maximum missing-grade rows to collect per run
+ *   (defaults to config.auditBatchSize).
  * @returns {Promise<void>}
  */
-async function RunMissingGradeAudit() {
-  // *************** Collect all missing grades
-  const missingGrades = await QueryMissingGrades();
+async function RunMissingGradeAudit(batchSize = config.auditBatchSize) {
+  // *************** Collect missing grades (bounded to batchSize)
+  const missingGrades = await QueryMissingGrades(batchSize);
 
   // *************** Dispatch one alert per missing grade
   for (const missing of missingGrades) {
