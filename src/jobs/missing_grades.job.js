@@ -8,7 +8,10 @@ const NotificationLogModel = require("../features/system/notifications/notificat
 const { SendEmail } = require("../shared/services/email.service");
 
 // *************** IMPORT VALIDATOR ***************
-const { EscapeHtml, SanitizeEmailSubject } = require("../shared/validator/email.validator");
+const {
+  EscapeHtml,
+  SanitizeEmailSubject,
+} = require("../shared/validator/email.validator");
 
 // *************** GLOBAL VARIABLES ***************
 const ALERT_TYPE = "MISSING_GRADE_ALERT";
@@ -244,10 +247,14 @@ async function RunScheduledAudit() {
  */
 function InitializeGradeAuditorJob() {
   // *************** Schedule the recurring run
-  cron.schedule(config.auditCron, RunScheduledAudit);
+  cron.schedule(config.auditCron, RunScheduledAudit, { noOverlap: true });
   console.log(`[GradeAudit] Scheduled every "${config.auditCron}"`);
 }
 // *************** END: Initialize the Audit Job ***************
 
 // *************** EXPORT MODULE ***************
-module.exports = { InitializeGradeAuditorJob, QueryMissingGrades, RunMissingGradeAudit };
+module.exports = {
+  InitializeGradeAuditorJob,
+  QueryMissingGrades,
+  RunMissingGradeAudit,
+};
