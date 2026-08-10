@@ -25,6 +25,14 @@ if (!ALLOWED_NODE_ENVS.includes(nodeEnv)) {
   );
 }
 
+if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+  throw new AppError(
+    "CONFIG_ERROR",
+    500,
+    "SMTP_HOST, SMTP_USER and SMTP_PASS must be defined in .env file",
+  );
+}
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   port: process.env.PORT,
@@ -35,4 +43,17 @@ module.exports = {
   jwt: {
     secret: process.env.JWT_SECRET,
   },
+  smtp: {
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 2525,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.SMTP_FROM || "alert@campus.edu",
+  },
+  alertEmail: process.env.ALERT_EMAIL || "alert@campus.edu",
+
+  // *************** Schedule the missing-grade audit every minute
+  auditCron: process.env.AUDIT_CRON || "* * * * *",
+  // *************** Cap missing-grade rows handled per tick; the next tick resumes
+  auditBatchSize: Number(process.env.AUDIT_BATCH_SIZE) || 100,
 };

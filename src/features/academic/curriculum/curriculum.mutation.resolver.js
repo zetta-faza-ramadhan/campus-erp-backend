@@ -5,13 +5,11 @@ const { NormalizeGqlError } = require("../../../core/graphql_error");
 const {
   ValidateAndSanitizeCreateBlock,
   ValidateAndSanitizeUpdateBlock,
-  ValidateAndSanitizeBlockId,
   ValidateAndSanitizeCreateSubject,
   ValidateAndSanitizeUpdateSubject,
-  ValidateAndSanitizeSubjectId,
   ValidateAndSanitizeCreateTest,
   ValidateAndSanitizeUpdateTest,
-  ValidateAndSanitizeTestId,
+  ValidateAndSanitizeId,
 } = require("./curriculum.validator");
 
 // *************** IMPORT HELPER FUNCTION ***************
@@ -71,7 +69,7 @@ async function UpdateBlock(_, { input }) {
  */
 async function DeleteBlock(_, { block_id }) {
   try {
-    const value = ValidateAndSanitizeBlockId(block_id);
+    const value = ValidateAndSanitizeId(block_id);
     const result = await curriculumHelper.DeleteBlockHelper(value);
     return result;
   } catch (err) {
@@ -133,7 +131,7 @@ async function UpdateSubject(_, { input }) {
  */
 async function DeleteSubject(_, { subject_id }) {
   try {
-    const value = ValidateAndSanitizeSubjectId(subject_id);
+    const value = ValidateAndSanitizeId(subject_id);
     const result = await curriculumHelper.DeleteSubjectHelper(value);
     return result;
   } catch (err) {
@@ -195,7 +193,7 @@ async function UpdateTest(_, { input }) {
  */
 async function DeleteTest(_, { test_id }) {
   try {
-    const value = ValidateAndSanitizeTestId(test_id);
+    const value = ValidateAndSanitizeId(test_id);
     const result = await curriculumHelper.DeleteTestHelper(value);
     return result;
   } catch (err) {
