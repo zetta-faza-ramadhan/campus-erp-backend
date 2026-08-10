@@ -25,6 +25,14 @@ if (!ALLOWED_NODE_ENVS.includes(nodeEnv)) {
   );
 }
 
+if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+  throw new AppError(
+    "CONFIG_ERROR",
+    500,
+    "SMTP_HOST, SMTP_USER and SMTP_PASS must be defined in .env file",
+  );
+}
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   port: process.env.PORT,
