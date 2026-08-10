@@ -158,7 +158,7 @@ async function QueryMissingGrades() {
  */
 async function DispatchMissingGradeAlert(missing) {
   // *************** Skip if this exact alert was already sent
-  const alreadySent = await NotificationLogModel.findOne({
+  const alreadySent = await NotificationLogModel.exists({
     type: ALERT_TYPE,
     student_id: missing.student_id,
     test_id: missing.test_id,
