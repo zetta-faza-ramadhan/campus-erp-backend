@@ -58,10 +58,39 @@ function ValidateAndSanitizeSpawnGradeAggregator(input) {
   });
 }
 
+// *************** VALIDATION SCHEMA FOR AGGREGATION PARAMS ***************
+const AggregationParamsSchema = Joi.object({
+  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).unique().required(),
+  academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+  hierarchy: Joi.object({
+    block: Joi.object().unknown(true).required(),
+    subjects: Joi.array().required(),
+  }).optional(),
+  grades: Joi.array().optional(),
+  gradeByKey: Joi.any().optional(),
+});
+
+// *************** VALIDATE AND SANITIZE: AGGREGATION PARAMS ***************
+/**
+ * Validates and sanitizes the shared aggregation parameters used by
+ * BuildStudentStanding, BuildBulkWriteOperations, and RunGradeAggregation.
+ *
+ * @param {Object} input - Raw aggregation params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeAggregationParams(input) {
+  return ValidateInputWithJoi({
+    schema: AggregationParamsSchema,
+    payload: input,
+  });
+}
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   SubmitTestGradesSchema,
   ValidateAndSanitizeSubmitTestGrades,
   SpawnGradeAggregatorSchema,
   ValidateAndSanitizeSpawnGradeAggregator,
+  AggregationParamsSchema,
+  ValidateAndSanitizeAggregationParams,
 };

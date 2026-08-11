@@ -9,7 +9,7 @@ const StudentGradeModel = require("./student_grade.model");
 const AcademicStandingModel = require("./academic_standing.model");
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAggregationParams } = require("./aggregation.validator");
+const { ValidateAndSanitizeAggregationParams } = require("./grading.validator");
 
 // *************** GLOBAL VARIABLES ***************
 // *************** Operator -> comparator used to resolve grading tiers
@@ -237,7 +237,7 @@ function BuildStudentStanding({
 }) {
   try {
     // *************** Validate input
-    const value = ValidateAggregationParams({ studentIds: [studentId], academicYearId, hierarchy, gradeByKey });
+    const value = ValidateAndSanitizeAggregationParams({ studentIds: [studentId], academicYearId, hierarchy, gradeByKey });
     studentId = value.studentIds[0];
     academicYearId = value.academicYearId;
     hierarchy = value.hierarchy;
@@ -314,7 +314,7 @@ function BuildBulkWriteOperations({
 }) {
   try {
     // *************** Validate input
-    const value = ValidateAggregationParams({ studentIds, academicYearId, hierarchy, grades });
+    const value = ValidateAndSanitizeAggregationParams({ studentIds, academicYearId, hierarchy, grades });
     studentIds = value.studentIds;
     academicYearId = value.academicYearId;
     hierarchy = value.hierarchy;
@@ -379,7 +379,7 @@ async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
     if (!testId || !String(testId).match(OBJECT_ID_PATTERN)) {
       throw new AppError("INVALID_TEST_ID", 400, "testId must be a valid ObjectId.");
     }
-    const value = ValidateAggregationParams({ studentIds, academicYearId });
+    const value = ValidateAndSanitizeAggregationParams({ studentIds, academicYearId });
     studentIds = value.studentIds;
     academicYearId = value.academicYearId;
 
