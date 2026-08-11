@@ -45,7 +45,8 @@ function NormalizeStandingLabel(label) {
     }
     // *************** Convert the matched label to a schema-valid status
     const upper = String(label).toUpperCase();
-    return STANDING_STATUSES.includes(upper) ? upper : "FAIL";
+    const result = STANDING_STATUSES.includes(upper) ? upper : "FAIL";
+    return result;
   } catch (err) {
     ReThrowHelperError(err, "normalizing standing label");
   }
@@ -90,7 +91,8 @@ function EvaluateStanding(score, gradingRules) {
       }
     }
     // *************** Return the winning label, falling back to FAIL
-    return bestLabel || "FAIL";
+    const result = bestLabel || "FAIL";
+    return result;
   } catch (err) {
     ReThrowHelperError(err, "evaluating standing");
   }
@@ -109,7 +111,8 @@ function RoundToTwoDecimals(value) {
       throw new AppError("INVALID_AVERAGE", 400, "Average value must be a valid number.");
     }
     // *************** Preserve two decimal places for average precision
-    return Math.round(value * 100) / 100;
+    const result = Math.round(value * 100) / 100;
+    return result;
   } catch (err) {
     ReThrowHelperError(err, "rounding average");
   }
@@ -129,7 +132,8 @@ function BuildGradeKey(studentId, testId) {
       throw new AppError("INVALID_GRADE_KEY", 400, "studentId and testId are required.");
     }
     // *************** Build a lowercase (student, test) key for collision-free lookups
-    return `${String(studentId).toLowerCase()}:${String(testId).toLowerCase()}`;
+    const key = `${String(studentId).toLowerCase()}:${String(testId).toLowerCase()}`;
+    return key;
   } catch (err) {
     ReThrowHelperError(err, "building grade key");
   }
@@ -206,7 +210,7 @@ async function LoadCurriculumHierarchy(testId) {
     }
 
     // *************** Return the block hierarchy with per-subject test lists
-    return {
+    const hierarchy = {
       block,
       subjects: subjects.map((subjectDoc) => ({
         _id: subjectDoc._id,
@@ -215,6 +219,7 @@ async function LoadCurriculumHierarchy(testId) {
       })),
       testIds: tests.map((testDoc) => testDoc._id),
     };
+    return hierarchy;
   } catch (err) {
     ReThrowHelperError(err, "loading curriculum hierarchy");
   }
@@ -285,7 +290,7 @@ function BuildStudentStanding({
     const blockAverage = RoundToTwoDecimals(subjectAverages / subjects.length);
 
     // *************** Return the nested standing payload
-    return {
+    const standing = {
       student_id: studentId,
       academic_year_id: academicYearId,
       block_id: hierarchy.block._id,
@@ -293,6 +298,7 @@ function BuildStudentStanding({
       block_status: EvaluateStanding(blockAverage, hierarchy.block.grading_rules),
       subjects,
     };
+    return standing;
   } catch (err) {
     ReThrowHelperError(err, "building student standing");
   }
@@ -331,7 +337,7 @@ function BuildBulkWriteOperations({
     );
 
     // *************** Build one standing (or null) per input student
-    return studentIds
+    const operations = studentIds
       .map((studentId) =>
         BuildStudentStanding({
           studentId,
@@ -360,6 +366,7 @@ function BuildBulkWriteOperations({
           upsert: true,
         },
       }));
+    return operations;
   } catch (err) {
     ReThrowHelperError(err, "building bulk write operations");
   }
