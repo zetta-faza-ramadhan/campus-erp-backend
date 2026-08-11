@@ -57,11 +57,12 @@ function NormalizeStandingLabel(label) {
  * Rules are ordered low-to-high; the last matching rule wins so overlapping
  * tiers resolve to the highest satisfied one. No match falls back to FAIL.
  *
- * @param {number} score - The numeric score.
- * @param {Array<{label: string, operator: string, threshold: number}>} gradingRules - Rules fetched from the curriculum models.
+ * @param {Object} params - The evaluation inputs.
+ * @param {number} params.score - The numeric score.
+ * @param {Array<{label: string, operator: string, threshold: number}>} params.gradingRules - Rules fetched from the curriculum models.
  * @returns {string} The standing status for the score.
  */
-function EvaluateStanding(score, gradingRules) {
+function EvaluateStanding({ score, gradingRules }) {
   try {
     // *************** Validate input
     if (typeof score !== "number" || Number.isNaN(score)) {
@@ -121,11 +122,12 @@ function RoundToTwoDecimals(value) {
 /**
  * Builds a case-insensitive (student, test) lookup key.
  *
- * @param {string | import("mongoose").Types.ObjectId} studentId - The student id.
- * @param {string | import("mongoose").Types.ObjectId} testId - The test id.
+ * @param {Object} params - The key inputs.
+ * @param {string | import("mongoose").Types.ObjectId} params.studentId - The student id.
+ * @param {string | import("mongoose").Types.ObjectId} params.testId - The test id.
  * @returns {string} The lookup key.
  */
-function BuildGradeKey(studentId, testId) {
+function BuildGradeKey({ studentId, testId }) {
   try {
     // *************** Validate input
     if (!studentId || !testId) {
@@ -256,13 +258,13 @@ function BuildStudentStanding({
     for (const subject of hierarchy.subjects) {
       const tests = [];
       for (const test of subject.tests) {
-        const grade = gradeByKey.get(BuildGradeKey(studentId, test._id));
+        const grade = gradeByKey.get(BuildGradeKey({ studentId, testId: test._id }));
         if (!grade) continue;
 
         tests.push({
           test_id: test._id,
           total_mark: grade.score,
-          test_status: EvaluateStanding(grade.score, test.grading_rules),
+          test_status: EvaluateStanding({ score: grade.score, gradingRules: test.grading_rules }),
         });
       }
 
@@ -274,7 +276,7 @@ function BuildStudentStanding({
       subjects.push({
         subject_id: subject._id,
         subject_average: subjectAverage,
-        subject_status: EvaluateStanding(subjectAverage, subject.grading_rules),
+        subject_status: EvaluateStanding({ score: subjectAverage, gradingRules: subject.grading_rules }),
         tests,
       });
     }
@@ -295,7 +297,7 @@ function BuildStudentStanding({
       academic_year_id: academicYearId,
       block_id: hierarchy.block._id,
       block_average: blockAverage,
-      block_status: EvaluateStanding(blockAverage, hierarchy.block.grading_rules),
+      block_status: EvaluateStanding({ score: blockAverage, gradingRules: hierarchy.block.grading_rules }),
       subjects,
     };
     return standing;
@@ -331,7 +333,7 @@ function BuildBulkWriteOperations({
     // *************** Index all grades by (student, test) key
     const gradeByKey = new Map(
       grades.map((grade) => [
-        BuildGradeKey(grade.student_id, grade.test_id),
+        BuildGradeKey({ studentId: grade.student_id, testId: grade.test_id }),
         grade,
       ]),
     );
