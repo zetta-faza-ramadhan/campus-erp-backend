@@ -8,6 +8,9 @@ const BlockModel = require("../curriculum/curriculum.model.block");
 const StudentGradeModel = require("./student_grade.model");
 const AcademicStandingModel = require("./academic_standing.model");
 
+// *************** IMPORT VALIDATOR ***************
+const { ValidateAggregationParams } = require("./aggregation.validator");
+
 // *************** GLOBAL VARIABLES ***************
 // *************** Operator -> comparator used to resolve grading tiers
 const OPERATOR_FUNCTIONS = {
@@ -22,34 +25,6 @@ const OPERATOR_FUNCTIONS = {
 const STANDING_STATUSES = ["PASS", "FAIL", "RETAKE"];
 
 // *************** START: Academic Standing Helper ***************
-
-/**
- * Validates the shared aggregation parameters used by BuildStudentStanding,
- * BuildBulkWriteOperations, and RunGradeAggregation.
- *
- * @param {Object} params - The aggregation params to validate.
- * @param {Array<string>} params.studentIds - Non-empty array of student IDs.
- * @param {string} params.academicYearId - The academic year ObjectId.
- * @param {Object} params.hierarchy - The loaded curriculum hierarchy.
- * @param {Array<Object>} [params.grades] - All grades for the block.
- * @throws {AppError} 400 - Any required param is missing or malformed.
- */
-function ValidateAggregationParams({ studentIds, academicYearId, hierarchy, grades }) {
-  if (!Array.isArray(studentIds) || studentIds.length === 0) {
-    throw new AppError("INVALID_STUDENT_IDS", 400, "studentIds must be a non-empty array.");
-  }
-  if (!academicYearId) {
-    throw new AppError("INVALID_ACADEMIC_YEAR_ID", 400, "academicYearId is required.");
-  }
-  if (hierarchy !== undefined && hierarchy !== null) {
-    if (!hierarchy.block || !Array.isArray(hierarchy.subjects)) {
-      throw new AppError("INVALID_HIERARCHY", 400, "hierarchy must contain block and subjects array.");
-    }
-  }
-  if (grades !== undefined && !Array.isArray(grades)) {
-    throw new AppError("INVALID_GRADES", 400, "grades must be an array.");
-  }
-}
 
 /**
  * Maps a rule label to a schema-valid standing status.
@@ -232,13 +207,11 @@ function BuildStudentStanding({
   gradeByKey,
 }) {
   // *************** Validate input
-  if (!studentId) {
-    throw new AppError("INVALID_STUDENT_ID", 400, "studentId is required.");
-  }
-  ValidateAggregationParams({ studentIds: [studentId], academicYearId, hierarchy });
-  if (!(gradeByKey instanceof Map)) {
-    throw new AppError("INVALID_GRADE_KEY_MAP", 400, "gradeByKey must be a Map.");
-  }
+  const value = ValidateAggregationParams({ studentIds: [studentId], academicYearId, hierarchy, gradeByKey });
+  studentId = value.studentIds[0];
+  academicYearId = value.academicYearId;
+  hierarchy = value.hierarchy;
+  gradeByKey = value.gradeByKey;
 
   // *************** Roll each subject's graded tests into a subject average
   const subjects = [];
@@ -307,7 +280,11 @@ function BuildBulkWriteOperations({
   grades,
 }) {
   // *************** Validate input
-  ValidateAggregationParams({ studentIds, academicYearId, hierarchy, grades });
+  const value = ValidateAggregationParams({ studentIds, academicYearId, hierarchy, grades });
+  studentIds = value.studentIds;
+  academicYearId = value.academicYearId;
+  hierarchy = value.hierarchy;
+  grades = value.grades;
 
   // *************** Index all grades by (student, test) key
   const gradeByKey = new Map(
@@ -365,7 +342,9 @@ async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
     if (!testId || !String(testId).match(OBJECT_ID_PATTERN)) {
       throw new AppError("INVALID_TEST_ID", 400, "testId must be a valid ObjectId.");
     }
-    ValidateAggregationParams({ studentIds, academicYearId });
+    const value = ValidateAggregationParams({ studentIds, academicYearId });
+    studentIds = value.studentIds;
+    academicYearId = value.academicYearId;
 
     // *************** Load the hierarchy and the relevant grades
     const hierarchy = await LoadCurriculumHierarchy(testId);
