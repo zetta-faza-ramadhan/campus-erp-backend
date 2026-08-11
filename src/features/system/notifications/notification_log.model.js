@@ -31,8 +31,6 @@ const NotificationLogSchema = new Schema(
       ref: "AcademicYear",
       required: true,
     },
-    // When the alert was logged; timestamps keeps this path in sync
-    created_at: { type: Date, default: Date.now },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
