@@ -25,6 +25,7 @@ function CreateAcademicYearLoader() {
       // *************** Query all requested years in a single round-trip
       const years = await AcademicYearModel.find({
         _id: { $in: keys },
+        deleted_at: null,
       })
         .select(ACADEMIC_YEAR_FIELDS)
         .lean();

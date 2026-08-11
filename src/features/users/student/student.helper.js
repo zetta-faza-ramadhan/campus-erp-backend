@@ -64,6 +64,7 @@ async function CreateStudentHelper({
     // *************** Ensure email and student number are unique
     const existing = await StudentModel.findOne({
       $or: [{ email }, { student_number: studentNumber }],
+      deleted_at: null,
     })
       .select("_id email student_number")
       .lean();

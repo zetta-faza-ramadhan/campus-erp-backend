@@ -115,7 +115,7 @@ function RoundToTwoDecimals(value) {
     // *************** Validate input
     value = ValidateAndSanitizeRoundToTwoDecimals(value);
     // *************** Preserve two decimal places for average precision
-    const result = Math.round(value * 100) / 100;
+    const result = Number(value.toFixed(2));
     return result;
   } catch (err) {
     ReThrowHelperError(err, "rounding average");
