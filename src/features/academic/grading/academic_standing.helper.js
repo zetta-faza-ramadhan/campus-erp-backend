@@ -1,12 +1,14 @@
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
-const { ReThrowHelperError } = require("../../../core/helper_error");
 const { OBJECT_ID_PATTERN } = require("../../../core/validators");
 const TestModel = require("../curriculum/curriculum.model.test");
 const SubjectModel = require("../curriculum/curriculum.model.subject");
 const BlockModel = require("../curriculum/curriculum.model.block");
 const StudentGradeModel = require("./student_grade.model");
 const AcademicStandingModel = require("./academic_standing.model");
+
+// *************** IMPORT HELPER FUNCTION ***************
+const { ReThrowHelperError } = require("../../../core/helper_error");
 
 // *************** IMPORT VALIDATOR ***************
 const { ValidateAndSanitizeAggregationParams } = require("./grading.validator");

@@ -3,11 +3,13 @@ const { Types } = require("mongoose");
 
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
-const { ReThrowHelperError } = require("../../../core/helper_error");
 const BlockModel = require("./curriculum.model.block");
 const SubjectModel = require("./curriculum.model.subject");
 const TestModel = require("./curriculum.model.test");
 const StudentGradeModel = require("../grading/student_grade.model");
+
+// *************** IMPORT HELPER FUNCTION ***************
+const { ReThrowHelperError } = require("../../../core/helper_error");
 
 // *************** IMPORT VALIDATOR ***************
 const {
@@ -20,8 +22,6 @@ const {
   ValidateAndSanitizeId,
   ValidateAndSanitizeEntityLockParam,
 } = require("./curriculum.validator");
-
-// *************** IMPORT HELPER FUNCTION ***************
 
 /**
  * Validates that the total weightage of subjects in a block does not exceed 100%.

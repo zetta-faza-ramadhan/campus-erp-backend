@@ -1,8 +1,10 @@
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
-const { ReThrowHelperError } = require("../../../core/helper_error");
 const AcademicYearModel = require("./academic_year.model");
 const StudentModel = require("../../users/student/student.model");
+
+// *************** IMPORT HELPER FUNCTION ***************
+const { ReThrowHelperError } = require("../../../core/helper_error");
 
 // *************** IMPORT VALIDATOR ***************
 const { ValidateAndSanitizeEnrollStudents } = require("./enrollment.validator");

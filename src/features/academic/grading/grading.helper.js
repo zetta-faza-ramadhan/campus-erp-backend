@@ -4,7 +4,6 @@ const { Worker } = require("worker_threads");
 
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
-const { ReThrowHelperError } = require("../../../core/helper_error");
 const logger = require("../../../core/logger");
 const TestModel = require("../curriculum/curriculum.model.test");
 const StudentModel = require("../../users/student/student.model");
@@ -15,6 +14,9 @@ const {
   ValidateAndSanitizeSubmitTestGrades,
   ValidateAndSanitizeSpawnGradeAggregator,
 } = require("./grading.validator");
+
+// *************** IMPORT HELPER FUNCTION ***************
+const { ReThrowHelperError } = require("../../../core/helper_error");
 
 // *************** START: Grading Helper Function ***************
 
@@ -88,7 +90,11 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
     const insertedGrades = await StudentGradeModel.insertMany(mappedGrades);
 
     // *************** Spawn the aggregation worker, fire-and-forget
-    SpawnGradeAggregator({ studentIds: extractedStudentIds, testId, academicYearId });
+    SpawnGradeAggregator({
+      studentIds: extractedStudentIds,
+      testId,
+      academicYearId,
+    });
 
     return insertedGrades;
   } catch (err) {
@@ -110,7 +116,11 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
 function SpawnGradeAggregator({ studentIds, testId, academicYearId }) {
   try {
     // *************** Validate input
-    const value = ValidateAndSanitizeSpawnGradeAggregator({ studentIds, testId, academicYearId });
+    const value = ValidateAndSanitizeSpawnGradeAggregator({
+      studentIds,
+      testId,
+      academicYearId,
+    });
     studentIds = value.studentIds;
     testId = value.testId;
     academicYearId = value.academicYearId;
@@ -129,7 +139,10 @@ function SpawnGradeAggregator({ studentIds, testId, academicYearId }) {
     // *************** Attach listeners to log worker crashes/failures/completion
     logger.AttachWorkerListeners(worker, "grade_aggregator");
   } catch (err) {
-    logger.error({ operation: "grade_aggregator.spawn", err }, "Failed to spawn grade aggregation worker");
+    logger.error(
+      { operation: "grade_aggregator.spawn", err },
+      "Failed to spawn grade aggregation worker",
+    );
   }
 }
 

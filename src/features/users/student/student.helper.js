@@ -3,9 +3,11 @@ const { Types } = require("mongoose");
 
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
-const { ReThrowHelperError } = require("../../../core/helper_error");
 const StudentModel = require("./student.model");
 const AcademicYearModel = require("../../academic/enrollment/academic_year.model");
+
+// *************** IMPORT HELPER FUNCTION ***************
+const { ReThrowHelperError } = require("../../../core/helper_error");
 
 // *************** IMPORT VALIDATOR ***************
 const {

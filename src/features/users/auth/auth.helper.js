@@ -4,9 +4,13 @@ const jwt = require("jsonwebtoken");
 
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
-const { ReThrowHelperError } = require("../../../core/helper_error");
 const UserModel = require("../user/user.model");
 const config = require("../../../core/config");
+
+// *************** IMPORT HELPER FUNCTION ***************
+const { ReThrowHelperError } = require("../../../core/helper_error");
+
+// *************** IMPORT VALIDATOR ***************
 const { ValidateAndSanitizeLogin } = require("./auth.validator");
 
 // *************** GLOBAL VARIABLES ***************
