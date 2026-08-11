@@ -6,8 +6,8 @@ const { ValidateInputWithJoi } = require("../../../shared/validator/joi.validato
 
 // *************** VALIDATION SCHEMA FOR LOGIN ***************
 const LoginSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().min(8).required(),
+  email: Joi.string().email().trim().max(255).required(),
+  password: Joi.string().min(8).max(128).required(),
 });
 
 // *************** VALIDATE AND SANITIZE LOGIN ***************

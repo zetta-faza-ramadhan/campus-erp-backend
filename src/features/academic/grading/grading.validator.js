@@ -15,11 +15,12 @@ const SubmitTestGradesSchema = Joi.object({
     .items(
       Joi.object({
         student_id: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
-        score: Joi.number().min(0).max(100).required(),
+        score: Joi.number().min(0).max(100).precision(2).required(),
       }),
     )
     .unique("student_id")
     .min(1)
+    .max(200)
     .required(),
 });
 
@@ -39,7 +40,7 @@ function ValidateAndSanitizeSubmitTestGrades(input) {
 
 // *************** VALIDATION SCHEMA FOR SPAWN GRADE AGGREGATOR ***************
 const SpawnGradeAggregatorSchema = Joi.object({
-  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).required(),
+  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(500).required(),
   testId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
   academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
 });
@@ -60,7 +61,7 @@ function ValidateAndSanitizeSpawnGradeAggregator(input) {
 
 // *************** VALIDATION SCHEMA FOR AGGREGATION PARAMS ***************
 const AggregationParamsSchema = Joi.object({
-  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).unique().required(),
+  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(500).unique().required(),
   academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
   hierarchy: Joi.object({
     block: Joi.object({

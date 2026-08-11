@@ -13,6 +13,7 @@ const EnrollStudentsSchema = Joi.object({
   student_ids: Joi.array()
     .items(Joi.string().regex(OBJECT_ID_PATTERN))
     .min(1)
+    .max(500)
     .required(),
 });
 
