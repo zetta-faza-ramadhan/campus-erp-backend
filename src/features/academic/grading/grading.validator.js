@@ -63,8 +63,12 @@ const AggregationParamsSchema = Joi.object({
   studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).unique().required(),
   academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
   hierarchy: Joi.object({
-    block: Joi.object().unknown(true).required(),
+    block: Joi.object({
+      _id: Joi.any().required(),
+      grading_rules: Joi.array().required(),
+    }).required(),
     subjects: Joi.array().required(),
+    testIds: Joi.array().optional(),
   }).optional(),
   grades: Joi.array().optional(),
   gradeByKey: Joi.any().optional(),
