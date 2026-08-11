@@ -5,6 +5,7 @@ const cors = require("cors");
 // *************** IMPORT MODULE ***************
 const config = require("./core/config");
 const dbConnection = require("./core/db");
+const logger = require("./core/logger");
 const { CreateApolloMiddleware } = require("./core/apollo");
 const systemSchema = require("./features/system");
 const curriculumSchema = require("./features/academic/curriculum");
@@ -73,7 +74,10 @@ async function StartServer() {
   app.use("/graphql", graphqlMiddleware);
 
   app.listen(config.port, () => {
-    console.log(`Server running on http://localhost:${config.port}/graphql`);
+    logger.info(
+      { port: config.port },
+      `Server running on http://localhost:${config.port}/graphql`,
+    );
   });
 }
 

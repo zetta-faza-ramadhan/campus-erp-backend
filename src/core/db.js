@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 
 // *************** IMPORT MODULE ***************
 const config = require("./config");
+const logger = require("./logger");
 
 /**
  * Connects to MongoDB using the configured URI from config.js.
@@ -16,20 +17,20 @@ async function ConnectDatabase() {
 
 // *************** CONNECT DATABASE ***************
 ConnectDatabase().catch((err) => {
-  console.error("Failed to connect to MongoDB:", err);
+  logger.error({ err }, "Failed to connect to MongoDB");
   process.exit(1);
 });
 
 mongoose.connection.on("connected", () => {
-  console.log("MongoDB connected successfully");
+  logger.info("MongoDB connected successfully");
 });
 
 mongoose.connection.on("error", (err) => {
-  console.error("MongoDB connection error:", err);
+  logger.error({ err }, "MongoDB connection error");
 });
 
 mongoose.connection.on("disconnected", () => {
-  console.log("MongoDB disconnected");
+  logger.info("MongoDB disconnected");
 });
 
 // *************** EXPORT MODULE ***************
