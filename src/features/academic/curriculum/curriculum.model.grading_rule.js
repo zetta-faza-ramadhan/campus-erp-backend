@@ -1,5 +1,5 @@
 // *************** IMPORT LIBRARY ***************
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 // *************** GLOBAL VARIABLES ***************
 const Schema = mongoose.Schema;
@@ -13,7 +13,7 @@ const GradingRuleSchema = new Schema(
     operator: {
       type: String,
       required: true,
-      enum: [">", ">=", "<", "<=", "=="],
+      enum: ['>', '>=', '<', '<=', '=='],
     },
     // Score threshold that triggers this grading rule
     threshold: { type: Number, required: true },

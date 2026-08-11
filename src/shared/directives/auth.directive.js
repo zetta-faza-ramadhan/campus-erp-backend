@@ -1,10 +1,10 @@
 // *************** IMPORT LIBRARY ***************
-const { mapSchema, getDirective, MapperKind } = require("@graphql-tools/utils");
-const { defaultFieldResolver } = require("graphql");
+const { mapSchema, getDirective, MapperKind } = require('@graphql-tools/utils');
+const { defaultFieldResolver } = require('graphql');
 
 // *************** IMPORT MODULE ***************
-const AppError = require("../../core/error");
-const { NormalizeGqlError } = require("../../core/graphql_error");
+const AppError = require('../../core/error');
+const { NormalizeGqlError } = require('../../core/graphql_error');
 
 // *************** GLOBAL VARIABLES ***************
 const AUTH_DIRECTIVE_SDL = `
@@ -18,8 +18,8 @@ const AUTH_DIRECTIVE_SDL = `
 
 // *************** ROLE HIERARCHY ***************
 const ROLE_HIERARCHY = {
-  ADMIN: ["ADMIN", "TEACHER"],
-  TEACHER: ["TEACHER"],
+  ADMIN: ['ADMIN', 'TEACHER'],
+  TEACHER: ['TEACHER'],
 };
 
 // *************** DIRECTIVE TRANSFORMER ***************
@@ -32,7 +32,7 @@ const ROLE_HIERARCHY = {
  * @param {string} directiveName - The directive name (default: 'auth').
  * @returns {Object} The transformed schema.
  */
-function AuthDirectiveTransformer(schema, directiveName = "auth") {
+function AuthDirectiveTransformer(schema, directiveName = 'auth') {
   return mapSchema(schema, {
     // *************** Field mapper: detect @auth and wrap the resolver
     /**
@@ -43,14 +43,10 @@ function AuthDirectiveTransformer(schema, directiveName = "auth") {
      * @returns {Object} The (possibly wrapped) fieldConfig.
      */
     [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
-      const authDirective = getDirective(
-        schema,
-        fieldConfig,
-        directiveName,
-      )?.[0];
+      const authDirective = getDirective(schema, fieldConfig, directiveName)?.[0];
       if (!authDirective) return fieldConfig;
 
-      const requiredRole = authDirective.requires || "ADMIN";
+      const requiredRole = authDirective.requires || 'ADMIN';
       const { resolve = defaultFieldResolver } = fieldConfig;
 
       // *************** Override resolver with role check
@@ -68,17 +64,13 @@ function AuthDirectiveTransformer(schema, directiveName = "auth") {
         try {
           // *************** Check if user is authenticated
           if (!context.user) {
-            throw new AppError(
-              "UNAUTHENTICATED",
-              401,
-              "You must be logged in.",
-            );
+            throw new AppError('UNAUTHENTICATED', 401, 'You must be logged in.');
           }
 
           // *************** Check if user has the required role
           const allowedRoles = ROLE_HIERARCHY[context.user.role] || [];
           if (!allowedRoles.includes(requiredRole)) {
-            throw new AppError("FORBIDDEN", 403, "You do not have permission.");
+            throw new AppError('FORBIDDEN', 403, 'You do not have permission.');
           }
 
           // *************** Authorized — execute the original resolver

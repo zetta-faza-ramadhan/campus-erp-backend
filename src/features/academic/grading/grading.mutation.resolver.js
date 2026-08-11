@@ -1,13 +1,11 @@
 // *************** IMPORT MODULE ***************
-const { NormalizeGqlError } = require("../../../core/graphql_error");
+const { NormalizeGqlError } = require('../../../core/graphql_error');
 
 // *************** IMPORT VALIDATOR ***************
-const {
-  ValidateAndSanitizeSubmitTestGrades,
-} = require("./grading.validator");
+const { ValidateAndSanitizeSubmitTestGrades } = require('./grading.validator');
 
 // *************** IMPORT HELPER FUNCTION ***************
-const { SubmitTestGradesHelper } = require("./grading.helper");
+const { SubmitTestGradesHelper } = require('./grading.helper');
 
 // *************** MUTATION ***************
 

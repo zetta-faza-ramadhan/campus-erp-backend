@@ -1,11 +1,9 @@
 // *************** IMPORT LIBRARY ***************
-const Joi = require("joi");
+const Joi = require('joi');
 
 // *************** IMPORT VALIDATOR ***************
-const { OBJECT_ID_PATTERN } = require("../../../core/validators");
-const {
-  ValidateInputWithJoi,
-} = require("../../../shared/validator/joi.validator");
+const { OBJECT_ID_PATTERN } = require('../../../core/validators');
+const { ValidateInputWithJoi } = require('../../../shared/validator/joi.validator');
 
 // *************** VALIDATION SCHEMA FOR STUDENT ***************
 const StudentSchema = Joi.object({
@@ -20,7 +18,7 @@ const GetStudentsByAcademicYearSchema = Joi.object({
   academic_year_id: Joi.string().regex(OBJECT_ID_PATTERN).trim().required(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
-  search: Joi.string().trim().allow("").optional(),
+  search: Joi.string().trim().allow('').optional(),
 });
 
 // *************** VALIDATE AND SANITIZE: STUDENT ***************

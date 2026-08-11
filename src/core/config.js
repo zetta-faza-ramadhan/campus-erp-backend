@@ -1,42 +1,26 @@
 // *************** IMPORT LIBRARY ***************
-require("dotenv").config();
+require('dotenv').config();
 
 // *************** IMPORT MODULE ***************
-const AppError = require("./error.js");
+const AppError = require('./error.js');
 
 // *************** GLOBAL VARIABLES ***************
-const ALLOWED_NODE_ENVS = ["development", "production", "test"];
-const nodeEnv = process.env.NODE_ENV || "development";
+const ALLOWED_NODE_ENVS = ['development', 'production', 'test'];
+const nodeEnv = process.env.NODE_ENV || 'development';
 // *************** Required one-minute audit schedule; intentionally not overridable
-const AUDIT_CRON = "* * * * *";
+const AUDIT_CRON = '* * * * *';
 
 // *************** VALIDATE ENVIRONMENT VARIABLES ***************
 if (!process.env.MONGO_URI || !process.env.PORT || !process.env.JWT_SECRET) {
-  throw new AppError(
-    "CONFIG_ERROR",
-    500,
-    "MONGO_URI, PORT and JWT_SECRET must be defined in .env file",
-  );
+  throw new AppError('CONFIG_ERROR', 500, 'MONGO_URI, PORT and JWT_SECRET must be defined in .env file');
 }
 
 if (!ALLOWED_NODE_ENVS.includes(nodeEnv)) {
-  throw new AppError(
-    "CONFIG_ERROR",
-    500,
-    "NODE_ENV must be one of development, production, test",
-  );
+  throw new AppError('CONFIG_ERROR', 500, 'NODE_ENV must be one of development, production, test');
 }
 
-if (
-  !process.env.SMTP_HOST ||
-  !process.env.SMTP_USER ||
-  !process.env.SMTP_PASS
-) {
-  throw new AppError(
-    "CONFIG_ERROR",
-    500,
-    "SMTP_HOST, SMTP_USER and SMTP_PASS must be defined in .env file",
-  );
+if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+  throw new AppError('CONFIG_ERROR', 500, 'SMTP_HOST, SMTP_USER and SMTP_PASS must be defined in .env file');
 }
 
 // *************** EXPORT MODULE ***************
@@ -54,9 +38,9 @@ module.exports = {
     port: Number(process.env.SMTP_PORT) || 2525,
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
-    from: process.env.SMTP_FROM || "alert@campus.edu",
+    from: process.env.SMTP_FROM || 'alert@campus.edu',
   },
-  alertEmail: process.env.ALERT_EMAIL || "alert@campus.edu",
+  alertEmail: process.env.ALERT_EMAIL || 'alert@campus.edu',
 
   // *************** Run the missing-grade audit every minute
   auditCron: AUDIT_CRON,

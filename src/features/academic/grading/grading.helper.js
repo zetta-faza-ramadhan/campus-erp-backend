@@ -1,22 +1,19 @@
 // *************** IMPORT LIBRARY ***************
-const path = require("path");
-const { Worker } = require("worker_threads");
+const path = require('path');
+const { Worker } = require('worker_threads');
 
 // *************** IMPORT MODULE ***************
-const AppError = require("../../../core/error");
-const logger = require("../../../core/logger");
-const TestModel = require("../curriculum/curriculum.model.test");
-const StudentModel = require("../../users/student/student.model");
-const StudentGradeModel = require("./student_grade.model");
+const AppError = require('../../../core/error');
+const logger = require('../../../core/logger');
+const TestModel = require('../curriculum/curriculum.model.test');
+const StudentModel = require('../../users/student/student.model');
+const StudentGradeModel = require('./student_grade.model');
 
 // *************** IMPORT VALIDATOR ***************
-const {
-  ValidateAndSanitizeSubmitTestGrades,
-  ValidateAndSanitizeSpawnGradeAggregator,
-} = require("./grading.validator");
+const { ValidateAndSanitizeSubmitTestGrades, ValidateAndSanitizeSpawnGradeAggregator } = require('./grading.validator');
 
 // *************** IMPORT HELPER FUNCTION ***************
-const { ReThrowHelperError } = require("../../../core/helper_error");
+const { ReThrowHelperError } = require('../../../core/helper_error');
 
 // *************** START: Grading Helper Function ***************
 
@@ -54,14 +51,14 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
       deleted_at: null,
     }).lean();
     if (!test) {
-      throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
+      throw new AppError('TEST_NOT_FOUND', 404, 'Test not found.');
     }
 
     // *************** Extract all student IDs into a flat array
     const extractedStudentIds = grades.map((grade) => grade.student_id);
 
     // *************** Find all valid, non-deleted students in a single query
-    const validStudentIds = await StudentModel.distinct("_id", {
+    const validStudentIds = await StudentModel.distinct('_id', {
       _id: { $in: extractedStudentIds },
       deleted_at: null,
     });
@@ -70,11 +67,7 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
     // *************** Validate that every student exists and is not deleted
     for (const grade of grades) {
       if (!validStudentIdSet.has(grade.student_id.toLowerCase())) {
-        throw new AppError(
-          "INVALID_STUDENT_REFERENCE",
-          400,
-          "One or more student IDs are invalid or deleted.",
-        );
+        throw new AppError('INVALID_STUDENT_REFERENCE', 400, 'One or more student IDs are invalid or deleted.');
       }
     }
 
@@ -98,7 +91,7 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
 
     return insertedGrades;
   } catch (err) {
-    ReThrowHelperError(err, "submitting grades");
+    ReThrowHelperError(err, 'submitting grades');
   }
 }
 
@@ -131,18 +124,12 @@ function SpawnGradeAggregator({ studentIds, testId, academicYearId }) {
       academic_year_id: academicYearId,
     });
 
-    const worker = new Worker(
-      path.join(__dirname, "../../../workers/grade_aggregator.worker.js"),
-      { workerData: payload },
-    );
+    const worker = new Worker(path.join(__dirname, '../../../workers/grade_aggregator.worker.js'), { workerData: payload });
 
     // *************** Attach listeners to log worker crashes/failures/completion
-    logger.AttachWorkerListeners(worker, "grade_aggregator");
+    logger.AttachWorkerListeners(worker, 'grade_aggregator');
   } catch (err) {
-    logger.error(
-      { operation: "grade_aggregator.spawn", err },
-      "Failed to spawn grade aggregation worker",
-    );
+    logger.error({ operation: 'grade_aggregator.spawn', err }, 'Failed to spawn grade aggregation worker');
   }
 }
 

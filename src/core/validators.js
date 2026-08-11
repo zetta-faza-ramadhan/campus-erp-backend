@@ -1,5 +1,5 @@
 // *************** IMPORT LIBRARY ***************
-const Joi = require("joi");
+const Joi = require('joi');
 
 // *************** GLOBAL VARIABLES ***************
 const OBJECT_ID_PATTERN = /^[a-fA-F0-9]{24}$/;

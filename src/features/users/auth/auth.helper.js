@@ -1,22 +1,21 @@
 // *************** IMPORT LIBRARY ***************
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 // *************** IMPORT MODULE ***************
-const AppError = require("../../../core/error");
-const UserModel = require("../user/user.model");
-const config = require("../../../core/config");
+const AppError = require('../../../core/error');
+const UserModel = require('../user/user.model');
+const config = require('../../../core/config');
 
 // *************** IMPORT HELPER FUNCTION ***************
-const { ReThrowHelperError } = require("../../../core/helper_error");
+const { ReThrowHelperError } = require('../../../core/helper_error');
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAndSanitizeLogin } = require("./auth.validator");
+const { ValidateAndSanitizeLogin } = require('./auth.validator');
 
 // *************** GLOBAL VARIABLES ***************
 const JWT_SECRET = config.jwt.secret;
-const DUMMY_PASSWORD_HASH =
-  "$2b$10$P4VVqjeWA2M5oUxL7aNqleheTH5JjCpr60KdRtrXFnEaZW2tZmcVe";
+const DUMMY_PASSWORD_HASH = '$2b$10$P4VVqjeWA2M5oUxL7aNqleheTH5JjCpr60KdRtrXFnEaZW2tZmcVe';
 
 // *************** START: LoginHelper ***************
 
@@ -37,35 +36,25 @@ async function LoginHelper({ email, password }) {
     password = value.password;
 
     // *************** Find user by email
-    const user = await UserModel.findOne({ email, deleted_at: null })
-      .select("email password role")
-      .lean();
+    const user = await UserModel.findOne({ email, deleted_at: null }).select('email password role').lean();
     if (!user) {
       // *************** Equalize timing by hashing against a dummy password
       await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
-      throw new AppError(
-        "INVALID_CREDENTIALS",
-        401,
-        "Invalid email or password.",
-      );
+      throw new AppError('INVALID_CREDENTIALS', 401, 'Invalid email or password.');
     }
 
     // *************** Compare password with hash
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      throw new AppError(
-        "INVALID_CREDENTIALS",
-        401,
-        "Invalid email or password.",
-      );
+      throw new AppError('INVALID_CREDENTIALS', 401, 'Invalid email or password.');
     }
     // *************** Sign JWT with userId and role
     const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: "8h",
+      expiresIn: '8h',
     });
     return token;
   } catch (err) {
-    ReThrowHelperError(err, "logging in");
+    ReThrowHelperError(err, 'logging in');
   }
 }
 // *************** END: LoginHelper ***************

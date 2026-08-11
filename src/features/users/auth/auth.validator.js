@@ -1,8 +1,8 @@
 // *************** IMPORT LIBRARY ***************
-const Joi = require("joi");
+const Joi = require('joi');
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateInputWithJoi } = require("../../../shared/validator/joi.validator");
+const { ValidateInputWithJoi } = require('../../../shared/validator/joi.validator');
 
 // *************** VALIDATION SCHEMA FOR LOGIN ***************
 const LoginSchema = Joi.object({

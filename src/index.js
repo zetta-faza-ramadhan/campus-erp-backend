@@ -1,20 +1,20 @@
 // *************** IMPORT LIBRARY ***************
-const express = require("express");
-const cors = require("cors");
+const express = require('express');
+const cors = require('cors');
 
 // *************** IMPORT MODULE ***************
-const config = require("./core/config");
-const dbConnection = require("./core/db");
-const logger = require("./core/logger");
-const { CreateApolloMiddleware } = require("./core/apollo");
-const systemSchema = require("./features/system");
-const curriculumSchema = require("./features/academic/curriculum");
-const studentSchema = require("./features/users/student");
-const enrollmentSchema = require("./features/academic/enrollment");
-const gradingSchema = require("./features/academic/grading");
-const authSchema = require("./features/users/auth");
-const AuthMiddleware = require("./shared/middlewares/auth.middleware");
-const { InitializeGradeAuditorJob } = require("./jobs/missing_grades.job");
+const config = require('./core/config');
+const dbConnection = require('./core/db');
+const logger = require('./core/logger');
+const { CreateApolloMiddleware } = require('./core/apollo');
+const systemSchema = require('./features/system');
+const curriculumSchema = require('./features/academic/curriculum');
+const studentSchema = require('./features/users/student');
+const enrollmentSchema = require('./features/academic/enrollment');
+const gradingSchema = require('./features/academic/grading');
+const authSchema = require('./features/users/auth');
+const AuthMiddleware = require('./shared/middlewares/auth.middleware');
+const { InitializeGradeAuditorJob } = require('./jobs/missing_grades.job');
 
 // *************** INITIALIZE APPLICATION ***************
 const app = express();
@@ -49,7 +49,7 @@ function MergeResolvers(...schemas) {
  */
 async function StartServer() {
   // *************** Initialize grader audit job once the DB is connected
-  dbConnection.once("connected", () => {
+  dbConnection.once('connected', () => {
     InitializeGradeAuditorJob();
   });
 
@@ -62,22 +62,12 @@ async function StartServer() {
       gradingSchema.typeDefs,
       authSchema.typeDefs,
     ],
-    resolvers: MergeResolvers(
-      systemSchema,
-      curriculumSchema,
-      studentSchema,
-      enrollmentSchema,
-      gradingSchema,
-      authSchema,
-    ),
+    resolvers: MergeResolvers(systemSchema, curriculumSchema, studentSchema, enrollmentSchema, gradingSchema, authSchema),
   });
-  app.use("/graphql", graphqlMiddleware);
+  app.use('/graphql', graphqlMiddleware);
 
   app.listen(config.port, () => {
-    logger.info(
-      { port: config.port },
-      `Server running on http://localhost:${config.port}/graphql`,
-    );
+    logger.info({ port: config.port }, `Server running on http://localhost:${config.port}/graphql`);
   });
 }
 

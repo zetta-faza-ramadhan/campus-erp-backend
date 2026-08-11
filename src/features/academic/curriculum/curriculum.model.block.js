@@ -1,8 +1,8 @@
 // *************** IMPORT LIBRARY ***************
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 // *************** IMPORT MODULE ***************
-const GradingRuleSchema = require("./curriculum.model.grading_rule");
+const GradingRuleSchema = require('./curriculum.model.grading_rule');
 
 // *************** GLOBAL VARIABLES ***************
 const Schema = mongoose.Schema;
@@ -20,15 +20,15 @@ const BlockSchema = new Schema(
     deleted_at: { type: Date, default: null },
   },
   {
-    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
-    collection: "blocks",
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    collection: 'blocks',
   },
 );
 
 BlockSchema.index({ deleted_at: 1 });
 
 // *************** DEFINE MODEL ***************
-const BlockModel = mongoose.model("Block", BlockSchema);
+const BlockModel = mongoose.model('Block', BlockSchema);
 
 // *************** EXPORT MODULE ***************
 module.exports = BlockModel;

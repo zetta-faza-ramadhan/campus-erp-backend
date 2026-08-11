@@ -1,6 +1,6 @@
 // *************** IMPORT LIBRARY ***************
-const { GraphQLError } = require("graphql");
-const Joi = require("joi");
+const { GraphQLError } = require('graphql');
+const Joi = require('joi');
 
 // *************** NORMALIZE GQL ERROR ***************
 /**
@@ -13,7 +13,7 @@ function NormalizeGqlError(err) {
   if (err instanceof GraphQLError) throw err;
   if (Joi.isError(err)) {
     throw new GraphQLError(err.message, {
-      extensions: { code: "VALIDATION_ERROR", status: 400 },
+      extensions: { code: 'VALIDATION_ERROR', status: 400 },
     });
   }
   if (err.isOperational) {
@@ -21,13 +21,13 @@ function NormalizeGqlError(err) {
       extensions: { code: err.code, status: err.statusCode },
     });
   }
-  throw new GraphQLError("Internal server error", {
-    extensions: { code: "INTERNAL_ERROR", status: 500 },
+  throw new GraphQLError('Internal server error', {
+    extensions: { code: 'INTERNAL_ERROR', status: 500 },
   });
 }
 
 // *************** NORMALIZE CLIENT ERRORS ***************
-const CLIENT_ERROR_CODES = new Set(["BAD_USER_INPUT", "GRAPHQL_VALIDATION_FAILED"]);
+const CLIENT_ERROR_CODES = new Set(['BAD_USER_INPUT', 'GRAPHQL_VALIDATION_FAILED']);
 
 /**
  * Apollo Server plugin lifecycle hook invoked when a request starts.
@@ -73,7 +73,7 @@ function CreateNormalizeClientError() {
  * @param {Object} body - Apollo HTTP response body ({ kind: "single", singleResult }).
  */
 function NormalizeClientErrors(body) {
-  if (!body || body.kind !== "single" || !body.singleResult.errors) return;
+  if (!body || body.kind !== 'single' || !body.singleResult.errors) return;
   for (const err of body.singleResult.errors) {
     if (!err.extensions || err.extensions.status !== undefined) continue;
     if (CLIENT_ERROR_CODES.has(err.extensions.code)) {

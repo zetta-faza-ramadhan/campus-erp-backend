@@ -1,15 +1,15 @@
 // *************** IMPORT LIBRARY ***************
-const { Types } = require("mongoose");
+const { Types } = require('mongoose');
 
 // *************** IMPORT MODULE ***************
-const AppError = require("../../../core/error");
-const BlockModel = require("./curriculum.model.block");
-const SubjectModel = require("./curriculum.model.subject");
-const TestModel = require("./curriculum.model.test");
-const StudentGradeModel = require("../grading/student_grade.model");
+const AppError = require('../../../core/error');
+const BlockModel = require('./curriculum.model.block');
+const SubjectModel = require('./curriculum.model.subject');
+const TestModel = require('./curriculum.model.test');
+const StudentGradeModel = require('../grading/student_grade.model');
 
 // *************** IMPORT HELPER FUNCTION ***************
-const { ReThrowHelperError } = require("../../../core/helper_error");
+const { ReThrowHelperError } = require('../../../core/helper_error');
 
 // *************** IMPORT VALIDATOR ***************
 const {
@@ -21,7 +21,7 @@ const {
   ValidateAndSanitizeUpdateTest,
   ValidateAndSanitizeId,
   ValidateAndSanitizeEntityLockParam,
-} = require("./curriculum.validator");
+} = require('./curriculum.validator');
 
 /**
  * Validates that the total weightage of subjects in a block does not exceed 100%.
@@ -36,21 +36,14 @@ async function ValidateSubjectWeightage(blockId, newWeightage, excludeId) {
     const filter = { block_id: blockId, deleted_at: null };
     // *************** EXCLUDE THE EDITED RECORD FROM THE TOTAL
     if (excludeId) filter._id = { $ne: excludeId };
-    const subjects = await SubjectModel.find(filter).select("weightage").lean();
-    const totalWeightage = subjects.reduce(
-      (sum, subject) => sum + subject.weightage,
-      0,
-    );
+    const subjects = await SubjectModel.find(filter).select('weightage').lean();
+    const totalWeightage = subjects.reduce((sum, subject) => sum + subject.weightage, 0);
     const capped = Math.round((totalWeightage + newWeightage) * 100) / 100;
     if (capped > 100) {
-      throw new AppError(
-        "WEIGHTAGE_LIMIT_EXCEEDED",
-        400,
-        "Total weightage of subjects exceeds 100%.",
-      );
+      throw new AppError('WEIGHTAGE_LIMIT_EXCEEDED', 400, 'Total weightage of subjects exceeds 100%.');
     }
   } catch (err) {
-    ReThrowHelperError(err, "validating subject weightage");
+    ReThrowHelperError(err, 'validating subject weightage');
   }
 }
 
@@ -67,18 +60,14 @@ async function ValidateTestWeightage(subjectId, newWeightage, excludeId) {
     const filter = { subject_id: subjectId, deleted_at: null };
     // *************** EXCLUDE THE EDITED RECORD FROM THE TOTAL
     if (excludeId) filter._id = { $ne: excludeId };
-    const tests = await TestModel.find(filter).select("weightage").lean();
+    const tests = await TestModel.find(filter).select('weightage').lean();
     const totalWeightage = tests.reduce((sum, test) => sum + test.weightage, 0);
     const capped = Math.round((totalWeightage + newWeightage) * 100) / 100;
     if (capped > 100) {
-      throw new AppError(
-        "WEIGHTAGE_LIMIT_EXCEEDED",
-        400,
-        "Total weightage of tests exceeds 100%.",
-      );
+      throw new AppError('WEIGHTAGE_LIMIT_EXCEEDED', 400, 'Total weightage of tests exceeds 100%.');
     }
   } catch (err) {
-    ReThrowHelperError(err, "validating test weightage");
+    ReThrowHelperError(err, 'validating test weightage');
   }
 }
 
@@ -100,22 +89,22 @@ async function CheckEntityLocked(entityType, entityId) {
     let testIds;
 
     // *************** Resolve the entity to its descendant test IDs
-    if (entityType === "test") {
+    if (entityType === 'test') {
       // *************** The test itself is the only descendant
       testIds = [entityId];
-    } else if (entityType === "subject") {
+    } else if (entityType === 'subject') {
       // ***************  Collect all active tests under this subject
-      testIds = await TestModel.distinct("_id", {
+      testIds = await TestModel.distinct('_id', {
         subject_id: entityId,
         deleted_at: null,
       });
     } else {
       // *************** Collect all active subjects, then all active tests under those subjects
-      const subjectIds = await SubjectModel.distinct("_id", {
+      const subjectIds = await SubjectModel.distinct('_id', {
         block_id: entityId,
         deleted_at: null,
       });
-      testIds = await TestModel.distinct("_id", {
+      testIds = await TestModel.distinct('_id', {
         subject_id: { $in: subjectIds },
         deleted_at: null,
       });
@@ -131,14 +120,10 @@ async function CheckEntityLocked(entityType, entityId) {
       test_id: { $in: testIds },
     });
     if (gradeExists) {
-      throw new AppError(
-        "ENTITY_LOCKED_GRADES_EXIST",
-        409,
-        `${entityType} is locked due to existing grades.`,
-      );
+      throw new AppError('ENTITY_LOCKED_GRADES_EXIST', 409, `${entityType} is locked due to existing grades.`);
     }
   } catch (err) {
-    ReThrowHelperError(err, "checking the entity lock");
+    ReThrowHelperError(err, 'checking the entity lock');
   }
 }
 
@@ -153,7 +138,7 @@ async function GetBlocksHelper() {
   try {
     return await BlockModel.find({ deleted_at: null }).lean();
   } catch (err) {
-    ReThrowHelperError(err, "fetching blocks");
+    ReThrowHelperError(err, 'fetching blocks');
   }
 }
 
@@ -171,7 +156,7 @@ async function GetSubjectsHelper(blockId) {
       deleted_at: null,
     }).lean();
   } catch (err) {
-    ReThrowHelperError(err, "fetching subjects");
+    ReThrowHelperError(err, 'fetching subjects');
   }
 }
 
@@ -189,7 +174,7 @@ async function GetTestsHelper(subjectId) {
       deleted_at: null,
     }).lean();
   } catch (err) {
-    ReThrowHelperError(err, "fetching tests");
+    ReThrowHelperError(err, 'fetching tests');
   }
 }
 
@@ -220,7 +205,7 @@ async function CreateBlockHelper({ name, academicYear, gradingRules }) {
       grading_rules: gradingRules,
     });
   } catch (err) {
-    ReThrowHelperError(err, "creating the block");
+    ReThrowHelperError(err, 'creating the block');
   }
 }
 
@@ -254,18 +239,14 @@ async function UpdateBlockHelper({ _id, name, academicYear, gradingRules }) {
         grading_rules: gradingRules,
       }).filter(([, v]) => v !== undefined),
     );
-    await CheckEntityLocked("block", _id);
-    const updated = await BlockModel.findOneAndUpdate(
-      { _id, deleted_at: null },
-      fields,
-      { returnDocument: "after" },
-    );
+    await CheckEntityLocked('block', _id);
+    const updated = await BlockModel.findOneAndUpdate({ _id, deleted_at: null }, fields, { returnDocument: 'after' });
     if (!updated) {
-      throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
+      throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
     }
     return updated;
   } catch (err) {
-    ReThrowHelperError(err, "updating the block");
+    ReThrowHelperError(err, 'updating the block');
   }
 }
 
@@ -280,24 +261,14 @@ async function UpdateBlockHelper({ _id, name, academicYear, gradingRules }) {
 async function DeleteBlockHelper(_id) {
   try {
     _id = ValidateAndSanitizeId(_id);
-    await CheckEntityLocked("block", _id);
+    await CheckEntityLocked('block', _id);
     const now = new Date();
-    const deleted = await BlockModel.findOneAndUpdate(
-      { _id, deleted_at: null },
-      { deleted_at: now },
-      { returnDocument: "after" },
-    );
+    const deleted = await BlockModel.findOneAndUpdate({ _id, deleted_at: null }, { deleted_at: now }, { returnDocument: 'after' });
     if (!deleted) {
-      throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
+      throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
     }
-    const subjects = await SubjectModel.find(
-      { block_id: _id, deleted_at: null },
-      { _id: 1 },
-    ).lean();
-    await SubjectModel.updateMany(
-      { block_id: _id, deleted_at: null },
-      { deleted_at: now },
-    );
+    const subjects = await SubjectModel.find({ block_id: _id, deleted_at: null }, { _id: 1 }).lean();
+    await SubjectModel.updateMany({ block_id: _id, deleted_at: null }, { deleted_at: now });
     await TestModel.updateMany(
       {
         subject_id: { $in: subjects.map((subject) => subject._id) },
@@ -307,7 +278,7 @@ async function DeleteBlockHelper(_id) {
     );
     return deleted;
   } catch (err) {
-    ReThrowHelperError(err, "deleting the block");
+    ReThrowHelperError(err, 'deleting the block');
   }
 }
 
@@ -341,7 +312,7 @@ async function CreateSubjectHelper({ name, blockId, weightage, gradingRules }) {
       deleted_at: null,
     });
     if (!block) {
-      throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
+      throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
     }
     await ValidateSubjectWeightage(blockId, weightage);
     return await SubjectModel.create({
@@ -351,7 +322,7 @@ async function CreateSubjectHelper({ name, blockId, weightage, gradingRules }) {
       grading_rules: gradingRules,
     });
   } catch (err) {
-    ReThrowHelperError(err, "creating the subject");
+    ReThrowHelperError(err, 'creating the subject');
   }
 }
 
@@ -368,13 +339,7 @@ async function CreateSubjectHelper({ name, blockId, weightage, gradingRules }) {
  * @throws {AppError} 404 - Subject not found.
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
-async function UpdateSubjectHelper({
-  _id,
-  name,
-  blockId,
-  weightage,
-  gradingRules,
-}) {
+async function UpdateSubjectHelper({ _id, name, blockId, weightage, gradingRules }) {
   try {
     const value = ValidateAndSanitizeUpdateSubject({
       _id,
@@ -396,15 +361,14 @@ async function UpdateSubjectHelper({
         grading_rules: gradingRules,
       }).filter(([, v]) => v !== undefined),
     );
-    if (fields.block_id && typeof fields.block_id === "string")
-      fields.block_id = new Types.ObjectId(fields.block_id);
-    await CheckEntityLocked("subject", _id);
+    if (fields.block_id && typeof fields.block_id === 'string') fields.block_id = new Types.ObjectId(fields.block_id);
+    await CheckEntityLocked('subject', _id);
     const existing = await SubjectModel.findOne({
       _id,
       deleted_at: null,
-    }).select("block_id weightage");
+    }).select('block_id weightage');
     if (!existing) {
-      throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
+      throw new AppError('SUBJECT_NOT_FOUND', 404, 'Subject not found.');
     }
     const targetBlockId = fields.block_id ?? existing.block_id;
     if (fields.block_id) {
@@ -414,19 +378,15 @@ async function UpdateSubjectHelper({
         deleted_at: null,
       });
       if (!targetBlock) {
-        throw new AppError("BLOCK_NOT_FOUND", 404, "Block not found.");
+        throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
       }
     }
     const targetWeightage = fields.weightage ?? existing.weightage;
     await ValidateSubjectWeightage(targetBlockId, targetWeightage, _id);
-    const updated = await SubjectModel.findOneAndUpdate(
-      { _id, deleted_at: null },
-      fields,
-      { returnDocument: "after" },
-    );
+    const updated = await SubjectModel.findOneAndUpdate({ _id, deleted_at: null }, fields, { returnDocument: 'after' });
     return updated;
   } catch (err) {
-    ReThrowHelperError(err, "updating the subject");
+    ReThrowHelperError(err, 'updating the subject');
   }
 }
 
@@ -441,23 +401,16 @@ async function UpdateSubjectHelper({
 async function DeleteSubjectHelper(_id) {
   try {
     _id = ValidateAndSanitizeId(_id);
-    await CheckEntityLocked("subject", _id);
+    await CheckEntityLocked('subject', _id);
     const now = new Date();
-    const deleted = await SubjectModel.findOneAndUpdate(
-      { _id, deleted_at: null },
-      { deleted_at: now },
-      { returnDocument: "after" },
-    );
+    const deleted = await SubjectModel.findOneAndUpdate({ _id, deleted_at: null }, { deleted_at: now }, { returnDocument: 'after' });
     if (!deleted) {
-      throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
+      throw new AppError('SUBJECT_NOT_FOUND', 404, 'Subject not found.');
     }
-    await TestModel.updateMany(
-      { subject_id: _id, deleted_at: null },
-      { deleted_at: now },
-    );
+    await TestModel.updateMany({ subject_id: _id, deleted_at: null }, { deleted_at: now });
     return deleted;
   } catch (err) {
-    ReThrowHelperError(err, "deleting the subject");
+    ReThrowHelperError(err, 'deleting the subject');
   }
 }
 
@@ -491,7 +444,7 @@ async function CreateTestHelper({ name, subjectId, weightage, gradingRules }) {
       deleted_at: null,
     });
     if (!subject) {
-      throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
+      throw new AppError('SUBJECT_NOT_FOUND', 404, 'Subject not found.');
     }
     await ValidateTestWeightage(subjectId, weightage);
     return await TestModel.create({
@@ -501,7 +454,7 @@ async function CreateTestHelper({ name, subjectId, weightage, gradingRules }) {
       grading_rules: gradingRules,
     });
   } catch (err) {
-    ReThrowHelperError(err, "creating the test");
+    ReThrowHelperError(err, 'creating the test');
   }
 }
 
@@ -518,13 +471,7 @@ async function CreateTestHelper({ name, subjectId, weightage, gradingRules }) {
  * @throws {AppError} 404 - Test not found.
  * @throws {AppError} 400 - Total weightage exceeds 100%.
  */
-async function UpdateTestHelper({
-  _id,
-  name,
-  subjectId,
-  weightage,
-  gradingRules,
-}) {
+async function UpdateTestHelper({ _id, name, subjectId, weightage, gradingRules }) {
   try {
     const value = ValidateAndSanitizeUpdateTest({
       _id,
@@ -546,14 +493,11 @@ async function UpdateTestHelper({
         grading_rules: gradingRules,
       }).filter(([, v]) => v !== undefined),
     );
-    if (fields.subject_id && typeof fields.subject_id === "string")
-      fields.subject_id = new Types.ObjectId(fields.subject_id);
-    await CheckEntityLocked("test", _id);
-    const existing = await TestModel.findOne({ _id, deleted_at: null }).select(
-      "subject_id weightage",
-    );
+    if (fields.subject_id && typeof fields.subject_id === 'string') fields.subject_id = new Types.ObjectId(fields.subject_id);
+    await CheckEntityLocked('test', _id);
+    const existing = await TestModel.findOne({ _id, deleted_at: null }).select('subject_id weightage');
     if (!existing) {
-      throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
+      throw new AppError('TEST_NOT_FOUND', 404, 'Test not found.');
     }
     const targetSubjectId = fields.subject_id ?? existing.subject_id;
     if (fields.subject_id) {
@@ -563,19 +507,15 @@ async function UpdateTestHelper({
         deleted_at: null,
       });
       if (!targetSubject) {
-        throw new AppError("SUBJECT_NOT_FOUND", 404, "Subject not found.");
+        throw new AppError('SUBJECT_NOT_FOUND', 404, 'Subject not found.');
       }
     }
     const targetWeightage = fields.weightage ?? existing.weightage;
     await ValidateTestWeightage(targetSubjectId, targetWeightage, _id);
-    const updated = await TestModel.findOneAndUpdate(
-      { _id, deleted_at: null },
-      fields,
-      { returnDocument: "after" },
-    );
+    const updated = await TestModel.findOneAndUpdate({ _id, deleted_at: null }, fields, { returnDocument: 'after' });
     return updated;
   } catch (err) {
-    ReThrowHelperError(err, "updating the test");
+    ReThrowHelperError(err, 'updating the test');
   }
 }
 
@@ -590,18 +530,14 @@ async function UpdateTestHelper({
 async function DeleteTestHelper(_id) {
   try {
     _id = ValidateAndSanitizeId(_id);
-    await CheckEntityLocked("test", _id);
-    const deleted = await TestModel.findOneAndUpdate(
-      { _id, deleted_at: null },
-      { deleted_at: new Date() },
-      { returnDocument: "after" },
-    );
+    await CheckEntityLocked('test', _id);
+    const deleted = await TestModel.findOneAndUpdate({ _id, deleted_at: null }, { deleted_at: new Date() }, { returnDocument: 'after' });
     if (!deleted) {
-      throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
+      throw new AppError('TEST_NOT_FOUND', 404, 'Test not found.');
     }
     return deleted;
   } catch (err) {
-    ReThrowHelperError(err, "deleting the test");
+    ReThrowHelperError(err, 'deleting the test');
   }
 }
 

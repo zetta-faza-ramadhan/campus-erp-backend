@@ -1,9 +1,9 @@
 // *************** IMPORT LIBRARY ***************
-const { GraphQLError } = require("graphql");
-const Joi = require("joi");
+const { GraphQLError } = require('graphql');
+const Joi = require('joi');
 
 // *************** IMPORT MODULE ***************
-const AppError = require("./error");
+const AppError = require('./error');
 
 // *************** RE-THROW HELPER ERROR ***************
 /**
@@ -23,20 +23,10 @@ const AppError = require("./error");
  *   keeping the original error as its `cause`.
  */
 function ReThrowHelperError(err, action) {
-  if (
-    err instanceof AppError ||
-    err instanceof GraphQLError ||
-    Joi.isError(err) ||
-    err?.code === 11000
-  ) {
+  if (err instanceof AppError || err instanceof GraphQLError || Joi.isError(err) || err?.code === 11000) {
     throw err;
   }
-  throw new AppError(
-    "INTERNAL_ERROR",
-    500,
-    `Unexpected internal error while ${action}.`,
-    { cause: err },
-  );
+  throw new AppError('INTERNAL_ERROR', 500, `Unexpected internal error while ${action}.`, { cause: err });
 }
 
 // *************** EXPORT MODULE ***************

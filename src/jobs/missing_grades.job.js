@@ -1,21 +1,18 @@
 // *************** IMPORT LIBRARY ***************
-const cron = require("node-cron");
+const cron = require('node-cron');
 
 // *************** IMPORT MODULE ***************
-const config = require("../core/config");
-const logger = require("../core/logger");
-const AcademicYearModel = require("../features/academic/enrollment/academic_year.model");
-const NotificationLogModel = require("../features/system/notifications/notification_log.model");
-const { SendEmail } = require("../shared/services/email.service");
+const config = require('../core/config');
+const logger = require('../core/logger');
+const AcademicYearModel = require('../features/academic/enrollment/academic_year.model');
+const NotificationLogModel = require('../features/system/notifications/notification_log.model');
+const { SendEmail } = require('../shared/services/email.service');
 
 // *************** IMPORT VALIDATOR ***************
-const {
-  EscapeHtml,
-  SanitizeEmailSubject,
-} = require("../shared/validator/email.validator");
+const { EscapeHtml, SanitizeEmailSubject } = require('../shared/validator/email.validator');
 
 // *************** GLOBAL VARIABLES ***************
-const ALERT_TYPE = "MISSING_GRADE_ALERT";
+const ALERT_TYPE = 'MISSING_GRADE_ALERT';
 
 // *************** QUERY: FIND MISSING GRADES ***************
 /**
@@ -37,81 +34,75 @@ const ALERT_TYPE = "MISSING_GRADE_ALERT";
 async function QueryMissingGrades(batchSize = config.auditBatchSize) {
   return AcademicYearModel.aggregate([
     // *************** Only keep active, non-deleted academic years
-    { $match: { status: "ACTIVE", deleted_at: null } },
+    { $match: { status: 'ACTIVE', deleted_at: null } },
 
     // *************** Expand one row per enrolled student
-    { $unwind: "$student_ids" },
+    { $unwind: '$student_ids' },
 
     // *************** Expand one row per block offered that year
-    { $unwind: "$block_ids" },
+    { $unwind: '$block_ids' },
 
     // *************** Resolve the subjects belonging to this block
     {
       $lookup: {
-        from: "subjects",
-        let: { block_id: "$block_ids" },
+        from: 'subjects',
+        let: { block_id: '$block_ids' },
         pipeline: [
           {
             $match: {
               $expr: {
-                $and: [
-                  { $eq: ["$block_id", "$$block_id"] },
-                  { $eq: ["$deleted_at", null] },
-                ],
+                $and: [{ $eq: ['$block_id', '$$block_id'] }, { $eq: ['$deleted_at', null] }],
               },
             },
           },
         ],
-        as: "subjects",
+        as: 'subjects',
       },
     },
-    { $unwind: "$subjects" },
+    { $unwind: '$subjects' },
 
     // *************** Resolve the tests belonging to this subject
     {
       $lookup: {
-        from: "tests",
-        let: { subject_id: "$subjects._id" },
+        from: 'tests',
+        let: { subject_id: '$subjects._id' },
         pipeline: [
           {
             $match: {
               $expr: {
-                $and: [
-                  { $eq: ["$subject_id", "$$subject_id"] },
-                  { $eq: ["$deleted_at", null] },
-                ],
+                $and: [{ $eq: ['$subject_id', '$$subject_id'] }, { $eq: ['$deleted_at', null] }],
               },
             },
           },
         ],
-        as: "tests",
+        as: 'tests',
       },
     },
-    { $unwind: "$tests" },
+    { $unwind: '$tests' },
 
     // *************** Look for a grade on (student, test, academic year)
     {
       $lookup: {
-        from: "student_grades",
+        from: 'student_grades',
         let: {
-          student_id: "$student_ids",
-          test_id: "$tests._id",
-          academic_year_id: "$_id",
+          student_id: '$student_ids',
+          test_id: '$tests._id',
+          academic_year_id: '$_id',
         },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ["$student_id", "$$student_id"] },
-                  { $eq: ["$test_id", "$$test_id"] },
-                  { $eq: ["$academic_year_id", "$$academic_year_id"] },
+                  { $eq: ['$student_id', '$$student_id'] },
+                  { $eq: ['$test_id', '$$test_id'] },
+                  { $eq: ['$academic_year_id', '$$academic_year_id'] },
                 ],
               },
             },
           },
         ],
-        as: "grade",
+        as: 'grade',
       },
     },
 
@@ -121,27 +112,27 @@ async function QueryMissingGrades(batchSize = config.auditBatchSize) {
     // *************** Drop already-notified combos so the batch advances
     {
       $lookup: {
-        from: "notification_logs",
+        from: 'notification_logs',
         let: {
-          student_id: "$student_ids",
-          test_id: "$tests._id",
-          academic_year_id: "$_id",
+          student_id: '$student_ids',
+          test_id: '$tests._id',
+          academic_year_id: '$_id',
         },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ["$type", ALERT_TYPE] },
-                  { $eq: ["$student_id", "$$student_id"] },
-                  { $eq: ["$test_id", "$$test_id"] },
-                  { $eq: ["$academic_year_id", "$$academic_year_id"] },
+                  { $eq: ['$type', ALERT_TYPE] },
+                  { $eq: ['$student_id', '$$student_id'] },
+                  { $eq: ['$test_id', '$$test_id'] },
+                  { $eq: ['$academic_year_id', '$$academic_year_id'] },
                 ],
               },
             },
           },
         ],
-        as: "existing_alert",
+        as: 'existing_alert',
       },
     },
     { $match: { existing_alert: { $size: 0 } } },
@@ -149,24 +140,21 @@ async function QueryMissingGrades(batchSize = config.auditBatchSize) {
     // *************** Drop deleted/dangling students before batching
     {
       $lookup: {
-        from: "students",
-        let: { student_id: "$student_ids" },
+        from: 'students',
+        let: { student_id: '$student_ids' },
         pipeline: [
           {
             $match: {
               $expr: {
-                $and: [
-                  { $eq: ["$_id", "$$student_id"] },
-                  { $eq: ["$deleted_at", null] },
-                ],
+                $and: [{ $eq: ['$_id', '$$student_id'] }, { $eq: ['$deleted_at', null] }],
               },
             },
           },
         ],
-        as: "student",
+        as: 'student',
       },
     },
-    { $unwind: "$student" },
+    { $unwind: '$student' },
 
     // *************** Bound the working set handled by this tick
     { $limit: batchSize },
@@ -175,16 +163,16 @@ async function QueryMissingGrades(batchSize = config.auditBatchSize) {
     {
       $project: {
         _id: 0,
-        academic_year_id: "$_id",
-        academic_year_name: "$name",
-        student_id: "$student_ids",
+        academic_year_id: '$_id',
+        academic_year_name: '$name',
+        student_id: '$student_ids',
         student_name: {
-          $concat: ["$student.first_name", " ", "$student.last_name"],
+          $concat: ['$student.first_name', ' ', '$student.last_name'],
         },
-        student_email: "$student.email",
-        test_id: "$tests._id",
-        test_name: "$tests.name",
-        subject_name: "$subjects.name",
+        student_email: '$student.email',
+        test_id: '$tests._id',
+        test_name: '$tests.name',
+        subject_name: '$subjects.name',
       },
     },
   ]).allowDiskUse(true);
@@ -231,15 +219,9 @@ async function DispatchMissingGradeAlert(missing) {
 
   // *************** Dispatch the alert email (SMTP delivery stage)
   try {
-    await SendEmail(
-      config.alertEmail,
-      SanitizeEmailSubject(
-        `Missing grade: ${missing.student_name} — ${missing.test_name}`,
-      ),
-      htmlBody,
-    );
+    await SendEmail(config.alertEmail, SanitizeEmailSubject(`Missing grade: ${missing.student_name} — ${missing.test_name}`), htmlBody);
   } catch (err) {
-    err.alertStage = "smtp_delivery";
+    err.alertStage = 'smtp_delivery';
     throw err;
   }
 
@@ -252,7 +234,7 @@ async function DispatchMissingGradeAlert(missing) {
       academic_year_id: missing.academic_year_id,
     });
   } catch (err) {
-    err.alertStage = "notification_log_persistence";
+    err.alertStage = 'notification_log_persistence';
     throw err;
   }
 }
@@ -277,21 +259,18 @@ async function RunMissingGradeAudit(batchSize = config.auditBatchSize) {
       await DispatchMissingGradeAlert(missing);
     } catch (err) {
       // *************** A lock failure means the email already went out
-      const emailAlreadyDelivered =
-        err.alertStage === "notification_log_persistence";
+      const emailAlreadyDelivered = err.alertStage === 'notification_log_persistence';
       logger.error(
         {
-          operation: "missing_grades.alert",
-          alert_stage: err.alertStage || "smtp_delivery",
+          operation: 'missing_grades.alert',
+          alert_stage: err.alertStage || 'smtp_delivery',
           email_delivered: emailAlreadyDelivered,
           student_id: missing.student_id,
           test_id: missing.test_id,
           academic_year_id: missing.academic_year_id,
           err,
         },
-        emailAlreadyDelivered
-          ? "Missing grade alert: email delivered but idempotency lock failed"
-          : "Missing grade alert failed",
+        emailAlreadyDelivered ? 'Missing grade alert: email delivered but idempotency lock failed' : 'Missing grade alert failed',
       );
     }
   }
@@ -311,10 +290,10 @@ async function RunScheduledAudit() {
   } catch (err) {
     logger.error(
       {
-        operation: "missing_grades.scheduled_run",
+        operation: 'missing_grades.scheduled_run',
         err,
       },
-      "Scheduled missing grade audit run failed",
+      'Scheduled missing grade audit run failed',
     );
   }
 }
@@ -325,7 +304,7 @@ async function RunScheduledAudit() {
 function InitializeGradeAuditorJob() {
   // *************** Schedule the recurring run
   cron.schedule(config.auditCron, RunScheduledAudit, { noOverlap: true });
-  logger.info({ operation: "missing_grades.scheduler" }, "Audit scheduled");
+  logger.info({ operation: 'missing_grades.scheduler' }, 'Audit scheduled');
 }
 // *************** END: Initialize the Audit Job ***************
 

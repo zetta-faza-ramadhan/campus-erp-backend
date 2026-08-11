@@ -8,9 +8,7 @@
  * @returns {Promise<Array<Object|null>>} Batch-loaded academic years in order.
  */
 function AcademicYearsFieldResolver(parent, _, context) {
-  return context.loaders.academicYearLoader
-    .loadMany(parent.academic_year_ids)
-    .then((years) => years.filter(Boolean));
+  return context.loaders.academicYearLoader.loadMany(parent.academic_year_ids).then((years) => years.filter(Boolean));
 }
 
 // *************** EXPORT MODULE ***************

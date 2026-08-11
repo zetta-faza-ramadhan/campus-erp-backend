@@ -1,8 +1,8 @@
 // *************** IMPORT LIBRARY ***************
-const pino = require("pino");
+const pino = require('pino');
 
 // *************** IMPORT MODULE ***************
-const config = require("./config");
+const config = require('./config');
 
 // *************** CREATE STRUCTURED LOGGER ***************
 /**
@@ -15,22 +15,22 @@ const config = require("./config");
  * code; console.* is not used in business logic or background jobs.
  */
 const transport =
-  config.nodeEnv === "development"
+  config.nodeEnv === 'development'
     ? {
-        target: "pino-pretty",
+        target: 'pino-pretty',
         options: {
           colorize: true,
-          translateTime: "SYS:standard",
+          translateTime: 'SYS:standard',
           singleLine: false,
-          ignore: "pid,hostname",
+          ignore: 'pid,hostname',
         },
       }
     : undefined;
 
 const logger = pino({
-  name: "campus-erp",
-  level: config.nodeEnv === "test" ? "silent" : "info",
-  base: { service: "campus-erp-backend" },
+  name: 'campus-erp',
+  level: config.nodeEnv === 'test' ? 'silent' : 'info',
+  base: { service: 'campus-erp-backend' },
   timestamp: pino.stdTimeFunctions.isoTime,
   ...(transport ? { transport } : {}),
 });
@@ -45,27 +45,21 @@ const logger = pino({
  * @param {string} operation - Label for log correlation (e.g. "grade_aggregator").
  */
 function AttachWorkerListeners(worker, operation) {
-  worker.on("error", (err) => {
+  worker.on('error', (err) => {
     logger.error({ operation, err }, `${operation} worker crashed`);
   });
 
-  worker.on("message", (message) => {
-    if (message?.status === "error") {
-      logger.error(
-        { operation, message: message.message },
-        `${operation} worker failed`,
-      );
+  worker.on('message', (message) => {
+    if (message?.status === 'error') {
+      logger.error({ operation, message: message.message }, `${operation} worker failed`);
       return;
     }
     logger.info({ operation }, `${operation} worker finished`);
   });
 
-  worker.on("exit", (code) => {
+  worker.on('exit', (code) => {
     if (code !== 0) {
-      logger.error(
-        { operation, exit_code: code },
-        `${operation} worker exited abnormally`,
-      );
+      logger.error({ operation, exit_code: code }, `${operation} worker exited abnormally`);
     }
   });
 }

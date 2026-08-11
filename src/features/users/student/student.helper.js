@@ -1,19 +1,16 @@
 // *************** IMPORT LIBRARY ***************
-const { Types } = require("mongoose");
+const { Types } = require('mongoose');
 
 // *************** IMPORT MODULE ***************
-const AppError = require("../../../core/error");
-const StudentModel = require("./student.model");
-const AcademicYearModel = require("../../academic/enrollment/academic_year.model");
+const AppError = require('../../../core/error');
+const StudentModel = require('./student.model');
+const AcademicYearModel = require('../../academic/enrollment/academic_year.model');
 
 // *************** IMPORT HELPER FUNCTION ***************
-const { ReThrowHelperError } = require("../../../core/helper_error");
+const { ReThrowHelperError } = require('../../../core/helper_error');
 
 // *************** IMPORT VALIDATOR ***************
-const {
-  ValidateAndSanitizeCreateStudent,
-  ValidateAndSanitizeGetStudentsByAcademicYear,
-} = require("./student.validator");
+const { ValidateAndSanitizeCreateStudent, ValidateAndSanitizeGetStudentsByAcademicYear } = require('./student.validator');
 
 // *************** GLOBAL VARIABLES ***************
 // *************** Reusable field selection applied early in the aggregation pipeline.
@@ -42,12 +39,7 @@ const STUDENT_PROJECT_FIELDS = {
  * @returns {Promise<Object>} The created student document.
  * @throws {AppError} 409 - Email or student number already registered.
  */
-async function CreateStudentHelper({
-  firstName,
-  lastName,
-  email,
-  studentNumber,
-}) {
+async function CreateStudentHelper({ firstName, lastName, email, studentNumber }) {
   try {
     // *************** Validate input
     const value = ValidateAndSanitizeCreateStudent({
@@ -66,23 +58,15 @@ async function CreateStudentHelper({
       $or: [{ email }, { student_number: studentNumber }],
       deleted_at: null,
     })
-      .select("_id email student_number")
+      .select('_id email student_number')
       .lean();
     if (existing) {
       if (existing.email === email) {
         // *************** Reject duplicate email
-        throw new AppError(
-          "EMAIL_ALREADY_EXISTS",
-          409,
-          "Email is already registered.",
-        );
+        throw new AppError('EMAIL_ALREADY_EXISTS', 409, 'Email is already registered.');
       }
       // *************** Reject duplicate student number
-      throw new AppError(
-        "STUDENT_NUMBER_ALREADY_EXISTS",
-        409,
-        "Student number is already registered.",
-      );
+      throw new AppError('STUDENT_NUMBER_ALREADY_EXISTS', 409, 'Student number is already registered.');
     }
     // *************** Insert the new student
     return await StudentModel.create({
@@ -95,15 +79,9 @@ async function CreateStudentHelper({
     // *************** Translate concurrent duplicate-key hit into a 409
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
-      throw new AppError(
-        field === "email"
-          ? "EMAIL_ALREADY_EXISTS"
-          : "STUDENT_NUMBER_ALREADY_EXISTS",
-        409,
-        "Already registered.",
-      );
+      throw new AppError(field === 'email' ? 'EMAIL_ALREADY_EXISTS' : 'STUDENT_NUMBER_ALREADY_EXISTS', 409, 'Already registered.');
     }
-    ReThrowHelperError(err, "creating the student");
+    ReThrowHelperError(err, 'creating the student');
   }
 }
 
@@ -124,12 +102,7 @@ async function CreateStudentHelper({
  * @throws {AppError} 404 - Academic year not found.
  */
 // *************** START: GetStudentsByAcademicYearHelper ***************
-async function GetStudentsByAcademicYearHelper({
-  academicYearId,
-  page,
-  limit,
-  search,
-}) {
+async function GetStudentsByAcademicYearHelper({ academicYearId, page, limit, search }) {
   try {
     // *************** Validate input
     const value = ValidateAndSanitizeGetStudentsByAcademicYear({
@@ -157,11 +130,8 @@ async function GetStudentsByAcademicYearHelper({
     // *************** Apply optional search on first/last name
     if (search) {
       // *************** Escape regex metacharacters so search is literal
-      const term = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      match.$or = [
-        { first_name: { $regex: term, $options: "i" } },
-        { last_name: { $regex: term, $options: "i" } },
-      ];
+      const term = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      match.$or = [{ first_name: { $regex: term, $options: 'i' } }, { last_name: { $regex: term, $options: 'i' } }];
     }
 
     // *************** Stage 2: $facet - metadata (count) and data (page slice)
@@ -170,12 +140,8 @@ async function GetStudentsByAcademicYearHelper({
       { $sort: { registration_date: -1, _id: 1 } },
       {
         $facet: {
-          metadata: [{ $count: "total" }],
-          data: [
-            { $skip: skip },
-            { $limit: limit },
-            { $project: STUDENT_PROJECT_FIELDS },
-          ],
+          metadata: [{ $count: 'total' }],
+          data: [{ $skip: skip }, { $limit: limit }, { $project: STUDENT_PROJECT_FIELDS }],
         },
       },
     ];
@@ -190,14 +156,10 @@ async function GetStudentsByAcademicYearHelper({
         _id: academicYearId,
         deleted_at: null,
       })
-        .select("_id")
+        .select('_id')
         .lean();
       if (!year) {
-        throw new AppError(
-          "ACADEMIC_YEAR_NOT_FOUND",
-          404,
-          "Academic year not found.",
-        );
+        throw new AppError('ACADEMIC_YEAR_NOT_FOUND', 404, 'Academic year not found.');
       }
     }
 
@@ -210,7 +172,7 @@ async function GetStudentsByAcademicYearHelper({
       data: result.data,
     };
   } catch (err) {
-    ReThrowHelperError(err, "fetching students");
+    ReThrowHelperError(err, 'fetching students');
   }
 }
 // *************** END: GetStudentsByAcademicYearHelper ***************

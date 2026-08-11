@@ -1,19 +1,14 @@
 // *************** IMPORT LIBRARY ***************
-const Joi = require("joi");
+const Joi = require('joi');
 
 // *************** IMPORT VALIDATOR ***************
-const {
-  OBJECT_ID_PATTERN,
-  ObjectIdSchema,
-} = require("../../../core/validators");
-const {
-  ValidateInputWithJoi,
-} = require("../../../shared/validator/joi.validator");
+const { OBJECT_ID_PATTERN, ObjectIdSchema } = require('../../../core/validators');
+const { ValidateInputWithJoi } = require('../../../shared/validator/joi.validator');
 
 // *************** VALIDATION SCHEMA FOR GRADINGRULE ***************
 const GradingRuleSchema = Joi.object({
   label: Joi.string().trim().required(),
-  operator: Joi.string().trim().valid(">", ">=", "<", "<=", "==").required(),
+  operator: Joi.string().trim().valid('>', '>=', '<', '<=', '==').required(),
   threshold: Joi.number().required(),
 });
 
@@ -26,10 +21,10 @@ const GradingRuleSchema = Joi.object({
  * @returns {Object} The unchanged value.
  * @throws {Error} Validation error when no updatable field is present.
  */
-function requireAtLeastOneNonIdField(value, helpers) {
-  const keys = Object.keys(value).filter((key) => key !== "_id");
+function RequireAtLeastOneNonIdField(value, helpers) {
+  const keys = Object.keys(value).filter((key) => key !== '_id');
   if (keys.length === 0) {
-    return helpers.message("At least one update field must be provided.");
+    return helpers.message('At least one update field must be provided.');
   }
   return value;
 }
@@ -46,7 +41,7 @@ const UpdateBlockSchema = Joi.object({
   name: Joi.string().trim().max(255),
   academic_year: Joi.string().trim().max(255),
   grading_rules: Joi.array().items(GradingRuleSchema).max(10),
-}).custom(requireAtLeastOneNonIdField);
+}).custom(RequireAtLeastOneNonIdField);
 
 // *************** VALIDATION SCHEMA FOR SUBJECT ***************
 const SubjectSchema = Joi.object({
@@ -62,7 +57,7 @@ const UpdateSubjectSchema = Joi.object({
   block_id: Joi.string().regex(OBJECT_ID_PATTERN),
   weightage: Joi.number().greater(0).max(100),
   grading_rules: Joi.array().items(GradingRuleSchema).max(10),
-}).custom(requireAtLeastOneNonIdField);
+}).custom(RequireAtLeastOneNonIdField);
 
 // *************** VALIDATION SCHEMA FOR TEST ***************
 const TestSchema = Joi.object({
@@ -78,7 +73,7 @@ const UpdateTestSchema = Joi.object({
   subject_id: Joi.string().regex(OBJECT_ID_PATTERN),
   weightage: Joi.number().greater(0).max(100),
   grading_rules: Joi.array().items(GradingRuleSchema).max(10),
-}).custom(requireAtLeastOneNonIdField);
+}).custom(RequireAtLeastOneNonIdField);
 
 // *************** VALIDATE AND SANITIZE: BLOCK ***************
 /**
@@ -154,10 +149,7 @@ function ValidateAndSanitizeUpdateTest(input) {
 }
 
 // *************** VALIDATE AND SANITIZE: ENTITY LOCK CHECK ***************
-const EntityTypeSchema = Joi.string()
-  .trim()
-  .valid("block", "subject", "test")
-  .required();
+const EntityTypeSchema = Joi.string().trim().valid('block', 'subject', 'test').required();
 
 const EntityLockParamSchema = Joi.object({
   entityType: EntityTypeSchema,

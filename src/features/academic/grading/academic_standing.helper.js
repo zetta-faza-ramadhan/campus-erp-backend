@@ -1,13 +1,13 @@
 // *************** IMPORT MODULE ***************
-const AppError = require("../../../core/error");
-const TestModel = require("../curriculum/curriculum.model.test");
-const SubjectModel = require("../curriculum/curriculum.model.subject");
-const BlockModel = require("../curriculum/curriculum.model.block");
-const StudentGradeModel = require("./student_grade.model");
-const AcademicStandingModel = require("./academic_standing.model");
+const AppError = require('../../../core/error');
+const TestModel = require('../curriculum/curriculum.model.test');
+const SubjectModel = require('../curriculum/curriculum.model.subject');
+const BlockModel = require('../curriculum/curriculum.model.block');
+const StudentGradeModel = require('./student_grade.model');
+const AcademicStandingModel = require('./academic_standing.model');
 
 // *************** IMPORT HELPER FUNCTION ***************
-const { ReThrowHelperError } = require("../../../core/helper_error");
+const { ReThrowHelperError } = require('../../../core/helper_error');
 
 // *************** IMPORT VALIDATOR ***************
 const {
@@ -18,20 +18,20 @@ const {
   ValidateAndSanitizeRoundToTwoDecimals,
   ValidateAndSanitizeBuildGradeKey,
   ValidateAndSanitizeLoadCurriculumHierarchy,
-} = require("./grading.validator");
+} = require('./grading.validator');
 
 // *************** GLOBAL VARIABLES ***************
 // *************** Operator -> comparator used to resolve grading tiers
 const OPERATOR_FUNCTIONS = {
-  ">": (score, threshold) => score > threshold,
-  ">=": (score, threshold) => score >= threshold,
-  "<": (score, threshold) => score < threshold,
-  "<=": (score, threshold) => score <= threshold,
-  "==": (score, threshold) => score === threshold,
+  '>': (score, threshold) => score > threshold,
+  '>=': (score, threshold) => score >= threshold,
+  '<': (score, threshold) => score < threshold,
+  '<=': (score, threshold) => score <= threshold,
+  '==': (score, threshold) => score === threshold,
 };
 
 // *************** Statuses accepted by the AcademicStanding schema
-const STANDING_STATUSES = ["PASS", "FAIL", "RETAKE"];
+const STANDING_STATUSES = ['PASS', 'FAIL', 'RETAKE'];
 
 // *************** Fixed precedence: PASS beats RETAKE beats FAIL regardless of array order
 const STANDING_PRECEDENCE = { FAIL: 0, RETAKE: 1, PASS: 2 };
@@ -50,10 +50,10 @@ function NormalizeStandingLabel(label) {
     label = ValidateAndSanitizeNormalizeStandingLabel(label);
     // *************** Convert the matched label to a schema-valid status
     const upper = String(label).toUpperCase();
-    const result = STANDING_STATUSES.includes(upper) ? upper : "FAIL";
+    const result = STANDING_STATUSES.includes(upper) ? upper : 'FAIL';
     return result;
   } catch (err) {
-    ReThrowHelperError(err, "normalizing standing label");
+    ReThrowHelperError(err, 'normalizing standing label');
   }
 }
 
@@ -75,7 +75,7 @@ function EvaluateStanding({ score, gradingRules }) {
     gradingRules = value.gradingRules;
     // *************** No grading rules present - default to FAIL
     if (!Array.isArray(gradingRules) || gradingRules.length === 0) {
-      return "FAIL";
+      return 'FAIL';
     }
 
     // *************** Walk rules, keep the highest-precedence match
@@ -97,10 +97,10 @@ function EvaluateStanding({ score, gradingRules }) {
       }
     }
     // *************** Return the winning label, falling back to FAIL
-    const result = bestLabel || "FAIL";
+    const result = bestLabel || 'FAIL';
     return result;
   } catch (err) {
-    ReThrowHelperError(err, "evaluating standing");
+    ReThrowHelperError(err, 'evaluating standing');
   }
 }
 
@@ -118,7 +118,7 @@ function RoundToTwoDecimals(value) {
     const result = Number(value.toFixed(2));
     return result;
   } catch (err) {
-    ReThrowHelperError(err, "rounding average");
+    ReThrowHelperError(err, 'rounding average');
   }
 }
 
@@ -140,7 +140,7 @@ function BuildGradeKey({ studentId, testId }) {
     const key = `${String(studentId).toLowerCase()}:${String(testId).toLowerCase()}`;
     return key;
   } catch (err) {
-    ReThrowHelperError(err, "building grade key");
+    ReThrowHelperError(err, 'building grade key');
   }
 }
 
@@ -162,10 +162,10 @@ async function LoadCurriculumHierarchy(testId) {
       _id: testId,
       deleted_at: null,
     })
-      .select("subject_id")
+      .select('subject_id')
       .lean();
     if (!test) {
-      throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
+      throw new AppError('TEST_NOT_FOUND', 404, 'Test not found.');
     }
 
     // *************** Locate the owning subject
@@ -173,21 +173,17 @@ async function LoadCurriculumHierarchy(testId) {
       _id: test.subject_id,
       deleted_at: null,
     })
-      .select("block_id")
+      .select('block_id')
       .lean();
     // *************** Locate the owning block with its grading rules
     const block = await BlockModel.findOne({
       _id: subject && subject.block_id,
       deleted_at: null,
     })
-      .select("grading_rules")
+      .select('grading_rules')
       .lean();
     if (!subject || !block) {
-      throw new AppError(
-        "CURRICULUM_ENTITY_NOT_FOUND",
-        404,
-        "Subject or block not found.",
-      );
+      throw new AppError('CURRICULUM_ENTITY_NOT_FOUND', 404, 'Subject or block not found.');
     }
 
     // *************** Load the block, its subjects and their tests
@@ -195,13 +191,13 @@ async function LoadCurriculumHierarchy(testId) {
       block_id: block._id,
       deleted_at: null,
     })
-      .select("_id grading_rules")
+      .select('_id grading_rules')
       .lean();
     const tests = await TestModel.find({
       subject_id: { $in: subjects.map((subjectDoc) => subjectDoc._id) },
       deleted_at: null,
     })
-      .select("_id subject_id grading_rules")
+      .select('_id subject_id grading_rules')
       .lean();
 
     // *************** Index sibling tests by subject for O(1) roll-up lookups
@@ -224,7 +220,7 @@ async function LoadCurriculumHierarchy(testId) {
     };
     return hierarchy;
   } catch (err) {
-    ReThrowHelperError(err, "loading curriculum hierarchy");
+    ReThrowHelperError(err, 'loading curriculum hierarchy');
   }
 }
 
@@ -239,12 +235,7 @@ async function LoadCurriculumHierarchy(testId) {
  * @param {Map<string, Object>} params.gradeByKey - Grades keyed by BuildGradeKey.
  * @returns {Object | null} The standing payload, or null when the student has no grades in this block.
  */
-function BuildStudentStanding({
-  studentId,
-  academicYearId,
-  hierarchy,
-  gradeByKey,
-}) {
+function BuildStudentStanding({ studentId, academicYearId, hierarchy, gradeByKey }) {
   try {
     // *************** Validate input
     const value = ValidateAndSanitizeAggregationParams({
@@ -264,9 +255,7 @@ function BuildStudentStanding({
     for (const subject of hierarchy.subjects) {
       const tests = [];
       for (const test of subject.tests) {
-        const grade = gradeByKey.get(
-          BuildGradeKey({ studentId, testId: test._id }),
-        );
+        const grade = gradeByKey.get(BuildGradeKey({ studentId, testId: test._id }));
         if (!grade) continue;
 
         tests.push({
@@ -299,10 +288,7 @@ function BuildStudentStanding({
     if (subjects.length === 0) return null;
 
     // *************** Roll subject averages into the block average
-    const subjectAverages = subjects.reduce(
-      (sum, subject) => sum + subject.subject_average,
-      0,
-    );
+    const subjectAverages = subjects.reduce((sum, subject) => sum + subject.subject_average, 0);
     const blockAverage = RoundToTwoDecimals(subjectAverages / subjects.length);
 
     // *************** Return the nested standing payload
@@ -319,7 +305,7 @@ function BuildStudentStanding({
     };
     return standing;
   } catch (err) {
-    ReThrowHelperError(err, "building student standing");
+    ReThrowHelperError(err, 'building student standing');
   }
 }
 
@@ -333,12 +319,7 @@ function BuildStudentStanding({
  * @param {Array<Object>} params.grades - All grades for the block in the year.
  * @returns {Array<{ updateOne: { filter: Object, update: Object, upsert: boolean } }>} The bulkWrite operations.
  */
-function BuildBulkWriteOperations({
-  studentIds,
-  academicYearId,
-  hierarchy,
-  grades,
-}) {
+function BuildBulkWriteOperations({ studentIds, academicYearId, hierarchy, grades }) {
   try {
     // *************** Validate input
     const value = ValidateAndSanitizeAggregationParams({
@@ -353,12 +334,7 @@ function BuildBulkWriteOperations({
     grades = value.grades;
 
     // *************** Index all grades by (student, test) key
-    const gradeByKey = new Map(
-      grades.map((grade) => [
-        BuildGradeKey({ studentId: grade.student_id, testId: grade.test_id }),
-        grade,
-      ]),
-    );
+    const gradeByKey = new Map(grades.map((grade) => [BuildGradeKey({ studentId: grade.student_id, testId: grade.test_id }), grade]));
 
     // *************** Build one standing (or null) per input student
     const operations = studentIds
@@ -392,7 +368,7 @@ function BuildBulkWriteOperations({
       }));
     return operations;
   } catch (err) {
-    ReThrowHelperError(err, "building bulk write operations");
+    ReThrowHelperError(err, 'building bulk write operations');
   }
 }
 
@@ -425,7 +401,7 @@ async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
       academic_year_id: academicYearId,
       student_id: { $in: studentIds },
     })
-      .select("student_id test_id score")
+      .select('student_id test_id score')
       .lean();
 
     // *************** Persist every standing in a single round-trip
@@ -439,7 +415,7 @@ async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
       await AcademicStandingModel.bulkWrite(operations);
     }
   } catch (err) {
-    ReThrowHelperError(err, "running grade aggregation");
+    ReThrowHelperError(err, 'running grade aggregation');
   }
 }
 

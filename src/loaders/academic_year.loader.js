@@ -1,13 +1,12 @@
 // *************** IMPORT LIBRARY ***************
-const DataLoader = require("dataloader");
+const DataLoader = require('dataloader');
 
 // *************** IMPORT MODULE ***************
-const AcademicYearModel = require("../features/academic/enrollment/academic_year.model");
+const AcademicYearModel = require('../features/academic/enrollment/academic_year.model');
 
 // *************** GLOBAL VARIABLES ***************
 // *************** Reusable field selection to avoid over-fetching and name mismatches in loaders.
-const ACADEMIC_YEAR_FIELDS =
-  "name start_date end_date status block_ids student_ids deleted_at created_at updated_at";
+const ACADEMIC_YEAR_FIELDS = 'name start_date end_date status block_ids student_ids deleted_at created_at updated_at';
 
 // *************** LOADER ***************
 /**

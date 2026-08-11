@@ -1,11 +1,9 @@
 // *************** IMPORT LIBRARY ***************
-const Joi = require("joi");
+const Joi = require('joi');
 
 // *************** IMPORT VALIDATOR ***************
-const { OBJECT_ID_PATTERN } = require("../../../core/validators");
-const {
-  ValidateInputWithJoi,
-} = require("../../../shared/validator/joi.validator");
+const { OBJECT_ID_PATTERN } = require('../../../core/validators');
+const { ValidateInputWithJoi } = require('../../../shared/validator/joi.validator');
 
 // *************** VALIDATION SCHEMA FOR GRADING ***************
 // *************** Rejects scores with more than 2 decimal places (precision drift)
@@ -14,7 +12,7 @@ const ScoreSchema = Joi.number()
   .max(100)
   .custom((value, helpers) => {
     if (Math.round(value * 100) / 100 !== value) {
-      return helpers.message("Score must have at most 2 decimal places");
+      return helpers.message('Score must have at most 2 decimal places');
     }
     return value;
   })
@@ -30,7 +28,7 @@ const SubmitTestGradesSchema = Joi.object({
         score: ScoreSchema,
       }),
     )
-    .unique("student_id")
+    .unique('student_id')
     .min(1)
     .max(200)
     .required(),

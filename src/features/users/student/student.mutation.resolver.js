@@ -1,11 +1,11 @@
 // *************** IMPORT MODULE ***************
-const { NormalizeGqlError } = require("../../../core/graphql_error");
+const { NormalizeGqlError } = require('../../../core/graphql_error');
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAndSanitizeCreateStudent } = require("./student.validator");
+const { ValidateAndSanitizeCreateStudent } = require('./student.validator');
 
 // *************** IMPORT HELPER FUNCTION ***************
-const { CreateStudentHelper } = require("./student.helper");
+const { CreateStudentHelper } = require('./student.helper');
 
 // *************** MUTATION ***************
 

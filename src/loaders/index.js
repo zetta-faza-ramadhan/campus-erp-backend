@@ -1,5 +1,5 @@
 // *************** IMPORT LOADERS ***************
-const { CreateAcademicYearLoader } = require("./academic_year.loader");
+const { CreateAcademicYearLoader } = require('./academic_year.loader');
 
 // *************** LOADER ***************
 /**

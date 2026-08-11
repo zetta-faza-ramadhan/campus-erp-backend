@@ -1,20 +1,14 @@
 // *************** IMPORT LIBRARY ***************
-const Joi = require("joi");
+const Joi = require('joi');
 
 // *************** IMPORT VALIDATOR ***************
-const { OBJECT_ID_PATTERN } = require("../../../core/validators");
-const {
-  ValidateInputWithJoi,
-} = require("../../../shared/validator/joi.validator");
+const { OBJECT_ID_PATTERN } = require('../../../core/validators');
+const { ValidateInputWithJoi } = require('../../../shared/validator/joi.validator');
 
 // *************** VALIDATION SCHEMA FOR ENROLLMENT ***************
 const EnrollStudentsSchema = Joi.object({
   academic_year_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
-  student_ids: Joi.array()
-    .items(Joi.string().regex(OBJECT_ID_PATTERN))
-    .min(1)
-    .max(500)
-    .required(),
+  student_ids: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN)).min(1).max(500).required(),
 });
 
 // *************** VALIDATE AND SANITIZE: ENROLLMENT ***************
