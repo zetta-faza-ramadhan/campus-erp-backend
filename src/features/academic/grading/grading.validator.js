@@ -8,6 +8,18 @@ const {
 } = require("../../../shared/validator/joi.validator");
 
 // *************** VALIDATION SCHEMA FOR GRADING ***************
+// *************** Rejects scores with more than 2 decimal places (precision drift)
+const ScoreSchema = Joi.number()
+  .min(0)
+  .max(100)
+  .custom((value, helpers) => {
+    if (Math.round(value * 100) / 100 !== value) {
+      return helpers.message("Score must have at most 2 decimal places");
+    }
+    return value;
+  })
+  .required();
+
 const SubmitTestGradesSchema = Joi.object({
   academic_year_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   test_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
@@ -15,7 +27,7 @@ const SubmitTestGradesSchema = Joi.object({
     .items(
       Joi.object({
         student_id: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
-        score: Joi.number().min(0).max(100).precision(2).required(),
+        score: ScoreSchema,
       }),
     )
     .unique("student_id")
