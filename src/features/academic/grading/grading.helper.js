@@ -11,7 +11,10 @@ const StudentModel = require("../../users/student/student.model");
 const StudentGradeModel = require("./student_grade.model");
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAndSanitizeSubmitTestGrades } = require("./grading.validator");
+const {
+  ValidateAndSanitizeSubmitTestGrades,
+  ValidateAndSanitizeSpawnGradeAggregator,
+} = require("./grading.validator");
 
 // *************** START: Grading Helper Function ***************
 
@@ -106,6 +109,12 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
  */
 function SpawnGradeAggregator({ studentIds, testId, academicYearId }) {
   try {
+    // *************** Validate input
+    const value = ValidateAndSanitizeSpawnGradeAggregator({ studentIds, testId, academicYearId });
+    studentIds = value.studentIds;
+    testId = value.testId;
+    academicYearId = value.academicYearId;
+
     const payload = JSON.stringify({
       student_ids: studentIds,
       test_id: testId,

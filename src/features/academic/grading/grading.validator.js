@@ -37,8 +37,31 @@ function ValidateAndSanitizeSubmitTestGrades(input) {
   });
 }
 
+// *************** VALIDATION SCHEMA FOR SPAWN GRADE AGGREGATOR ***************
+const SpawnGradeAggregatorSchema = Joi.object({
+  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).required(),
+  testId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+  academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: SPAWN GRADE AGGREGATOR ***************
+/**
+ * Validates and sanitizes SpawnGradeAggregator input.
+ *
+ * @param {Object} input - Raw input from the caller.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeSpawnGradeAggregator(input) {
+  return ValidateInputWithJoi({
+    schema: SpawnGradeAggregatorSchema,
+    payload: input,
+  });
+}
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   SubmitTestGradesSchema,
   ValidateAndSanitizeSubmitTestGrades,
+  SpawnGradeAggregatorSchema,
+  ValidateAndSanitizeSpawnGradeAggregator,
 };

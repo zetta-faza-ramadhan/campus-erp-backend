@@ -1,5 +1,7 @@
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
+const { ReThrowHelperError } = require("../../../core/helper_error");
+const { OBJECT_ID_PATTERN } = require("../../../core/validators");
 const TestModel = require("../curriculum/curriculum.model.test");
 const SubjectModel = require("../curriculum/curriculum.model.subject");
 const BlockModel = require("../curriculum/curriculum.model.block");
@@ -22,12 +24,44 @@ const STANDING_STATUSES = ["PASS", "FAIL", "RETAKE"];
 // *************** START: Academic Standing Helper ***************
 
 /**
+ * Validates the shared aggregation parameters used by BuildStudentStanding,
+ * BuildBulkWriteOperations, and RunGradeAggregation.
+ *
+ * @param {Object} params - The aggregation params to validate.
+ * @param {Array<string>} params.studentIds - Non-empty array of student IDs.
+ * @param {string} params.academicYearId - The academic year ObjectId.
+ * @param {Object} params.hierarchy - The loaded curriculum hierarchy.
+ * @param {Array<Object>} [params.grades] - All grades for the block.
+ * @throws {AppError} 400 - Any required param is missing or malformed.
+ */
+function ValidateAggregationParams({ studentIds, academicYearId, hierarchy, grades }) {
+  if (!Array.isArray(studentIds) || studentIds.length === 0) {
+    throw new AppError("INVALID_STUDENT_IDS", 400, "studentIds must be a non-empty array.");
+  }
+  if (!academicYearId) {
+    throw new AppError("INVALID_ACADEMIC_YEAR_ID", 400, "academicYearId is required.");
+  }
+  if (hierarchy !== undefined && hierarchy !== null) {
+    if (!hierarchy.block || !Array.isArray(hierarchy.subjects)) {
+      throw new AppError("INVALID_HIERARCHY", 400, "hierarchy must contain block and subjects array.");
+    }
+  }
+  if (grades !== undefined && !Array.isArray(grades)) {
+    throw new AppError("INVALID_GRADES", 400, "grades must be an array.");
+  }
+}
+
+/**
  * Maps a rule label to a schema-valid standing status.
  *
  * @param {string} label - The label matched by a grading rule.
  * @returns {string} The uppercase standing status.
  */
 function NormalizeStandingLabel(label) {
+  // *************** Validate input
+  if (typeof label !== "string" || label.trim().length === 0) {
+    throw new AppError("INVALID_STANDING_LABEL", 400, "Standing label must be a non-empty string.");
+  }
   // *************** Convert the matched label to a schema-valid status
   const upper = String(label).toUpperCase();
   return STANDING_STATUSES.includes(upper) ? upper : "FAIL";
@@ -43,6 +77,10 @@ function NormalizeStandingLabel(label) {
  * @returns {string} The standing status for the score.
  */
 function EvaluateStanding(score, gradingRules) {
+  // *************** Validate input
+  if (typeof score !== "number" || Number.isNaN(score)) {
+    throw new AppError("INVALID_SCORE", 400, "Score must be a valid number.");
+  }
   // *************** No grading rules present - default to FAIL
   if (!Array.isArray(gradingRules) || gradingRules.length === 0) {
     return "FAIL";
@@ -67,6 +105,10 @@ function EvaluateStanding(score, gradingRules) {
  * @returns {number} The rounded average.
  */
 function RoundToTwoDecimals(value) {
+  // *************** Validate input
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    throw new AppError("INVALID_AVERAGE", 400, "Average value must be a valid number.");
+  }
   // *************** Preserve two decimal places for average precision
   return Math.round(value * 100) / 100;
 }
@@ -79,6 +121,10 @@ function RoundToTwoDecimals(value) {
  * @returns {string} The lookup key.
  */
 function BuildGradeKey(studentId, testId) {
+  // *************** Validate input
+  if (!studentId || !testId) {
+    throw new AppError("INVALID_GRADE_KEY", 400, "studentId and testId are required.");
+  }
   // *************** Build a lowercase (student, test) key for collision-free lookups
   return `${String(studentId).toLowerCase()}:${String(testId).toLowerCase()}`;
 }
@@ -92,71 +138,80 @@ function BuildGradeKey(studentId, testId) {
  * @throws {AppError} 404 - Test, subject or block not found.
  */
 async function LoadCurriculumHierarchy(testId) {
-  // *************** Locate the graded test
-  const test = await TestModel.findOne({
-    _id: testId,
-    deleted_at: null,
-  })
-    .select("subject_id")
-    .lean();
-  if (!test) {
-    throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
+  try {
+    // *************** Validate input
+    if (!testId || !String(testId).match(OBJECT_ID_PATTERN)) {
+      throw new AppError("INVALID_TEST_ID", 400, "testId must be a valid ObjectId.");
+    }
+
+    // *************** Locate the graded test
+    const test = await TestModel.findOne({
+      _id: testId,
+      deleted_at: null,
+    })
+      .select("subject_id")
+      .lean();
+    if (!test) {
+      throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
+    }
+
+    // *************** Locate the owning subject
+    const subject = await SubjectModel.findOne({
+      _id: test.subject_id,
+      deleted_at: null,
+    })
+      .select("block_id")
+      .lean();
+    // *************** Locate the owning block with its grading rules
+    const block = await BlockModel.findOne({
+      _id: subject && subject.block_id,
+      deleted_at: null,
+    })
+      .select("grading_rules")
+      .lean();
+    if (!subject || !block) {
+      throw new AppError(
+        "CURRICULUM_ENTITY_NOT_FOUND",
+        404,
+        "Subject or block not found.",
+      );
+    }
+
+    // *************** Load the block, its subjects and their tests
+    const subjects = await SubjectModel.find({
+      block_id: block._id,
+      deleted_at: null,
+    })
+      .select("_id grading_rules")
+      .lean();
+    const tests = await TestModel.find({
+      subject_id: { $in: subjects.map((subjectDoc) => subjectDoc._id) },
+      deleted_at: null,
+    })
+      .select("_id subject_id grading_rules")
+      .lean();
+
+    // *************** Index sibling tests by subject for O(1) roll-up lookups
+    const testsBySubjectId = new Map();
+    for (const testDoc of tests) {
+      const key = String(testDoc.subject_id);
+      if (!testsBySubjectId.has(key)) testsBySubjectId.set(key, []);
+      testsBySubjectId.get(key).push(testDoc);
+    }
+
+    // *************** Return the block hierarchy with per-subject test lists
+    return {
+      block,
+      subjects: subjects.map((subjectDoc) => ({
+        _id: subjectDoc._id,
+        grading_rules: subjectDoc.grading_rules,
+        tests: testsBySubjectId.get(String(subjectDoc._id)) || [],
+      })),
+      testIds: tests.map((testDoc) => testDoc._id),
+    };
+  } catch (err) {
+    ReThrowHelperError(err, "loading curriculum hierarchy");
   }
-
-  // *************** Locate the owning subject
-  const subject = await SubjectModel.findOne({
-    _id: test.subject_id,
-    deleted_at: null,
-  })
-    .select("block_id")
-    .lean();
-  // *************** Locate the owning block with its grading rules
-  const block = await BlockModel.findOne({
-    _id: subject && subject.block_id,
-    deleted_at: null,
-  })
-    .select("grading_rules")
-    .lean();
-  if (!subject || !block) {
-    throw new AppError(
-      "CURRICULUM_ENTITY_NOT_FOUND",
-      404,
-      "Subject or block not found.",
-    );
-  }
-
-  // *************** Load the block, its subjects and their tests
-  const subjects = await SubjectModel.find({
-    block_id: block._id,
-    deleted_at: null,
-  })
-    .select("_id grading_rules")
-    .lean();
-  const tests = await TestModel.find({
-    subject_id: { $in: subjects.map((subjectDoc) => subjectDoc._id) },
-    deleted_at: null,
-  })
-    .select("_id subject_id grading_rules")
-    .lean();
-
-  // *************** Index sibling tests by subject for O(1) roll-up lookups
-  const testsBySubjectId = new Map();
-  for (const testDoc of tests) {
-    const key = String(testDoc.subject_id);
-    if (!testsBySubjectId.has(key)) testsBySubjectId.set(key, []);
-    testsBySubjectId.get(key).push(testDoc);
-  }
-
-  // *************** Return the block hierarchy with per-subject test lists
-  return {
-    block,
-    subjects: subjects.map((subjectDoc) => ({
-      _id: subjectDoc._id,
-      grading_rules: subjectDoc.grading_rules,
-      tests: testsBySubjectId.get(String(subjectDoc._id)) || [],
-    })),
-    testIds: tests.map((testDoc) => testDoc._id),
-  };
 }
 
 /**
@@ -176,6 +231,15 @@ function BuildStudentStanding({
   hierarchy,
   gradeByKey,
 }) {
+  // *************** Validate input
+  if (!studentId) {
+    throw new AppError("INVALID_STUDENT_ID", 400, "studentId is required.");
+  }
+  ValidateAggregationParams({ studentIds: [studentId], academicYearId, hierarchy });
+  if (!(gradeByKey instanceof Map)) {
+    throw new AppError("INVALID_GRADE_KEY_MAP", 400, "gradeByKey must be a Map.");
+  }
+
   // *************** Roll each subject's graded tests into a subject average
   const subjects = [];
 
@@ -242,6 +306,9 @@ function BuildBulkWriteOperations({
   hierarchy,
   grades,
 }) {
+  // *************** Validate input
+  ValidateAggregationParams({ studentIds, academicYearId, hierarchy, grades });
+
   // *************** Index all grades by (student, test) key
   const gradeByKey = new Map(
     grades.map((grade) => [
@@ -293,25 +360,35 @@ function BuildBulkWriteOperations({
  * @returns {Promise<void>} Resolves once the standings have been written.
  */
 async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
-  // *************** Load the hierarchy and the relevant grades
-  const hierarchy = await LoadCurriculumHierarchy(testId);
-  const grades = await StudentGradeModel.find({
-    test_id: { $in: hierarchy.testIds },
-    academic_year_id: academicYearId,
-    student_id: { $in: studentIds },
-  })
-    .select("student_id test_id score")
-    .lean();
+  try {
+    // *************** Validate input
+    if (!testId || !String(testId).match(OBJECT_ID_PATTERN)) {
+      throw new AppError("INVALID_TEST_ID", 400, "testId must be a valid ObjectId.");
+    }
+    ValidateAggregationParams({ studentIds, academicYearId });
 
-  // *************** Persist every standing in a single round-trip
-  const operations = BuildBulkWriteOperations({
-    studentIds,
-    academicYearId,
-    hierarchy,
-    grades,
-  });
-  if (operations.length > 0) {
-    await AcademicStandingModel.bulkWrite(operations);
+    // *************** Load the hierarchy and the relevant grades
+    const hierarchy = await LoadCurriculumHierarchy(testId);
+    const grades = await StudentGradeModel.find({
+      test_id: { $in: hierarchy.testIds },
+      academic_year_id: academicYearId,
+      student_id: { $in: studentIds },
+    })
+      .select("student_id test_id score")
+      .lean();
+
+    // *************** Persist every standing in a single round-trip
+    const operations = BuildBulkWriteOperations({
+      studentIds,
+      academicYearId,
+      hierarchy,
+      grades,
+    });
+    if (operations.length > 0) {
+      await AcademicStandingModel.bulkWrite(operations);
+    }
+  } catch (err) {
+    ReThrowHelperError(err, "running grade aggregation");
   }
 }
 
