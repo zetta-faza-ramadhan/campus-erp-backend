@@ -7,7 +7,7 @@ const AppError = require("./error.js");
 // *************** GLOBAL VARIABLES ***************
 const ALLOWED_NODE_ENVS = ["development", "production", "test"];
 const nodeEnv = process.env.NODE_ENV || "development";
-// Required one-minute audit schedule; intentionally not overridable
+// *************** Required one-minute audit schedule; intentionally not overridable
 const AUDIT_CRON = "* * * * *";
 
 // *************** VALIDATE ENVIRONMENT VARIABLES ***************
