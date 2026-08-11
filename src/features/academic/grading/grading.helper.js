@@ -1,6 +1,11 @@
+// *************** IMPORT LIBRARY ***************
+const path = require("path");
+const { Worker } = require("worker_threads");
+
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
 const { ReThrowHelperError } = require("../../../core/helper_error");
+const logger = require("../../../core/logger");
 const TestModel = require("../curriculum/curriculum.model.test");
 const StudentModel = require("../../users/student/student.model");
 const StudentGradeModel = require("./student_grade.model");
@@ -12,7 +17,8 @@ const { ValidateAndSanitizeSubmitTestGrades } = require("./grading.validator");
 
 /**
  * Validates a test and a batch of student references, then bulk-inserts
- * the grades all at once.
+ * the grades all at once, and finally spawns a background worker thread to
+ * recompute the hierarchical standings without delaying the response.
  *
  * @param {Object} input - Raw grading payload.
  * @param {string} input.academicYearId - The ID of the academic year the grades belong to.
@@ -77,9 +83,44 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
 
     // *************** Bulk insert all grades (E11000 duplicate-key re-thrown unchanged)
     const insertedGrades = await StudentGradeModel.insertMany(mappedGrades);
+
+    // *************** Spawn the aggregation worker, fire-and-forget
+    SpawnGradeAggregator({ studentIds: extractedStudentIds, testId, academicYearId });
+
     return insertedGrades;
   } catch (err) {
     ReThrowHelperError(err, "submitting grades");
+  }
+}
+
+/**
+ * Spawns the grade-aggregation worker thread and logs any background crash.
+ * Intentionally not awaited: the standings recomputation is CPU-heavy, so the
+ * caller returns its response while the worker processes in the background.
+ *
+ * @param {Object} params - The aggregation payload.
+ * @param {Array<string>} params.studentIds - The IDs of the just-graded students.
+ * @param {string} params.testId - The ID of the test that was just graded.
+ * @param {string} params.academicYearId - The academic year of the submission.
+ * @returns {void}
+ */
+function SpawnGradeAggregator({ studentIds, testId, academicYearId }) {
+  try {
+    const payload = JSON.stringify({
+      student_ids: studentIds,
+      test_id: testId,
+      academic_year_id: academicYearId,
+    });
+
+    const worker = new Worker(
+      path.join(__dirname, "../../../workers/grade_aggregator.worker.js"),
+      { workerData: payload },
+    );
+
+    // *************** Attach listeners to log worker crashes/failures/completion
+    logger.AttachWorkerListeners(worker, "grade_aggregator");
+  } catch (err) {
+    logger.error({ operation: "grade_aggregator.spawn", err }, "Failed to spawn grade aggregation worker");
   }
 }
 

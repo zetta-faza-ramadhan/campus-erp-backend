@@ -19,7 +19,8 @@ const AppError = require("./error");
  * @param {string} action - Verb phrase describing the failing operation
  *   (e.g. "validating subject weightage" → "… while validating subject weightage.").
  * @throws {AppError|GraphQLError} The original error when recognized, or a
- *   new AppError("INTERNAL_ERROR", 500, "Unexpected internal error while {action}.").
+ *   new AppError("INTERNAL_ERROR", 500, "Unexpected internal error while {action}.")
+ *   keeping the original error as its `cause`.
  */
 function ReThrowHelperError(err, action) {
   if (
@@ -34,6 +35,7 @@ function ReThrowHelperError(err, action) {
     "INTERNAL_ERROR",
     500,
     `Unexpected internal error while ${action}.`,
+    { cause: err },
   );
 }
 

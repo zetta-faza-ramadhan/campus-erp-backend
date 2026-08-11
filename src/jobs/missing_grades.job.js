@@ -23,12 +23,13 @@ const ALERT_TYPE = "MISSING_GRADE_ALERT";
  * that has no matching StudentGrade yet, along with the details needed
  * to render and dispatch the alert email.
  *
- * The pipeline is bounded to `batchSize` rows per call: the four expansion
- * stages can produce a large intermediate working set (students × blocks ×
- * subjects × tests), so the $limit caps the materialised result and
- * allowDiskUse prevents the 100 MB aggregation memory limit from killing
- * the job at scale. Unprocessed rows are picked up on the next tick because
- * DispatchMissingGradeAlert durably records each alert in the log.
+ * Already-notified combos and deleted/dangling students are excluded before
+ * the batch `$limit`, so each tick advances to rows that still need an alert
+ * instead of re-selecting the same first batch. The working set is still
+ * capped to `batchSize` rows per call (students × blocks × subjects × tests
+ * can grow large) and allowDiskUse prevents the 100 MB aggregation memory
+ * limit from killing the job at scale. DispatchMissingGradeAlert keeps a
+ * race-safe per-row persisted check as a second layer.
  *
  * @param {number} [batchSize] - Maximum missing-grade rows to return per call.
  * @returns {Promise<Array<Object>>} Missing-grade rows with student/test/year details.
@@ -117,10 +118,35 @@ async function QueryMissingGrades(batchSize = config.auditBatchSize) {
     // *************** Keep only rows that have no grade
     { $match: { grade: { $size: 0 } } },
 
-    // *************** Bound the working set handled by this tick
-    { $limit: batchSize },
+    // *************** Drop already-notified combos so the batch advances
+    {
+      $lookup: {
+        from: "notification_logs",
+        let: {
+          student_id: "$student_ids",
+          test_id: "$tests._id",
+          academic_year_id: "$_id",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$type", ALERT_TYPE] },
+                  { $eq: ["$student_id", "$$student_id"] },
+                  { $eq: ["$test_id", "$$test_id"] },
+                  { $eq: ["$academic_year_id", "$$academic_year_id"] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "existing_alert",
+      },
+    },
+    { $match: { existing_alert: { $size: 0 } } },
 
-    // *************** Resolve the student profile for the email body
+    // *************** Drop deleted/dangling students before batching
     {
       $lookup: {
         from: "students",
@@ -141,6 +167,9 @@ async function QueryMissingGrades(batchSize = config.auditBatchSize) {
       },
     },
     { $unwind: "$student" },
+
+    // *************** Bound the working set handled by this tick
+    { $limit: batchSize },
 
     // *************** Shape the row for the dispatch step
     {
@@ -165,6 +194,10 @@ async function QueryMissingGrades(batchSize = config.auditBatchSize) {
 /**
  * Sends the missing grade alert for one row and records it in the
  * notification log so the same alert is never dispatched twice.
+ *
+ * Failures carry an `err.alertStage` so the caller can tell an SMTP
+ * delivery failure (nothing was sent) from a NotificationLog persistence
+ * failure (the email already went out but the lock was not recorded).
  *
  * @param {Object} missing - A single missing-grade row from QueryMissingGrades.
  * @returns {Promise<void>}
@@ -196,22 +229,32 @@ async function DispatchMissingGradeAlert(missing) {
     </div>
   `;
 
-  // *************** Dispatch the alert email
-  await SendEmail(
-    config.alertEmail,
-    SanitizeEmailSubject(
-      `Missing grade: ${missing.student_name} — ${missing.test_name}`,
-    ),
-    htmlBody,
-  );
+  // *************** Dispatch the alert email (SMTP delivery stage)
+  try {
+    await SendEmail(
+      config.alertEmail,
+      SanitizeEmailSubject(
+        `Missing grade: ${missing.student_name} — ${missing.test_name}`,
+      ),
+      htmlBody,
+    );
+  } catch (err) {
+    err.alertStage = "smtp_delivery";
+    throw err;
+  }
 
-  // *************** Lock the alert so it won't be resent on the next run
-  await NotificationLogModel.create({
-    type: ALERT_TYPE,
-    student_id: missing.student_id,
-    test_id: missing.test_id,
-    academic_year_id: missing.academic_year_id,
-  });
+  // *************** Lock the alert (after the email went out)
+  try {
+    await NotificationLogModel.create({
+      type: ALERT_TYPE,
+      student_id: missing.student_id,
+      test_id: missing.test_id,
+      academic_year_id: missing.academic_year_id,
+    });
+  } catch (err) {
+    err.alertStage = "notification_log_persistence";
+    throw err;
+  }
 }
 // *************** END: Dispatch Alert ***************
 
@@ -233,15 +276,22 @@ async function RunMissingGradeAudit(batchSize = config.auditBatchSize) {
     try {
       await DispatchMissingGradeAlert(missing);
     } catch (err) {
+      // *************** A lock failure means the email already went out
+      const emailAlreadyDelivered =
+        err.alertStage === "notification_log_persistence";
       logger.error(
         {
           operation: "missing_grades.alert",
+          alert_stage: err.alertStage || "smtp_delivery",
+          email_delivered: emailAlreadyDelivered,
           student_id: missing.student_id,
           test_id: missing.test_id,
           academic_year_id: missing.academic_year_id,
           err,
         },
-        "Missing grade alert failed",
+        emailAlreadyDelivered
+          ? "Missing grade alert: email delivered but idempotency lock failed"
+          : "Missing grade alert failed",
       );
     }
   }

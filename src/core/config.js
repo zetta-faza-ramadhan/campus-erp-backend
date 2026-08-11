@@ -7,6 +7,8 @@ const AppError = require("./error.js");
 // *************** GLOBAL VARIABLES ***************
 const ALLOWED_NODE_ENVS = ["development", "production", "test"];
 const nodeEnv = process.env.NODE_ENV || "development";
+// Required one-minute audit schedule; intentionally not overridable
+const AUDIT_CRON = "* * * * *";
 
 // *************** VALIDATE ENVIRONMENT VARIABLES ***************
 if (!process.env.MONGO_URI || !process.env.PORT || !process.env.JWT_SECRET) {
@@ -25,7 +27,11 @@ if (!ALLOWED_NODE_ENVS.includes(nodeEnv)) {
   );
 }
 
-if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+if (
+  !process.env.SMTP_HOST ||
+  !process.env.SMTP_USER ||
+  !process.env.SMTP_PASS
+) {
   throw new AppError(
     "CONFIG_ERROR",
     500,
@@ -52,8 +58,8 @@ module.exports = {
   },
   alertEmail: process.env.ALERT_EMAIL || "alert@campus.edu",
 
-  // *************** Schedule the missing-grade audit every minute
-  auditCron: process.env.AUDIT_CRON || "* * * * *",
+  // *************** Run the missing-grade audit every minute
+  auditCron: AUDIT_CRON,
   // *************** Cap missing-grade rows handled per tick; the next tick resumes
   auditBatchSize: Number(process.env.AUDIT_BATCH_SIZE) || 100,
 };
