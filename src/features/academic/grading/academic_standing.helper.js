@@ -7,7 +7,7 @@ const StudentGradeModel = require("./student_grade.model");
 const AcademicStandingModel = require("./academic_standing.model");
 
 // *************** GLOBAL VARIABLES ***************
-// Operator -> comparator used to evaluate grading rules dynamically
+// *************** Operator -> comparator used to resolve grading tiers
 const OPERATOR_FUNCTIONS = {
   ">": (score, threshold) => score > threshold,
   ">=": (score, threshold) => score >= threshold,
@@ -16,7 +16,7 @@ const OPERATOR_FUNCTIONS = {
   "==": (score, threshold) => score === threshold,
 };
 
-// Statuses accepted by the AcademicStanding schema
+// *************** Statuses accepted by the AcademicStanding schema
 const STANDING_STATUSES = ["PASS", "FAIL", "RETAKE"];
 
 // *************** START: Academic Standing Helper ***************
@@ -28,6 +28,7 @@ const STANDING_STATUSES = ["PASS", "FAIL", "RETAKE"];
  * @returns {string} The uppercase standing status.
  */
 function NormalizeStandingLabel(label) {
+  // *************** Convert the matched label to a schema-valid status
   const upper = String(label).toUpperCase();
   return STANDING_STATUSES.includes(upper) ? upper : "FAIL";
 }
@@ -42,10 +43,12 @@ function NormalizeStandingLabel(label) {
  * @returns {string} The standing status for the score.
  */
 function EvaluateStanding(score, gradingRules) {
+  // *************** No grading rules present - default to FAIL
   if (!Array.isArray(gradingRules) || gradingRules.length === 0) {
     return "FAIL";
   }
 
+  // *************** Walk rules low-to-high, the last satisfied tier wins
   let matchedLabel = null;
   for (const rule of gradingRules) {
     const applyOperator = OPERATOR_FUNCTIONS[rule.operator];
@@ -53,6 +56,7 @@ function EvaluateStanding(score, gradingRules) {
       matchedLabel = rule.label;
     }
   }
+  // *************** Normalize the winning label, falling back to FAIL
   return matchedLabel ? NormalizeStandingLabel(matchedLabel) : "FAIL";
 }
 
@@ -63,6 +67,7 @@ function EvaluateStanding(score, gradingRules) {
  * @returns {number} The rounded average.
  */
 function RoundToTwoDecimals(value) {
+  // *************** Preserve two decimal places for average precision
   return Math.round(value * 100) / 100;
 }
 
@@ -74,6 +79,7 @@ function RoundToTwoDecimals(value) {
  * @returns {string} The lookup key.
  */
 function BuildGradeKey(studentId, testId) {
+  // *************** Build a lowercase (student, test) key for collision-free lookups
   return `${String(studentId).toLowerCase()}:${String(testId).toLowerCase()}`;
 }
 
@@ -86,6 +92,7 @@ function BuildGradeKey(studentId, testId) {
  * @throws {AppError} 404 - Test, subject or block not found.
  */
 async function LoadCurriculumHierarchy(testId) {
+  // *************** Locate the graded test
   const test = await TestModel.findOne({
     _id: testId,
     deleted_at: null,
@@ -96,12 +103,14 @@ async function LoadCurriculumHierarchy(testId) {
     throw new AppError("TEST_NOT_FOUND", 404, "Test not found.");
   }
 
+  // *************** Locate the owning subject
   const subject = await SubjectModel.findOne({
     _id: test.subject_id,
     deleted_at: null,
   })
     .select("block_id")
     .lean();
+  // *************** Locate the owning block with its grading rules
   const block = await BlockModel.findOne({
     _id: subject && subject.block_id,
     deleted_at: null,
@@ -130,6 +139,7 @@ async function LoadCurriculumHierarchy(testId) {
     .select("_id subject_id grading_rules")
     .lean();
 
+  // *************** Index sibling tests by subject for O(1) roll-up lookups
   const testsBySubjectId = new Map();
   for (const testDoc of tests) {
     const key = String(testDoc.subject_id);
@@ -137,6 +147,7 @@ async function LoadCurriculumHierarchy(testId) {
     testsBySubjectId.get(key).push(testDoc);
   }
 
+  // *************** Return the block hierarchy with per-subject test lists
   return {
     block,
     subjects: subjects.map((subjectDoc) => ({
@@ -165,6 +176,7 @@ function BuildStudentStanding({
   hierarchy,
   gradeByKey,
 }) {
+  // *************** Roll each subject's graded tests into a subject average
   const subjects = [];
 
   for (const subject of hierarchy.subjects) {
@@ -180,6 +192,7 @@ function BuildStudentStanding({
       });
     }
 
+    // *************** Skip subjects the student has no grades for
     if (tests.length === 0) continue;
 
     const totalMarks = tests.reduce((sum, test) => sum + test.total_mark, 0);
@@ -192,14 +205,17 @@ function BuildStudentStanding({
     });
   }
 
+  // *************** Skip the student when no subject has graded tests
   if (subjects.length === 0) return null;
 
+  // *************** Roll subject averages into the block average
   const subjectAverages = subjects.reduce(
     (sum, subject) => sum + subject.subject_average,
     0,
   );
   const blockAverage = RoundToTwoDecimals(subjectAverages / subjects.length);
 
+  // *************** Return the nested standing payload
   return {
     student_id: studentId,
     academic_year_id: academicYearId,
@@ -226,6 +242,7 @@ function BuildBulkWriteOperations({
   hierarchy,
   grades,
 }) {
+  // *************** Index all grades by (student, test) key
   const gradeByKey = new Map(
     grades.map((grade) => [
       BuildGradeKey(grade.student_id, grade.test_id),
@@ -233,6 +250,7 @@ function BuildBulkWriteOperations({
     ]),
   );
 
+  // *************** Build one standing (or null) per input student
   return studentIds
     .map((studentId) =>
       BuildStudentStanding({
@@ -242,7 +260,9 @@ function BuildBulkWriteOperations({
         gradeByKey,
       }),
     )
+    // *************** Keep only students with a computable standing
     .filter((standing) => standing !== null)
+    // *************** Map each standing into an upsert write operation
     .map((standing) => ({
       updateOne: {
         filter: {
