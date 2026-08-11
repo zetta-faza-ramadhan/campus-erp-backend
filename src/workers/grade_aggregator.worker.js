@@ -4,6 +4,8 @@ const { parentPort, workerData } = require("worker_threads");
 // *************** IMPORT MODULE ***************
 const AppError = require("../core/error");
 const databaseConnection = require("../core/db");
+
+// *************** IMPORT HELPER FUNCTION ***************
 const {
   RunGradeAggregation,
 } = require("../features/academic/grading/academic_standing.helper");
@@ -34,7 +36,13 @@ async function WaitForDatabaseConnection() {
 
   await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      reject(new AppError("DB_CONNECTION_TIMEOUT", 500, "Timed out waiting for the database connection."));
+      reject(
+        new AppError(
+          "DB_CONNECTION_TIMEOUT",
+          500,
+          "Timed out waiting for the database connection.",
+        ),
+      );
     }, CONNECTION_TIMEOUT_MS);
 
     databaseConnection.once("connected", () => {
