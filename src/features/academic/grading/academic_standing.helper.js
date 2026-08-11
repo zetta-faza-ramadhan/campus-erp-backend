@@ -24,6 +24,9 @@ const OPERATOR_FUNCTIONS = {
 // *************** Statuses accepted by the AcademicStanding schema
 const STANDING_STATUSES = ["PASS", "FAIL", "RETAKE"];
 
+// *************** Fixed precedence: PASS beats RETAKE beats FAIL regardless of array order
+const STANDING_PRECEDENCE = { "FAIL": 0, "RETAKE": 1, "PASS": 2 };
+
 // *************** START: Academic Standing Helper ***************
 
 /**
@@ -61,16 +64,26 @@ function EvaluateStanding(score, gradingRules) {
     return "FAIL";
   }
 
-  // *************** Walk rules low-to-high, the last satisfied tier wins
-  let matchedLabel = null;
+  // *************** Walk rules, keep the highest-precedence match
+  let bestLabel = null;
+  let bestPrecedence = -1;
+
   for (const rule of gradingRules) {
+    // *************** Resolve the comparator function for this rule's operator
     const applyOperator = OPERATOR_FUNCTIONS[rule.operator];
     if (applyOperator && applyOperator(score, rule.threshold)) {
-      matchedLabel = rule.label;
+      // *************** Normalize the label and look up its fixed precedence
+      const normalized = NormalizeStandingLabel(rule.label);
+      const precedence = STANDING_PRECEDENCE[normalized];
+      // *************** Keep the match with the highest precedence (PASS > RETAKE > FAIL)
+      if (precedence > bestPrecedence) {
+        bestPrecedence = precedence;
+        bestLabel = normalized;
+      }
     }
   }
-  // *************** Normalize the winning label, falling back to FAIL
-  return matchedLabel ? NormalizeStandingLabel(matchedLabel) : "FAIL";
+  // *************** Return the winning label, falling back to FAIL
+  return bestLabel || "FAIL";
 }
 
 /**
