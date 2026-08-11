@@ -89,6 +89,97 @@ function ValidateAndSanitizeAggregationParams(input) {
   });
 }
 
+// *************** VALIDATION SCHEMA FOR NORMALIZE STANDING LABEL ***************
+const NormalizeStandingLabelSchema = Joi.string().trim().min(1).required();
+
+// *************** VALIDATE AND SANITIZE: NORMALIZE STANDING LABEL ***************
+/**
+ * Validates and sanitizes NormalizeStandingLabel input.
+ *
+ * @param {string} input - Raw label input.
+ * @returns {string} Sanitized and validated label.
+ */
+function ValidateAndSanitizeNormalizeStandingLabel(input) {
+  return ValidateInputWithJoi({
+    schema: NormalizeStandingLabelSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR EVALUATE STANDING ***************
+const EvaluateStandingSchema = Joi.object({
+  score: Joi.number().required(),
+  gradingRules: Joi.array().optional(),
+});
+
+// *************** VALIDATE AND SANITIZE: EVALUATE STANDING ***************
+/**
+ * Validates and sanitizes EvaluateStanding input.
+ *
+ * @param {Object} input - Raw evaluation params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeEvaluateStanding(input) {
+  return ValidateInputWithJoi({
+    schema: EvaluateStandingSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR ROUND TO TWO DECIMALS ***************
+const RoundToTwoDecimalsSchema = Joi.number().required();
+
+// *************** VALIDATE AND SANITIZE: ROUND TO TWO DECIMALS ***************
+/**
+ * Validates and sanitizes RoundToTwoDecimals input.
+ *
+ * @param {number} input - Raw numeric value.
+ * @returns {number} Sanitized and validated value.
+ */
+function ValidateAndSanitizeRoundToTwoDecimals(input) {
+  return ValidateInputWithJoi({
+    schema: RoundToTwoDecimalsSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR BUILD GRADE KEY ***************
+const BuildGradeKeySchema = Joi.object({
+  studentId: Joi.any().required(),
+  testId: Joi.any().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: BUILD GRADE KEY ***************
+/**
+ * Validates and sanitizes BuildGradeKey input.
+ *
+ * @param {Object} input - Raw key params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeBuildGradeKey(input) {
+  return ValidateInputWithJoi({
+    schema: BuildGradeKeySchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR LOAD CURRICULUM HIERARCHY ***************
+const LoadCurriculumHierarchySchema = Joi.string().regex(OBJECT_ID_PATTERN).required();
+
+// *************** VALIDATE AND SANITIZE: LOAD CURRICULUM HIERARCHY ***************
+/**
+ * Validates and sanitizes LoadCurriculumHierarchy input.
+ *
+ * @param {string} input - Raw testId.
+ * @returns {string} Sanitized and validated testId.
+ */
+function ValidateAndSanitizeLoadCurriculumHierarchy(input) {
+  return ValidateInputWithJoi({
+    schema: LoadCurriculumHierarchySchema,
+    payload: input,
+  });
+}
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   SubmitTestGradesSchema,
@@ -97,4 +188,9 @@ module.exports = {
   ValidateAndSanitizeSpawnGradeAggregator,
   AggregationParamsSchema,
   ValidateAndSanitizeAggregationParams,
+  ValidateAndSanitizeNormalizeStandingLabel,
+  ValidateAndSanitizeEvaluateStanding,
+  ValidateAndSanitizeRoundToTwoDecimals,
+  ValidateAndSanitizeBuildGradeKey,
+  ValidateAndSanitizeLoadCurriculumHierarchy,
 };

@@ -10,8 +10,15 @@ const AcademicStandingModel = require("./academic_standing.model");
 const { ReThrowHelperError } = require("../../../core/helper_error");
 
 // *************** IMPORT VALIDATOR ***************
-const { OBJECT_ID_PATTERN } = require("../../../core/validators");
-const { ValidateAndSanitizeAggregationParams } = require("./grading.validator");
+const {
+  ValidateAndSanitizeSpawnGradeAggregator,
+  ValidateAndSanitizeAggregationParams,
+  ValidateAndSanitizeNormalizeStandingLabel,
+  ValidateAndSanitizeEvaluateStanding,
+  ValidateAndSanitizeRoundToTwoDecimals,
+  ValidateAndSanitizeBuildGradeKey,
+  ValidateAndSanitizeLoadCurriculumHierarchy,
+} = require("./grading.validator");
 
 // *************** GLOBAL VARIABLES ***************
 // *************** Operator -> comparator used to resolve grading tiers
@@ -27,7 +34,7 @@ const OPERATOR_FUNCTIONS = {
 const STANDING_STATUSES = ["PASS", "FAIL", "RETAKE"];
 
 // *************** Fixed precedence: PASS beats RETAKE beats FAIL regardless of array order
-const STANDING_PRECEDENCE = { "FAIL": 0, "RETAKE": 1, "PASS": 2 };
+const STANDING_PRECEDENCE = { FAIL: 0, RETAKE: 1, PASS: 2 };
 
 // *************** START: Academic Standing Helper ***************
 
@@ -40,9 +47,7 @@ const STANDING_PRECEDENCE = { "FAIL": 0, "RETAKE": 1, "PASS": 2 };
 function NormalizeStandingLabel(label) {
   try {
     // *************** Validate input
-    if (typeof label !== "string" || label.trim().length === 0) {
-      throw new AppError("INVALID_STANDING_LABEL", 400, "Standing label must be a non-empty string.");
-    }
+    label = ValidateAndSanitizeNormalizeStandingLabel(label);
     // *************** Convert the matched label to a schema-valid status
     const upper = String(label).toUpperCase();
     const result = STANDING_STATUSES.includes(upper) ? upper : "FAIL";
@@ -65,9 +70,9 @@ function NormalizeStandingLabel(label) {
 function EvaluateStanding({ score, gradingRules }) {
   try {
     // *************** Validate input
-    if (typeof score !== "number" || Number.isNaN(score)) {
-      throw new AppError("INVALID_SCORE", 400, "Score must be a valid number.");
-    }
+    const value = ValidateAndSanitizeEvaluateStanding({ score, gradingRules });
+    score = value.score;
+    gradingRules = value.gradingRules;
     // *************** No grading rules present - default to FAIL
     if (!Array.isArray(gradingRules) || gradingRules.length === 0) {
       return "FAIL";
@@ -108,9 +113,7 @@ function EvaluateStanding({ score, gradingRules }) {
 function RoundToTwoDecimals(value) {
   try {
     // *************** Validate input
-    if (typeof value !== "number" || Number.isNaN(value)) {
-      throw new AppError("INVALID_AVERAGE", 400, "Average value must be a valid number.");
-    }
+    value = ValidateAndSanitizeRoundToTwoDecimals(value);
     // *************** Preserve two decimal places for average precision
     const result = Math.round(value * 100) / 100;
     return result;
@@ -130,9 +133,9 @@ function RoundToTwoDecimals(value) {
 function BuildGradeKey({ studentId, testId }) {
   try {
     // *************** Validate input
-    if (!studentId || !testId) {
-      throw new AppError("INVALID_GRADE_KEY", 400, "studentId and testId are required.");
-    }
+    const value = ValidateAndSanitizeBuildGradeKey({ studentId, testId });
+    studentId = value.studentId;
+    testId = value.testId;
     // *************** Build a lowercase (student, test) key for collision-free lookups
     const key = `${String(studentId).toLowerCase()}:${String(testId).toLowerCase()}`;
     return key;
@@ -152,9 +155,7 @@ function BuildGradeKey({ studentId, testId }) {
 async function LoadCurriculumHierarchy(testId) {
   try {
     // *************** Validate input
-    if (!testId || !String(testId).match(OBJECT_ID_PATTERN)) {
-      throw new AppError("INVALID_TEST_ID", 400, "testId must be a valid ObjectId.");
-    }
+    testId = ValidateAndSanitizeLoadCurriculumHierarchy(testId);
 
     // *************** Locate the graded test
     const test = await TestModel.findOne({
@@ -246,7 +247,12 @@ function BuildStudentStanding({
 }) {
   try {
     // *************** Validate input
-    const value = ValidateAndSanitizeAggregationParams({ studentIds: [studentId], academicYearId, hierarchy, gradeByKey });
+    const value = ValidateAndSanitizeAggregationParams({
+      studentIds: [studentId],
+      academicYearId,
+      hierarchy,
+      gradeByKey,
+    });
     studentId = value.studentIds[0];
     academicYearId = value.academicYearId;
     hierarchy = value.hierarchy;
@@ -258,13 +264,18 @@ function BuildStudentStanding({
     for (const subject of hierarchy.subjects) {
       const tests = [];
       for (const test of subject.tests) {
-        const grade = gradeByKey.get(BuildGradeKey({ studentId, testId: test._id }));
+        const grade = gradeByKey.get(
+          BuildGradeKey({ studentId, testId: test._id }),
+        );
         if (!grade) continue;
 
         tests.push({
           test_id: test._id,
           total_mark: grade.score,
-          test_status: EvaluateStanding({ score: grade.score, gradingRules: test.grading_rules }),
+          test_status: EvaluateStanding({
+            score: grade.score,
+            gradingRules: test.grading_rules,
+          }),
         });
       }
 
@@ -276,7 +287,10 @@ function BuildStudentStanding({
       subjects.push({
         subject_id: subject._id,
         subject_average: subjectAverage,
-        subject_status: EvaluateStanding({ score: subjectAverage, gradingRules: subject.grading_rules }),
+        subject_status: EvaluateStanding({
+          score: subjectAverage,
+          gradingRules: subject.grading_rules,
+        }),
         tests,
       });
     }
@@ -297,7 +311,10 @@ function BuildStudentStanding({
       academic_year_id: academicYearId,
       block_id: hierarchy.block._id,
       block_average: blockAverage,
-      block_status: EvaluateStanding({ score: blockAverage, gradingRules: hierarchy.block.grading_rules }),
+      block_status: EvaluateStanding({
+        score: blockAverage,
+        gradingRules: hierarchy.block.grading_rules,
+      }),
       subjects,
     };
     return standing;
@@ -324,7 +341,12 @@ function BuildBulkWriteOperations({
 }) {
   try {
     // *************** Validate input
-    const value = ValidateAndSanitizeAggregationParams({ studentIds, academicYearId, hierarchy, grades });
+    const value = ValidateAndSanitizeAggregationParams({
+      studentIds,
+      academicYearId,
+      hierarchy,
+      grades,
+    });
     studentIds = value.studentIds;
     academicYearId = value.academicYearId;
     hierarchy = value.hierarchy;
@@ -387,12 +409,14 @@ function BuildBulkWriteOperations({
 async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
   try {
     // *************** Validate input
-    if (!testId || !String(testId).match(OBJECT_ID_PATTERN)) {
-      throw new AppError("INVALID_TEST_ID", 400, "testId must be a valid ObjectId.");
-    }
-    const value = ValidateAndSanitizeAggregationParams({ studentIds, academicYearId });
-    studentIds = value.studentIds;
-    academicYearId = value.academicYearId;
+    const spawnValue = ValidateAndSanitizeSpawnGradeAggregator({
+      studentIds,
+      testId,
+      academicYearId,
+    });
+    studentIds = spawnValue.studentIds;
+    testId = spawnValue.testId;
+    academicYearId = spawnValue.academicYearId;
 
     // *************** Load the hierarchy and the relevant grades
     const hierarchy = await LoadCurriculumHierarchy(testId);
