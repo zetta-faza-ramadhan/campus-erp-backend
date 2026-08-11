@@ -36,13 +36,17 @@ const STANDING_PRECEDENCE = { "FAIL": 0, "RETAKE": 1, "PASS": 2 };
  * @returns {string} The uppercase standing status.
  */
 function NormalizeStandingLabel(label) {
-  // *************** Validate input
-  if (typeof label !== "string" || label.trim().length === 0) {
-    throw new AppError("INVALID_STANDING_LABEL", 400, "Standing label must be a non-empty string.");
+  try {
+    // *************** Validate input
+    if (typeof label !== "string" || label.trim().length === 0) {
+      throw new AppError("INVALID_STANDING_LABEL", 400, "Standing label must be a non-empty string.");
+    }
+    // *************** Convert the matched label to a schema-valid status
+    const upper = String(label).toUpperCase();
+    return STANDING_STATUSES.includes(upper) ? upper : "FAIL";
+  } catch (err) {
+    ReThrowHelperError(err, "normalizing standing label");
   }
-  // *************** Convert the matched label to a schema-valid status
-  const upper = String(label).toUpperCase();
-  return STANDING_STATUSES.includes(upper) ? upper : "FAIL";
 }
 
 /**
@@ -55,35 +59,39 @@ function NormalizeStandingLabel(label) {
  * @returns {string} The standing status for the score.
  */
 function EvaluateStanding(score, gradingRules) {
-  // *************** Validate input
-  if (typeof score !== "number" || Number.isNaN(score)) {
-    throw new AppError("INVALID_SCORE", 400, "Score must be a valid number.");
-  }
-  // *************** No grading rules present - default to FAIL
-  if (!Array.isArray(gradingRules) || gradingRules.length === 0) {
-    return "FAIL";
-  }
+  try {
+    // *************** Validate input
+    if (typeof score !== "number" || Number.isNaN(score)) {
+      throw new AppError("INVALID_SCORE", 400, "Score must be a valid number.");
+    }
+    // *************** No grading rules present - default to FAIL
+    if (!Array.isArray(gradingRules) || gradingRules.length === 0) {
+      return "FAIL";
+    }
 
-  // *************** Walk rules, keep the highest-precedence match
-  let bestLabel = null;
-  let bestPrecedence = -1;
+    // *************** Walk rules, keep the highest-precedence match
+    let bestLabel = null;
+    let bestPrecedence = -1;
 
-  for (const rule of gradingRules) {
-    // *************** Resolve the comparator function for this rule's operator
-    const applyOperator = OPERATOR_FUNCTIONS[rule.operator];
-    if (applyOperator && applyOperator(score, rule.threshold)) {
-      // *************** Normalize the label and look up its fixed precedence
-      const normalized = NormalizeStandingLabel(rule.label);
-      const precedence = STANDING_PRECEDENCE[normalized];
-      // *************** Keep the match with the highest precedence (PASS > RETAKE > FAIL)
-      if (precedence > bestPrecedence) {
-        bestPrecedence = precedence;
-        bestLabel = normalized;
+    for (const rule of gradingRules) {
+      // *************** Resolve the comparator function for this rule's operator
+      const applyOperator = OPERATOR_FUNCTIONS[rule.operator];
+      if (applyOperator && applyOperator(score, rule.threshold)) {
+        // *************** Normalize the label and look up its fixed precedence
+        const normalized = NormalizeStandingLabel(rule.label);
+        const precedence = STANDING_PRECEDENCE[normalized];
+        // *************** Keep the match with the highest precedence (PASS > RETAKE > FAIL)
+        if (precedence > bestPrecedence) {
+          bestPrecedence = precedence;
+          bestLabel = normalized;
+        }
       }
     }
+    // *************** Return the winning label, falling back to FAIL
+    return bestLabel || "FAIL";
+  } catch (err) {
+    ReThrowHelperError(err, "evaluating standing");
   }
-  // *************** Return the winning label, falling back to FAIL
-  return bestLabel || "FAIL";
 }
 
 /**
@@ -93,12 +101,16 @@ function EvaluateStanding(score, gradingRules) {
  * @returns {number} The rounded average.
  */
 function RoundToTwoDecimals(value) {
-  // *************** Validate input
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    throw new AppError("INVALID_AVERAGE", 400, "Average value must be a valid number.");
+  try {
+    // *************** Validate input
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      throw new AppError("INVALID_AVERAGE", 400, "Average value must be a valid number.");
+    }
+    // *************** Preserve two decimal places for average precision
+    return Math.round(value * 100) / 100;
+  } catch (err) {
+    ReThrowHelperError(err, "rounding average");
   }
-  // *************** Preserve two decimal places for average precision
-  return Math.round(value * 100) / 100;
 }
 
 /**
@@ -109,12 +121,16 @@ function RoundToTwoDecimals(value) {
  * @returns {string} The lookup key.
  */
 function BuildGradeKey(studentId, testId) {
-  // *************** Validate input
-  if (!studentId || !testId) {
-    throw new AppError("INVALID_GRADE_KEY", 400, "studentId and testId are required.");
+  try {
+    // *************** Validate input
+    if (!studentId || !testId) {
+      throw new AppError("INVALID_GRADE_KEY", 400, "studentId and testId are required.");
+    }
+    // *************** Build a lowercase (student, test) key for collision-free lookups
+    return `${String(studentId).toLowerCase()}:${String(testId).toLowerCase()}`;
+  } catch (err) {
+    ReThrowHelperError(err, "building grade key");
   }
-  // *************** Build a lowercase (student, test) key for collision-free lookups
-  return `${String(studentId).toLowerCase()}:${String(testId).toLowerCase()}`;
 }
 
 /**
@@ -219,61 +235,65 @@ function BuildStudentStanding({
   hierarchy,
   gradeByKey,
 }) {
-  // *************** Validate input
-  const value = ValidateAggregationParams({ studentIds: [studentId], academicYearId, hierarchy, gradeByKey });
-  studentId = value.studentIds[0];
-  academicYearId = value.academicYearId;
-  hierarchy = value.hierarchy;
-  gradeByKey = value.gradeByKey;
+  try {
+    // *************** Validate input
+    const value = ValidateAggregationParams({ studentIds: [studentId], academicYearId, hierarchy, gradeByKey });
+    studentId = value.studentIds[0];
+    academicYearId = value.academicYearId;
+    hierarchy = value.hierarchy;
+    gradeByKey = value.gradeByKey;
 
-  // *************** Roll each subject's graded tests into a subject average
-  const subjects = [];
+    // *************** Roll each subject's graded tests into a subject average
+    const subjects = [];
 
-  for (const subject of hierarchy.subjects) {
-    const tests = [];
-    for (const test of subject.tests) {
-      const grade = gradeByKey.get(BuildGradeKey(studentId, test._id));
-      if (!grade) continue;
+    for (const subject of hierarchy.subjects) {
+      const tests = [];
+      for (const test of subject.tests) {
+        const grade = gradeByKey.get(BuildGradeKey(studentId, test._id));
+        if (!grade) continue;
 
-      tests.push({
-        test_id: test._id,
-        total_mark: grade.score,
-        test_status: EvaluateStanding(grade.score, test.grading_rules),
+        tests.push({
+          test_id: test._id,
+          total_mark: grade.score,
+          test_status: EvaluateStanding(grade.score, test.grading_rules),
+        });
+      }
+
+      // *************** Skip subjects the student has no grades for
+      if (tests.length === 0) continue;
+
+      const totalMarks = tests.reduce((sum, test) => sum + test.total_mark, 0);
+      const subjectAverage = RoundToTwoDecimals(totalMarks / tests.length);
+      subjects.push({
+        subject_id: subject._id,
+        subject_average: subjectAverage,
+        subject_status: EvaluateStanding(subjectAverage, subject.grading_rules),
+        tests,
       });
     }
 
-    // *************** Skip subjects the student has no grades for
-    if (tests.length === 0) continue;
+    // *************** Skip the student when no subject has graded tests
+    if (subjects.length === 0) return null;
 
-    const totalMarks = tests.reduce((sum, test) => sum + test.total_mark, 0);
-    const subjectAverage = RoundToTwoDecimals(totalMarks / tests.length);
-    subjects.push({
-      subject_id: subject._id,
-      subject_average: subjectAverage,
-      subject_status: EvaluateStanding(subjectAverage, subject.grading_rules),
-      tests,
-    });
+    // *************** Roll subject averages into the block average
+    const subjectAverages = subjects.reduce(
+      (sum, subject) => sum + subject.subject_average,
+      0,
+    );
+    const blockAverage = RoundToTwoDecimals(subjectAverages / subjects.length);
+
+    // *************** Return the nested standing payload
+    return {
+      student_id: studentId,
+      academic_year_id: academicYearId,
+      block_id: hierarchy.block._id,
+      block_average: blockAverage,
+      block_status: EvaluateStanding(blockAverage, hierarchy.block.grading_rules),
+      subjects,
+    };
+  } catch (err) {
+    ReThrowHelperError(err, "building student standing");
   }
-
-  // *************** Skip the student when no subject has graded tests
-  if (subjects.length === 0) return null;
-
-  // *************** Roll subject averages into the block average
-  const subjectAverages = subjects.reduce(
-    (sum, subject) => sum + subject.subject_average,
-    0,
-  );
-  const blockAverage = RoundToTwoDecimals(subjectAverages / subjects.length);
-
-  // *************** Return the nested standing payload
-  return {
-    student_id: studentId,
-    academic_year_id: academicYearId,
-    block_id: hierarchy.block._id,
-    block_average: blockAverage,
-    block_status: EvaluateStanding(blockAverage, hierarchy.block.grading_rules),
-    subjects,
-  };
 }
 
 /**
@@ -292,51 +312,55 @@ function BuildBulkWriteOperations({
   hierarchy,
   grades,
 }) {
-  // *************** Validate input
-  const value = ValidateAggregationParams({ studentIds, academicYearId, hierarchy, grades });
-  studentIds = value.studentIds;
-  academicYearId = value.academicYearId;
-  hierarchy = value.hierarchy;
-  grades = value.grades;
+  try {
+    // *************** Validate input
+    const value = ValidateAggregationParams({ studentIds, academicYearId, hierarchy, grades });
+    studentIds = value.studentIds;
+    academicYearId = value.academicYearId;
+    hierarchy = value.hierarchy;
+    grades = value.grades;
 
-  // *************** Index all grades by (student, test) key
-  const gradeByKey = new Map(
-    grades.map((grade) => [
-      BuildGradeKey(grade.student_id, grade.test_id),
-      grade,
-    ]),
-  );
+    // *************** Index all grades by (student, test) key
+    const gradeByKey = new Map(
+      grades.map((grade) => [
+        BuildGradeKey(grade.student_id, grade.test_id),
+        grade,
+      ]),
+    );
 
-  // *************** Build one standing (or null) per input student
-  return studentIds
-    .map((studentId) =>
-      BuildStudentStanding({
-        studentId,
-        academicYearId,
-        hierarchy,
-        gradeByKey,
-      }),
-    )
-    // *************** Keep only students with a computable standing
-    .filter((standing) => standing !== null)
-    // *************** Map each standing into an upsert write operation
-    .map((standing) => ({
-      updateOne: {
-        filter: {
-          student_id: standing.student_id,
-          academic_year_id: standing.academic_year_id,
-          block_id: standing.block_id,
-        },
-        update: {
-          $set: {
-            block_average: standing.block_average,
-            block_status: standing.block_status,
-            subjects: standing.subjects,
+    // *************** Build one standing (or null) per input student
+    return studentIds
+      .map((studentId) =>
+        BuildStudentStanding({
+          studentId,
+          academicYearId,
+          hierarchy,
+          gradeByKey,
+        }),
+      )
+      // *************** Keep only students with a computable standing
+      .filter((standing) => standing !== null)
+      // *************** Map each standing into an upsert write operation
+      .map((standing) => ({
+        updateOne: {
+          filter: {
+            student_id: standing.student_id,
+            academic_year_id: standing.academic_year_id,
+            block_id: standing.block_id,
           },
+          update: {
+            $set: {
+              block_average: standing.block_average,
+              block_status: standing.block_status,
+              subjects: standing.subjects,
+            },
+          },
+          upsert: true,
         },
-        upsert: true,
-      },
-    }));
+      }));
+  } catch (err) {
+    ReThrowHelperError(err, "building bulk write operations");
+  }
 }
 
 /**
