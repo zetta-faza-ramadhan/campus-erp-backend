@@ -1,7 +1,7 @@
 // *************** IMPORT LIBRARY ***************
 const Joi = require("joi");
 
-// *************** IMPORT MODULE ***************
+// *************** IMPORT VALIDATOR ***************
 const {
   OBJECT_ID_PATTERN,
   ObjectIdSchema,

@@ -1,7 +1,7 @@
 // *************** IMPORT LIBRARY ***************
 const Joi = require("joi");
 
-// *************** IMPORT MODULE ***************
+// *************** IMPORT VALIDATOR ***************
 const { ValidateInputWithJoi } = require("../../../shared/validator/joi.validator");
 
 // *************** VALIDATION SCHEMA FOR LOGIN ***************

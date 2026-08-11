@@ -1,6 +1,5 @@
 // *************** IMPORT MODULE ***************
 const AppError = require("../../../core/error");
-const { OBJECT_ID_PATTERN } = require("../../../core/validators");
 const TestModel = require("../curriculum/curriculum.model.test");
 const SubjectModel = require("../curriculum/curriculum.model.subject");
 const BlockModel = require("../curriculum/curriculum.model.block");
@@ -11,6 +10,7 @@ const AcademicStandingModel = require("./academic_standing.model");
 const { ReThrowHelperError } = require("../../../core/helper_error");
 
 // *************** IMPORT VALIDATOR ***************
+const { OBJECT_ID_PATTERN } = require("../../../core/validators");
 const { ValidateAndSanitizeAggregationParams } = require("./grading.validator");
 
 // *************** GLOBAL VARIABLES ***************
