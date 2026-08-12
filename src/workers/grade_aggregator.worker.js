@@ -22,6 +22,8 @@ if (!parentPort || !workerData) {
 /**
  * Resolves the connection promise when Mongoose reports 'connected'.
  *
+ * @param {Function} resolve - The Promise resolve function.
+ * @param {NodeJS.Timeout} timeout - The timeout handle to clear.
  * @returns {void} Clears the timeout and resolves.
  */
 function OnDatabaseConnected(resolve, timeout) {
@@ -43,6 +45,31 @@ function OnDatabaseError(reject, timeout, err) {
 }
 
 /**
+ * Rejects the connection promise when the connection wait budget is exhausted.
+ *
+ * @param {Function} reject - The Promise reject function.
+ * @returns {void} Rejects the connection promise.
+ */
+function OnConnectionTimeout(reject) {
+  reject(new AppError('DB_CONNECTION_TIMEOUT', 500, 'Timed out waiting for the database connection.'));
+}
+
+/**
+ * Drives the connection-wait promise by arming the timeout and wiring the
+ * Mongoose connection listeners to the executor's resolve/reject functions.
+ *
+ * @param {Function} resolve - The Promise resolve function.
+ * @param {Function} reject - The Promise reject function.
+ * @returns {void} Registers the timeout and the connection listeners.
+ */
+function WaitForConnectionExecutor(resolve, reject) {
+  const timeout = setTimeout(OnConnectionTimeout, CONNECTION_TIMEOUT_MS, reject);
+
+  databaseConnection.once('connected', OnDatabaseConnected.bind(null, resolve, timeout));
+  databaseConnection.once('error', OnDatabaseError.bind(null, reject, timeout));
+}
+
+/**
  * Waits for the auto-started Mongoose connection in this worker isolate.
  *
  * @returns {Promise<void>} Resolves once the connection is ready.
@@ -51,14 +78,7 @@ function OnDatabaseError(reject, timeout, err) {
 async function WaitForDatabaseConnection() {
   if (databaseConnection.readyState === 1) return;
 
-  await new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new AppError('DB_CONNECTION_TIMEOUT', 500, 'Timed out waiting for the database connection.'));
-    }, CONNECTION_TIMEOUT_MS);
-
-    databaseConnection.once('connected', () => OnDatabaseConnected(resolve, timeout));
-    databaseConnection.once('error', (err) => OnDatabaseError(reject, timeout, err));
-  });
+  await new Promise(WaitForConnectionExecutor);
 }
 
 /**

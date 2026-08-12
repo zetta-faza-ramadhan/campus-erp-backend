@@ -40,22 +40,24 @@ const logger = pino({
 /**
  * Handles the 'error' event from a worker thread by logging the crash.
  *
- * @param {string} operation - The operation label for log correlation.
+ * @param {Object} context - The bound correlation context.
+ * @param {string} context.operation - The operation label for log correlation.
  * @param {Error} err - The error that caused the worker to crash.
  * @returns {void}
  */
-function HandleWorkerError(operation, err) {
+function HandleWorkerError({ operation }, err) {
   logger.error({ operation, err }, `${operation} worker crashed`);
 }
 
 /**
  * Handles the 'message' event from a worker thread by logging the outcome.
  *
- * @param {string} operation - The operation label for log correlation.
+ * @param {Object} context - The bound correlation context.
+ * @param {string} context.operation - The operation label for log correlation.
  * @param {{ status?: string, message?: string }} message - The message payload from the worker.
  * @returns {void}
  */
-function HandleWorkerMessage(operation, message) {
+function HandleWorkerMessage({ operation }, message) {
   if (message?.status === 'error') {
     logger.error({ operation, message: message.message }, `${operation} worker failed`);
     return;
@@ -66,11 +68,12 @@ function HandleWorkerMessage(operation, message) {
 /**
  * Handles the 'exit' event from a worker thread by logging abnormal exits.
  *
- * @param {string} operation - The operation label for log correlation.
+ * @param {Object} context - The bound correlation context.
+ * @param {string} context.operation - The operation label for log correlation.
  * @param {number} code - The exit code.
  * @returns {void}
  */
-function HandleWorkerExit(operation, code) {
+function HandleWorkerExit({ operation }, code) {
   if (code !== 0) {
     logger.error({ operation, exit_code: code }, `${operation} worker exited abnormally`);
   }
@@ -82,11 +85,13 @@ function HandleWorkerExit(operation, code) {
  *
  * @param {import("worker_threads").Worker} worker - The spawned worker instance.
  * @param {string} operation - Label for log correlation (e.g. "grade_aggregator").
+ * @returns {void}
  */
 function AttachWorkerListeners(worker, operation) {
-  worker.on('error', (err) => HandleWorkerError(operation, err));
-  worker.on('message', (message) => HandleWorkerMessage(operation, message));
-  worker.on('exit', (code) => HandleWorkerExit(operation, code));
+  const context = { operation };
+  worker.on('error', HandleWorkerError.bind(null, context));
+  worker.on('message', HandleWorkerMessage.bind(null, context));
+  worker.on('exit', HandleWorkerExit.bind(null, context));
 }
 
 // *************** EXPORT MODULE ***************

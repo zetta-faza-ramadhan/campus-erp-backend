@@ -23,6 +23,78 @@ const { ReThrowHelperError } = require('../../../core/helper_error');
 // *************** START: Grading Helper Function ***************
 
 /**
+ * Extracts the test id from a test-grade group.
+ *
+ * @param {Object} group - A test-grade group.
+ * @param {string} group.test_id - The test id.
+ * @returns {string} The test id.
+ */
+function ExtractTestId(group) {
+  return group.test_id;
+}
+
+/**
+ * Extracts the grade entries from a test-grade group.
+ *
+ * @param {Object} group - A test-grade group.
+ * @param {Array<Object>} group.grades - The grade entries for the test.
+ * @returns {Array<Object>} The grade entries.
+ */
+function ExtractGradesFromGroup(group) {
+  return group.grades;
+}
+
+/**
+ * Extracts the student id from a grade entry.
+ *
+ * @param {Object} grade - A grade entry.
+ * @param {string} grade.student_id - The student id.
+ * @returns {string} The student id.
+ */
+function ExtractStudentId(grade) {
+  return grade.student_id;
+}
+
+/**
+ * Extracts the owning subject id from a test document as a string.
+ *
+ * @param {Object} test - A lean test document.
+ * @returns {string} The owning subject id.
+ */
+function ExtractSubjectOwnerId(test) {
+  return String(test.subject_id);
+}
+
+/**
+ * Extracts the owning block id from a subject document as a string.
+ *
+ * @param {Object} subject - A lean subject document.
+ * @returns {string} The owning block id.
+ */
+function ExtractBlockOwnerId(subject) {
+  return String(subject.block_id);
+}
+
+/**
+ * Maps a grade entry into the flat StudentGrade insert document by injecting
+ * the test id and academic year that own it.
+ *
+ * @param {Object} params - The mapping inputs.
+ * @param {Object} params.group - The test-grade group that owns the grade.
+ * @param {Object} params.grade - The grade entry to map.
+ * @param {string} params.academicYearId - The academic year the grade belongs to.
+ * @returns {Object} The StudentGrade insert document.
+ */
+function MapGradeToDocument({ group, grade, academicYearId }) {
+  return {
+    student_id: grade.student_id,
+    test_id: group.test_id,
+    academic_year_id: academicYearId,
+    score: grade.score,
+  };
+}
+
+/**
  * Validates a batch of tests and student references, then bulk-inserts
  * the grades all at once, and finally spawns a background worker thread to
  * recompute the hierarchical standings without delaying the response.
@@ -50,8 +122,18 @@ async function SubmitTestGradesHelper({ academicYearId, testGrades }) {
     testGrades = value.test_grades;
 
     // *************** Extract all test and student IDs into flat arrays
-    const testIds = testGrades.map((group) => group.test_id);
-    const studentIds = [...new Set(testGrades.flatMap((group) => group.grades.map((grade) => grade.student_id)))];
+    const testIds = testGrades.map(ExtractTestId);
+    const studentIds = [];
+    const seenStudentIds = new Set();
+    for (const group of testGrades) {
+      for (const grade of ExtractGradesFromGroup(group)) {
+        const studentId = ExtractStudentId(grade);
+        if (!seenStudentIds.has(studentId)) {
+          seenStudentIds.add(studentId);
+          studentIds.push(studentId);
+        }
+      }
+    }
 
     // *************** Verify every test exists and resolve its owning subject
     const tests = await TestModel.find({
@@ -65,7 +147,7 @@ async function SubmitTestGradesHelper({ academicYearId, testGrades }) {
     }
 
     // *************** Verify every test belongs to the same block
-    const subjectIds = [...new Set(tests.map((test) => String(test.subject_id)))];
+    const subjectIds = [...new Set(tests.map(ExtractSubjectOwnerId))];
     const subjects = await SubjectModel.find({
       _id: { $in: subjectIds },
       deleted_at: null,
@@ -75,7 +157,7 @@ async function SubmitTestGradesHelper({ academicYearId, testGrades }) {
     if (subjects.length !== subjectIds.length) {
       throw new AppError('CURRICULUM_ENTITY_NOT_FOUND', 404, 'Subject or block not found.');
     }
-    const blockIds = [...new Set(subjects.map((subject) => String(subject.block_id)))];
+    const blockIds = [...new Set(subjects.map(ExtractBlockOwnerId))];
     if (blockIds.length !== 1) {
       throw new AppError('CROSS_BLOCK_SUBMISSION', 400, 'All tests must belong to the same block.');
     }
@@ -104,14 +186,12 @@ async function SubmitTestGradesHelper({ academicYearId, testGrades }) {
     }
 
     // *************** Transform grades for Mongoose, injecting the year and test
-    const mappedGrades = testGrades.flatMap((group) =>
-      group.grades.map((grade) => ({
-        student_id: grade.student_id,
-        test_id: group.test_id,
-        academic_year_id: academicYearId,
-        score: grade.score,
-      })),
-    );
+    const mappedGrades = [];
+    for (const group of testGrades) {
+      for (const grade of ExtractGradesFromGroup(group)) {
+        mappedGrades.push(MapGradeToDocument({ group, grade, academicYearId }));
+      }
+    }
 
     // *************** Bulk insert all grades (E11000 duplicate-key re-thrown unchanged)
     const insertedGrades = await StudentGradeModel.insertMany(mappedGrades);

@@ -25,55 +25,60 @@ const {
 /**
  * Checks if a score strictly exceeds a threshold.
  *
- * @param {number} score - The student's numeric score.
- * @param {number} threshold - The grading threshold.
+ * @param {Object} params - The comparison inputs.
+ * @param {number} params.score - The student's numeric score.
+ * @param {number} params.threshold - The grading threshold.
  * @returns {boolean} True when score > threshold.
  */
-function IsGreaterThan(score, threshold) {
+function IsGreaterThan({ score, threshold }) {
   return score > threshold;
 }
 
 /**
  * Checks if a score meets or exceeds a threshold.
  *
- * @param {number} score - The student's numeric score.
- * @param {number} threshold - The grading threshold.
+ * @param {Object} params - The comparison inputs.
+ * @param {number} params.score - The student's numeric score.
+ * @param {number} params.threshold - The grading threshold.
  * @returns {boolean} True when score >= threshold.
  */
-function IsGreaterThanOrEqual(score, threshold) {
+function IsGreaterThanOrEqual({ score, threshold }) {
   return score >= threshold;
 }
 
 /**
  * Checks if a score is strictly below a threshold.
  *
- * @param {number} score - The student's numeric score.
- * @param {number} threshold - The grading threshold.
+ * @param {Object} params - The comparison inputs.
+ * @param {number} params.score - The student's numeric score.
+ * @param {number} params.threshold - The grading threshold.
  * @returns {boolean} True when score < threshold.
  */
-function IsLessThan(score, threshold) {
+function IsLessThan({ score, threshold }) {
   return score < threshold;
 }
 
 /**
  * Checks if a score is at or below a threshold.
  *
- * @param {number} score - The student's numeric score.
- * @param {number} threshold - The grading threshold.
+ * @param {Object} params - The comparison inputs.
+ * @param {number} params.score - The student's numeric score.
+ * @param {number} params.threshold - The grading threshold.
  * @returns {boolean} True when score <= threshold.
  */
-function IsLessThanOrEqual(score, threshold) {
+function IsLessThanOrEqual({ score, threshold }) {
   return score <= threshold;
 }
 
 /**
  * Checks if a score equals a threshold exactly.
  *
- * @param {number} score - The student's numeric score.
- * @param {number} threshold - The grading threshold.
+ * @param {Object} params - The comparison inputs.
+ * @param {number} params.score - The student's numeric score.
+ * @param {number} params.threshold - The grading threshold.
  * @returns {boolean} True when score === threshold.
  */
-function IsEqualTo(score, threshold) {
+function IsEqualTo({ score, threshold }) {
   return score === threshold;
 }
 
@@ -93,6 +98,112 @@ const STANDING_STATUSES = ['PASS', 'FAIL', 'RETAKE'];
 const STANDING_PRECEDENCE = { FAIL: 0, RETAKE: 1, PASS: 2 };
 
 // *************** START: Academic Standing Helper ***************
+
+/**
+ * Extracts the id from a lean subject document.
+ *
+ * @param {Object} subjectDoc - A lean subject document.
+ * @returns {Object} The subject id.
+ */
+function ExtractSubjectId(subjectDoc) {
+  return subjectDoc._id;
+}
+
+/**
+ * Extracts the id from a lean test document.
+ *
+ * @param {Object} testDoc - A lean test document.
+ * @returns {Object} The test id.
+ */
+function ExtractTestId(testDoc) {
+  return testDoc._id;
+}
+
+/**
+ * Sums the total marks across a subject's graded tests.
+ *
+ * @param {Array<Object>} tests - The subject's graded test entries.
+ * @param {number} tests[].total_mark - The mark earned on a test.
+ * @returns {number} The summed total marks.
+ */
+function SumTotalMarks(tests) {
+  let sum = 0;
+  for (const test of tests) {
+    sum += test.total_mark;
+  }
+  return sum;
+}
+
+/**
+ * Sums the subject averages that roll up into the block average.
+ *
+ * @param {Array<Object>} subjects - The student's subject standing entries.
+ * @param {number} subjects[].subject_average - A subject's rounded average.
+ * @returns {number} The summed subject averages.
+ */
+function SumSubjectAverages(subjects) {
+  let sum = 0;
+  for (const subject of subjects) {
+    sum += subject.subject_average;
+  }
+  return sum;
+}
+
+/**
+ * Maps a grade document into a (student, test) key -> grade entry for the
+ * collision-free lookup map used while rolling up standings.
+ *
+ * @param {Object} grade - A lean StudentGrade document.
+ * @param {Object} grade.student_id - The student id.
+ * @param {Object} grade.test_id - The test id.
+ * @returns {[string, Object]} The keyed lookup-map entry.
+ */
+function MapGradeToKeyedEntry(grade) {
+  return [BuildGradeKey({ studentId: grade.student_id, testId: grade.test_id }), grade];
+}
+
+/**
+ * Builds a hierarchy subject entry carrying its own grading rules and the
+ * sibling tests indexed under it.
+ *
+ * @param {Object} params - The hierarchy inputs.
+ * @param {Object} params.subjectDoc - A lean subject document.
+ * @param {Map<string, Array<Object>>} params.testsBySubjectId - Tests indexed by subject id.
+ * @returns {Object} The subject hierarchy entry.
+ */
+function BuildHierarchySubject({ subjectDoc, testsBySubjectId }) {
+  return {
+    _id: subjectDoc._id,
+    grading_rules: subjectDoc.grading_rules,
+    tests: testsBySubjectId.get(String(subjectDoc._id)) || [],
+  };
+}
+
+/**
+ * Maps a computed standing payload into a single-student bulkWrite upsert.
+ *
+ * @param {Object} standing - A computed standing payload.
+ * @returns {Object} The bulkWrite updateOne operation.
+ */
+function BuildUpsertOperation(standing) {
+  return {
+    updateOne: {
+      filter: {
+        student_id: standing.student_id,
+        academic_year_id: standing.academic_year_id,
+        block_id: standing.block_id,
+      },
+      update: {
+        $set: {
+          block_average: standing.block_average,
+          block_status: standing.block_status,
+          subjects: standing.subjects,
+        },
+      },
+      upsert: true,
+    },
+  };
+}
 
 /**
  * Maps a rule label to a schema-valid standing status.
@@ -141,7 +252,7 @@ function EvaluateStanding({ score, gradingRules }) {
     for (const rule of gradingRules) {
       // *************** Resolve the comparator function for this rule's operator
       const applyOperator = OPERATOR_FUNCTIONS[rule.operator];
-      if (applyOperator && applyOperator(score, rule.threshold)) {
+      if (applyOperator && applyOperator({ score, threshold: rule.threshold })) {
         // *************** Normalize the label and look up its fixed precedence
         const normalized = NormalizeStandingLabel(rule.label);
         const precedence = STANDING_PRECEDENCE[normalized];
@@ -250,7 +361,7 @@ async function LoadCurriculumHierarchy(testId) {
       .select('_id grading_rules')
       .lean();
     const tests = await TestModel.find({
-      subject_id: { $in: subjects.map((subjectDoc) => subjectDoc._id) },
+      subject_id: { $in: subjects.map(ExtractSubjectId) },
       deleted_at: null,
     })
       .select('_id subject_id grading_rules')
@@ -265,14 +376,14 @@ async function LoadCurriculumHierarchy(testId) {
     }
 
     // *************** Return the block hierarchy with per-subject test lists
+    const hierarchySubjects = [];
+    for (const subjectDoc of subjects) {
+      hierarchySubjects.push(BuildHierarchySubject({ subjectDoc, testsBySubjectId }));
+    }
     const hierarchy = {
       block,
-      subjects: subjects.map((subjectDoc) => ({
-        _id: subjectDoc._id,
-        grading_rules: subjectDoc.grading_rules,
-        tests: testsBySubjectId.get(String(subjectDoc._id)) || [],
-      })),
-      testIds: tests.map((testDoc) => testDoc._id),
+      subjects: hierarchySubjects,
+      testIds: tests.map(ExtractTestId),
     };
     return hierarchy;
   } catch (err) {
@@ -327,7 +438,7 @@ function BuildStudentStanding({ studentId, academicYearId, hierarchy, gradeByKey
       // *************** Skip subjects the student has no grades for
       if (tests.length === 0) continue;
 
-      const totalMarks = tests.reduce((sum, test) => sum + test.total_mark, 0);
+      const totalMarks = SumTotalMarks(tests);
       const subjectAverage = RoundToTwoDecimals(totalMarks / tests.length);
       subjects.push({
         subject_id: subject._id,
@@ -344,7 +455,7 @@ function BuildStudentStanding({ studentId, academicYearId, hierarchy, gradeByKey
     if (subjects.length === 0) return null;
 
     // *************** Roll subject averages into the block average
-    const subjectAverages = subjects.reduce((sum, subject) => sum + subject.subject_average, 0);
+    const subjectAverages = SumSubjectAverages(subjects);
     const blockAverage = RoundToTwoDecimals(subjectAverages / subjects.length);
 
     // *************** Return the nested standing payload
@@ -390,38 +501,21 @@ function BuildBulkWriteOperations({ studentIds, academicYearId, hierarchy, grade
     grades = value.grades;
 
     // *************** Index all grades by (student, test) key
-    const gradeByKey = new Map(grades.map((grade) => [BuildGradeKey({ studentId: grade.student_id, testId: grade.test_id }), grade]));
+    const gradeByKey = new Map(grades.map(MapGradeToKeyedEntry));
 
-    // *************** Build one standing (or null) per input student
-    const operations = studentIds
-      .map((studentId) =>
-        BuildStudentStanding({
-          studentId,
-          academicYearId,
-          hierarchy,
-          gradeByKey,
-        }),
-      )
-      // *************** Keep only students with a computable standing
-      .filter((standing) => standing !== null)
-      // *************** Map each standing into an upsert write operation
-      .map((standing) => ({
-        updateOne: {
-          filter: {
-            student_id: standing.student_id,
-            academic_year_id: standing.academic_year_id,
-            block_id: standing.block_id,
-          },
-          update: {
-            $set: {
-              block_average: standing.block_average,
-              block_status: standing.block_status,
-              subjects: standing.subjects,
-            },
-          },
-          upsert: true,
-        },
-      }));
+    // *************** Build one upsert operation per student with a standing
+    const operations = [];
+    for (const studentId of studentIds) {
+      const standing = BuildStudentStanding({
+        studentId,
+        academicYearId,
+        hierarchy,
+        gradeByKey,
+      });
+      // *************** Skip students with no computable standing in this block
+      if (standing === null) continue;
+      operations.push(BuildUpsertOperation(standing));
+    }
     return operations;
   } catch (err) {
     ReThrowHelperError(err, 'building bulk write operations');
