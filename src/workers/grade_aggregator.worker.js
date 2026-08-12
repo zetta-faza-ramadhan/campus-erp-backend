@@ -104,12 +104,12 @@ async function HandleWorkerFailure(err) {
  */
 async function Run() {
   // *************** Decode the stringified payload
-  const { student_ids: studentIds, test_ids: testIds, academic_year_id: academicYearId } = JSON.parse(workerData);
+  const { student_ids: studentIds, test_id: testId, academic_year_id: academicYearId } = JSON.parse(workerData);
 
   await WaitForDatabaseConnection();
 
   // *************** Aggregate the standings for the graded students
-  await RunGradeAggregation({ studentIds, testIds, academicYearId });
+  await RunGradeAggregation({ studentIds, testId, academicYearId });
 
   parentPort.postMessage({ status: 'success' });
   // *************** Close the DB handle so the worker exits cleanly

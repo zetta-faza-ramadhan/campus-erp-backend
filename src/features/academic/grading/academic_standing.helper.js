@@ -528,24 +528,24 @@ function BuildBulkWriteOperations({ studentIds, academicYearId, hierarchy, grade
  *
  * @param {Object} params - The aggregation payload.
  * @param {Array<string>} params.studentIds - The IDs of the graded students.
- * @param {Array<string>} params.testIds - The IDs of the tests that were just graded.
+ * @param {string} params.testId - The ID of the test that was just graded.
  * @param {string} params.academicYearId - The academic year of the submission.
  * @returns {Promise<void>} Resolves once the standings have been written.
  */
-async function RunGradeAggregation({ studentIds, testIds, academicYearId }) {
+async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
   try {
     // *************** Validate input
     const spawnValue = ValidateAndSanitizeSpawnGradeAggregator({
       studentIds,
-      testIds,
+      testId,
       academicYearId,
     });
     studentIds = spawnValue.studentIds;
-    testIds = spawnValue.testIds;
+    testId = spawnValue.testId;
     academicYearId = spawnValue.academicYearId;
 
     // *************** Load the hierarchy and the relevant grades
-    const hierarchy = await LoadCurriculumHierarchy(testIds[0]);
+    const hierarchy = await LoadCurriculumHierarchy(testId);
     const grades = await StudentGradeModel.find({
       test_id: { $in: hierarchy.testIds },
       academic_year_id: academicYearId,

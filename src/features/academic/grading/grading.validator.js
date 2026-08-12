@@ -65,7 +65,7 @@ function ValidateAndSanitizeSubmitTestGrades(input) {
 // *************** VALIDATION SCHEMA FOR SPAWN GRADE AGGREGATOR ***************
 const SpawnGradeAggregatorSchema = Joi.object({
   studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(MAX_AGGREGATION_STUDENTS).required(),
-  testIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(50).unique().required(),
+  testId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
   academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
 });
 

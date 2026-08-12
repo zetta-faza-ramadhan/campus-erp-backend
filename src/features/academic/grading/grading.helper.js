@@ -124,15 +124,23 @@ async function SubmitTestGradesHelper({ academicYearId, testGrades }) {
     // *************** Extract all test and student IDs into flat arrays
     const testIds = testGrades.map(ExtractTestId);
     const studentIds = [];
+    const studentIdsByTestId = new Map();
     const seenStudentIds = new Set();
     for (const group of testGrades) {
+      const groupStudentIds = [];
+      const seenGroupStudentIds = new Set();
       for (const grade of ExtractGradesFromGroup(group)) {
         const studentId = ExtractStudentId(grade);
+        if (!seenGroupStudentIds.has(studentId)) {
+          seenGroupStudentIds.add(studentId);
+          groupStudentIds.push(studentId);
+        }
         if (!seenStudentIds.has(studentId)) {
           seenStudentIds.add(studentId);
           studentIds.push(studentId);
         }
       }
+      studentIdsByTestId.set(group.test_id, groupStudentIds);
     }
 
     // *************** Verify every test exists and resolve its owning subject
@@ -196,12 +204,14 @@ async function SubmitTestGradesHelper({ academicYearId, testGrades }) {
     // *************** Bulk insert all grades (E11000 duplicate-key re-thrown unchanged)
     const insertedGrades = await StudentGradeModel.insertMany(mappedGrades);
 
-    // *************** Spawn the aggregation worker, fire-and-forget
-    SpawnGradeAggregator({
-      studentIds,
-      testIds,
-      academicYearId,
-    });
+    // *************** Spawn one aggregation worker per graded test, fire-and-forget
+    for (const group of testGrades) {
+      SpawnGradeAggregator({
+        studentIds: studentIdsByTestId.get(group.test_id),
+        testId: group.test_id,
+        academicYearId,
+      });
+    }
 
     return insertedGrades;
   } catch (err) {
@@ -215,26 +225,26 @@ async function SubmitTestGradesHelper({ academicYearId, testGrades }) {
  * caller returns its response while the worker processes in the background.
  *
  * @param {Object} params - The aggregation payload.
- * @param {Array<string>} params.studentIds - The IDs of the just-graded students.
- * @param {Array<string>} params.testIds - The IDs of the just-graded tests.
+ * @param {Array<string>} params.studentIds - The IDs of the students graded on this test.
+ * @param {string} params.testId - The ID of the test that was just graded.
  * @param {string} params.academicYearId - The academic year of the submission.
  * @returns {void}
  */
-function SpawnGradeAggregator({ studentIds, testIds, academicYearId }) {
+function SpawnGradeAggregator({ studentIds, testId, academicYearId }) {
   try {
     // *************** Validate input
     const value = ValidateAndSanitizeSpawnGradeAggregator({
       studentIds,
-      testIds,
+      testId,
       academicYearId,
     });
     studentIds = value.studentIds;
-    testIds = value.testIds;
+    testId = value.testId;
     academicYearId = value.academicYearId;
 
     const payload = JSON.stringify({
       student_ids: studentIds,
-      test_ids: testIds,
+      test_id: testId,
       academic_year_id: academicYearId,
     });
 
