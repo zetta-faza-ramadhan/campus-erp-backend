@@ -1,5 +1,5 @@
 // *************** IMPORT LIBRARY ***************
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 // *************** GLOBAL VARIABLES ***************
 const Schema = mongoose.Schema;
@@ -16,30 +16,30 @@ const AcademicYearSchema = new Schema(
     // Lifecycle status controlling enrollment eligibility
     status: {
       type: String,
-      enum: ["ACTIVE", "COMPLETED", "ARCHIVED"],
-      default: "ACTIVE",
+      enum: ['ACTIVE', 'COMPLETED', 'ARCHIVED'],
+      default: 'ACTIVE',
     },
     // Curriculum blocks offered during this academic year
     block_ids: {
       type: [Schema.Types.ObjectId],
-      ref: "Block",
+      ref: 'Block',
       validate: {
         validator: (v) => v.length > 0,
-        message: "block_ids must not be empty",
+        message: 'block_ids must not be empty',
       },
     },
     // Students enrolled in this academic year
     student_ids: {
       type: [Schema.Types.ObjectId],
-      ref: "Student",
+      ref: 'Student',
       default: [],
     },
     // null means active, Date means deleted
     deleted_at: { type: Date, default: null },
   },
   {
-    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
-    collection: "academic_years",
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    collection: 'academic_years',
   },
 );
 
@@ -48,7 +48,7 @@ AcademicYearSchema.index({ student_ids: 1 });
 AcademicYearSchema.index({ deleted_at: 1 });
 
 // *************** DEFINE MODEL ***************
-const AcademicYearModel = mongoose.model("AcademicYear", AcademicYearSchema);
+const AcademicYearModel = mongoose.model('AcademicYear', AcademicYearSchema);
 
 // *************** EXPORT MODULE ***************
 module.exports = AcademicYearModel;

@@ -1,6 +1,6 @@
 // *************** IMPORT MODULE ***************
-const typeDefs = require("./grading.typedef");
-const mutationResolver = require("./grading.mutation.resolver");
+const typeDefs = require('./grading.typedef');
+const mutationResolver = require('./grading.mutation.resolver');
 
 // *************** EXPORT MODULE ***************
 module.exports = {

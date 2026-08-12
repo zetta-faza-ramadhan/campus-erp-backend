@@ -7,15 +7,15 @@
  * @returns {string} The escaped string, or an empty string when null/undefined.
  */
 function EscapeHtml(value) {
-  return String(value ?? "").replace(
+  return String(value ?? '').replace(
     /[&<>"']/g,
     (char) =>
       ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
       })[char],
   );
 }
@@ -28,7 +28,7 @@ function EscapeHtml(value) {
  * @returns {string} The sanitized single-line string.
  */
 function SanitizeEmailSubject(value) {
-  return String(value ?? "").replace(/[\r\n\x00-\x1f\x7f]/g, "");
+  return String(value ?? '').replace(/[\r\n\x00-\x1f\x7f]/g, '');
 }
 
 // *************** EXPORT MODULE ***************

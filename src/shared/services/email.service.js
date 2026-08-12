@@ -1,8 +1,8 @@
 // *************** IMPORT LIBRARY ***************
-const nodemailer = require("nodemailer");
+const nodemailer = require('nodemailer');
 
 // *************** IMPORT MODULE ***************
-const config = require("../../core/config");
+const config = require('../../core/config');
 
 // *************** GLOBAL VARIABLES ***************
 const transporter = nodemailer.createTransport({

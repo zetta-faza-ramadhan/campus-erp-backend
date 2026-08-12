@@ -1,5 +1,5 @@
 // *************** IMPORT MODULE ***************
-const { NormalizeGqlError } = require("../../core/graphql_error");
+const { NormalizeGqlError } = require('../../core/graphql_error');
 
 // *************** VALIDATE INPUT WITH JOI ***************
 /**

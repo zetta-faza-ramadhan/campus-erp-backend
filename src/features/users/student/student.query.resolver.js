@@ -1,16 +1,14 @@
 // *************** IMPORT MODULE ***************
-const { NormalizeGqlError } = require("../../../core/graphql_error");
+const { NormalizeGqlError } = require('../../../core/graphql_error');
 
 // *************** IMPORT VALIDATOR ***************
-const {
-  ValidateAndSanitizeGetStudentsByAcademicYear,
-} = require("./student.validator");
+const { ValidateAndSanitizeGetStudentsByAcademicYear } = require('./student.validator');
 
 // *************** IMPORT HELPER FUNCTION ***************
-const { GetStudentsByAcademicYearHelper } = require("./student.helper");
+const { GetStudentsByAcademicYearHelper } = require('./student.helper');
 
 // *************** IMPORT LOADER ***************
-const { AcademicYearsFieldResolver } = require("./student.loader.resolver");
+const { AcademicYearsFieldResolver } = require('./student.loader.resolver');
 
 // *************** FIELD RESOLVERS ***************
 /**

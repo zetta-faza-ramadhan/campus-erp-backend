@@ -1,8 +1,8 @@
 // *************** IMPORT LIBRARY ***************
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 
 // *************** IMPORT MODULE ***************
-const config = require("../../core/config");
+const config = require('../../core/config');
 
 // *************** GLOBAL VARIABLES ***************
 const JWT_SECRET = config.jwt.secret;
@@ -21,13 +21,13 @@ const JWT_SECRET = config.jwt.secret;
 function AuthMiddleware(req, res, next) {
   // *************** Extract Bearer token from Authorization header
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.split(" ")[1];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
     try {
       // *************** Verify token and attach decoded payload to req.user
       const decoded = jwt.verify(token, JWT_SECRET);
       req.user = decoded;
-    } catch (err) {
+    } catch (_err) {
       // *************** Invalid token — leave req.user undefined
     }
   }
