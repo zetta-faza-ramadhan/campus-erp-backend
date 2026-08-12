@@ -1,5 +1,5 @@
 // *************** IMPORT LIBRARY ***************
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 // *************** GLOBAL VARIABLES ***************
 const Schema = mongoose.Schema;
@@ -19,21 +19,21 @@ const UserSchema = new Schema(
     role: {
       type: String,
       required: true,
-      enum: ["ADMIN", "TEACHER"],
+      enum: ['ADMIN', 'TEACHER'],
     },
     // Soft-delete timestamp; null means active, Date means deleted; queries filter on null to exclude deleted records
     deleted_at: { type: Date, default: null },
   },
   {
-    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
-    collection: "users",
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    collection: 'users',
   },
 );
 
 UserSchema.index({ deleted_at: 1 });
 
 // *************** DEFINE MODEL ***************
-const UserModel = mongoose.model("User", UserSchema);
+const UserModel = mongoose.model('User', UserSchema);
 
 // *************** EXPORT MODULE ***************
 module.exports = UserModel;

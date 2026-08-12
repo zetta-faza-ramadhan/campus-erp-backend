@@ -1,18 +1,13 @@
 // *************** IMPORT LIBRARY ***************
-const { ApolloServer, HeaderMap } = require("@apollo/server");
-const { makeExecutableSchema } = require("@graphql-tools/schema");
+const { ApolloServer, HeaderMap } = require('@apollo/server');
+const { makeExecutableSchema } = require('@graphql-tools/schema');
 
 // *************** IMPORT MODULE ***************
-const config = require("./config");
-const { DateTime } = require("./scalars");
-const {
-  CreateNormalizeClientError,
-} = require("./graphql_error");
-const { CreateAllLoaders } = require("../loaders");
-const {
-  AUTH_DIRECTIVE_SDL,
-  AuthDirectiveTransformer,
-} = require("../shared/directives/auth.directive");
+const config = require('./config');
+const { DateTime } = require('./scalars');
+const { CreateNormalizeClientError } = require('./graphql_error');
+const { CreateAllLoaders } = require('../loaders');
+const { AUTH_DIRECTIVE_SDL, AuthDirectiveTransformer } = require('../shared/directives/auth.directive');
 
 // *************** CREATE APOLLO MIDDLEWARE ***************
 
@@ -80,7 +75,7 @@ async function ApolloMiddleware(req, res, next, server) {
     const headers = new HeaderMap();
     for (const [key, value] of Object.entries(req.headers)) {
       if (value !== undefined) {
-        headers.set(key, Array.isArray(value) ? value.join(", ") : value);
+        headers.set(key, Array.isArray(value) ? value.join(', ') : value);
       }
     }
     // *************** Execute the GraphQL request
@@ -88,7 +83,7 @@ async function ApolloMiddleware(req, res, next, server) {
       method: req.method.toUpperCase(),
       headers,
       body: req.body,
-      search: req.url.split("?")[1] || "",
+      search: req.url.split('?')[1] || '',
     };
     const result = await server.executeHTTPGraphQLRequest({
       httpGraphQLRequest,
@@ -100,10 +95,10 @@ async function ApolloMiddleware(req, res, next, server) {
     }
     res.statusCode = result.status || 200;
     // *************** Write response body
-    if (result.body.kind === "complete") {
+    if (result.body.kind === 'complete') {
       res.send(result.body.string);
     } else {
-      res.send("");
+      res.send('');
     }
   } catch (err) {
     next(err);

@@ -1,5 +1,5 @@
 // *************** IMPORT LIBRARY ***************
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 // *************** GLOBAL VARIABLES ***************
 const Schema = mongoose.Schema;
@@ -20,15 +20,15 @@ const StudentSchema = new Schema(
     // Academic years this student has been enrolled in
     academic_year_ids: {
       type: [Schema.Types.ObjectId],
-      ref: "AcademicYear",
+      ref: 'AcademicYear',
       default: [],
     },
     // null means active, Date means deleted
     deleted_at: { type: Date, default: null },
   },
   {
-    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
-    collection: "students",
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    collection: 'students',
   },
 );
 
@@ -36,7 +36,7 @@ StudentSchema.index({ academic_year_ids: 1 });
 StudentSchema.index({ deleted_at: 1 });
 
 // *************** DEFINE MODEL ***************
-const StudentModel = mongoose.model("Student", StudentSchema);
+const StudentModel = mongoose.model('Student', StudentSchema);
 
 // *************** EXPORT MODULE ***************
 module.exports = StudentModel;

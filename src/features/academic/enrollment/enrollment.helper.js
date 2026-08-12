@@ -1,11 +1,13 @@
 // *************** IMPORT MODULE ***************
-const AppError = require("../../../core/error");
-const { ReThrowHelperError } = require("../../../core/helper_error");
-const AcademicYearModel = require("./academic_year.model");
-const StudentModel = require("../../users/student/student.model");
+const AppError = require('../../../core/error');
+const AcademicYearModel = require('./academic_year.model');
+const StudentModel = require('../../users/student/student.model');
+
+// *************** IMPORT HELPER FUNCTION ***************
+const { ReThrowHelperError } = require('../../../core/helper_error');
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAndSanitizeEnrollStudents } = require("./enrollment.validator");
+const { ValidateAndSanitizeEnrollStudents } = require('./enrollment.validator');
 
 // *************** ENROLLMENT ***************
 
@@ -37,18 +39,10 @@ async function EnrollStudentsHelper({ academicYearId, studentIds }) {
       deleted_at: null,
     }).lean();
     if (!year) {
-      throw new AppError(
-        "ACADEMIC_YEAR_NOT_FOUND",
-        404,
-        "Academic year not found.",
-      );
+      throw new AppError('ACADEMIC_YEAR_NOT_FOUND', 404, 'Academic year not found.');
     }
-    if (year.status !== "ACTIVE") {
-      throw new AppError(
-        "ACADEMIC_YEAR_CLOSED",
-        400,
-        "Academic year is closed to new enrollments.",
-      );
+    if (year.status !== 'ACTIVE') {
+      throw new AppError('ACADEMIC_YEAR_CLOSED', 400, 'Academic year is closed to new enrollments.');
     }
 
     // *************** Collapse duplicate IDs into a unique set
@@ -60,27 +54,20 @@ async function EnrollStudentsHelper({ academicYearId, studentIds }) {
       deleted_at: null,
     });
     if (studentCount !== uniqueStudentIds.length) {
-      throw new AppError(
-        "INVALID_STUDENT_REFERENCE",
-        400,
-        "One or more student IDs are invalid or deleted.",
-      );
+      throw new AppError('INVALID_STUDENT_REFERENCE', 400, 'One or more student IDs are invalid or deleted.');
     }
 
     // *************** Atomically add students to the year
     const updatedYear = await AcademicYearModel.findByIdAndUpdate(
       academicYearId,
       { $addToSet: { student_ids: { $each: uniqueStudentIds } } },
-      { returnDocument: "after" },
+      { returnDocument: 'after' },
     );
     // *************** Atomically link the year to each student
-    await StudentModel.updateMany(
-      { _id: { $in: uniqueStudentIds } },
-      { $addToSet: { academic_year_ids: academicYearId } },
-    );
+    await StudentModel.updateMany({ _id: { $in: uniqueStudentIds } }, { $addToSet: { academic_year_ids: academicYearId } });
     return updatedYear;
   } catch (err) {
-    ReThrowHelperError(err, "enrolling students");
+    ReThrowHelperError(err, 'enrolling students');
   }
 }
 

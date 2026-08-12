@@ -1,13 +1,11 @@
 // *************** IMPORT MODULE ***************
-const { NormalizeGqlError } = require("../../../core/graphql_error");
+const { NormalizeGqlError } = require('../../../core/graphql_error');
 
 // *************** IMPORT VALIDATOR ***************
-const {
-  ValidateAndSanitizeId,
-} = require("./curriculum.validator");
+const { ValidateAndSanitizeId } = require('./curriculum.validator');
 
 // *************** IMPORT HELPER FUNCTION ***************
-const curriculumHelper = require("./curriculum.helper");
+const curriculumHelper = require('./curriculum.helper');
 
 // *************** FIELD RESOLVERS ***************
 /**
