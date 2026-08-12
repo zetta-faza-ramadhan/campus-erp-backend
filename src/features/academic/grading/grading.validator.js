@@ -1,6 +1,9 @@
 // *************** IMPORT LIBRARY ***************
 const Joi = require('joi');
 
+// *************** IMPORT MODULE ***************
+const AppError = require('../../../core/error');
+
 // *************** IMPORT VALIDATOR ***************
 const { OBJECT_ID_PATTERN } = require('../../../core/validators');
 const { ValidateInputWithJoi } = require('../../../shared/validator/joi.validator');
@@ -205,6 +208,32 @@ function ValidateAndSanitizeLoadCurriculumHierarchy(input) {
   });
 }
 
+// *************** VALIDATION SCHEMA FOR REPORT CARD PARAMS ***************
+const ReportCardParamsSchema = Joi.object({
+  academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).required(),
+  studentId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: REPORT CARD PARAMS ***************
+/**
+ * Validates and sanitizes the report-card route parameters for the REST
+ * endpoint. Unlike the GraphQL validators, failures surface as a 400
+ * AppError so the Express error path can respond without a GraphQL error.
+ *
+ * @param {Object} input - Raw route parameters from the request.
+ * @param {string} input.academicYearId - The academic year id.
+ * @param {string} input.studentId - The student id.
+ * @returns {Object} Sanitized and validated route parameters.
+ * @throws {AppError} 400 - Malformed academic year or student id.
+ */
+function ValidateAndSanitizeReportCardParams(input) {
+  const { error, value } = ReportCardParamsSchema.validate(input);
+  if (error) {
+    throw new AppError('INVALID_PARAMETER', 400, 'Invalid academic year or student id.');
+  }
+  return value;
+}
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   MAX_AGGREGATION_STUDENTS,
@@ -219,4 +248,6 @@ module.exports = {
   ValidateAndSanitizeRoundToTwoDecimals,
   ValidateAndSanitizeBuildGradeKey,
   ValidateAndSanitizeLoadCurriculumHierarchy,
+  ReportCardParamsSchema,
+  ValidateAndSanitizeReportCardParams,
 };
