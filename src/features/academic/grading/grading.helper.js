@@ -1,5 +1,7 @@
-// *************** IMPORT LIBRARY ***************
+// *************** IMPORT CORE ***************
 const path = require('path');
+
+// *************** IMPORT LIBRARY ***************
 const { Worker } = require('worker_threads');
 
 // *************** IMPORT MODULE ***************

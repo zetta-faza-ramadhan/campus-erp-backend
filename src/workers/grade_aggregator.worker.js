@@ -1,4 +1,4 @@
-// *************** IMPORT LIBRARY ***************
+// *************** IMPORT CORE ***************
 const { parentPort, workerData } = require('worker_threads');
 
 // *************** IMPORT MODULE ***************
