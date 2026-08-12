@@ -13,7 +13,11 @@ const StudentModel = require('../../users/student/student.model');
 const StudentGradeModel = require('./student_grade.model');
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAndSanitizeSubmitTestGrades, ValidateAndSanitizeSpawnGradeAggregator } = require('./grading.validator');
+const {
+  MAX_AGGREGATION_STUDENTS,
+  ValidateAndSanitizeSubmitTestGrades,
+  ValidateAndSanitizeSpawnGradeAggregator,
+} = require('./grading.validator');
 
 // *************** IMPORT HELPER FUNCTION ***************
 const { ReThrowHelperError } = require('../../../core/helper_error');
@@ -90,6 +94,15 @@ async function SubmitTestGradesHelper({ academicYearId, testGrades }) {
       if (!validStudentIdSet.has(grade.toLowerCase())) {
         throw new AppError('INVALID_STUDENT_REFERENCE', 400, 'One or more student IDs are invalid or deleted.');
       }
+    }
+
+    // *************** Reject submissions exceeding the worker aggregation limit
+    if (studentIds.length > MAX_AGGREGATION_STUDENTS) {
+      throw new AppError(
+        'AGGREGATION_STUDENT_LIMIT_EXCEEDED',
+        400,
+        `Submission contains ${studentIds.length} unique students, exceeding the maximum of ${MAX_AGGREGATION_STUDENTS} allowed for grade aggregation.`,
+      );
     }
 
     // *************** Transform grades for Mongoose, injecting the year and test

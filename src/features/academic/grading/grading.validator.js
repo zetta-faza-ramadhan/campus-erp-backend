@@ -5,6 +5,9 @@ const Joi = require('joi');
 const { OBJECT_ID_PATTERN } = require('../../../core/validators');
 const { ValidateInputWithJoi } = require('../../../shared/validator/joi.validator');
 
+// *************** GLOBAL VARIABLES ***************
+const MAX_AGGREGATION_STUDENTS = 500;
+
 // *************** VALIDATION SCHEMA FOR GRADING ***************
 
 /**
@@ -61,7 +64,7 @@ function ValidateAndSanitizeSubmitTestGrades(input) {
 
 // *************** VALIDATION SCHEMA FOR SPAWN GRADE AGGREGATOR ***************
 const SpawnGradeAggregatorSchema = Joi.object({
-  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(500).required(),
+  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(MAX_AGGREGATION_STUDENTS).required(),
   testIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(50).unique().required(),
   academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
 });
@@ -82,7 +85,7 @@ function ValidateAndSanitizeSpawnGradeAggregator(input) {
 
 // *************** VALIDATION SCHEMA FOR AGGREGATION PARAMS ***************
 const AggregationParamsSchema = Joi.object({
-  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(500).unique().required(),
+  studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(MAX_AGGREGATION_STUDENTS).unique().required(),
   academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
   hierarchy: Joi.object({
     block: Joi.object({
@@ -204,6 +207,7 @@ function ValidateAndSanitizeLoadCurriculumHierarchy(input) {
 
 // *************** EXPORT MODULE ***************
 module.exports = {
+  MAX_AGGREGATION_STUDENTS,
   SubmitTestGradesSchema,
   ValidateAndSanitizeSubmitTestGrades,
   SpawnGradeAggregatorSchema,
