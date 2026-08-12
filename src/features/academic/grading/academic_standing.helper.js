@@ -430,28 +430,28 @@ function BuildBulkWriteOperations({ studentIds, academicYearId, hierarchy, grade
 
 /**
  * Recomputes and persists the standings for a batch of students in the block
- * that owns the given test, using a single bulkWrite of one upsert per student.
+ * that owns the given tests, using a single bulkWrite of one upsert per student.
  *
  * @param {Object} params - The aggregation payload.
  * @param {Array<string>} params.studentIds - The IDs of the graded students.
- * @param {string} params.testId - The ID of the test that was just graded.
+ * @param {Array<string>} params.testIds - The IDs of the tests that were just graded.
  * @param {string} params.academicYearId - The academic year of the submission.
  * @returns {Promise<void>} Resolves once the standings have been written.
  */
-async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
+async function RunGradeAggregation({ studentIds, testIds, academicYearId }) {
   try {
     // *************** Validate input
     const spawnValue = ValidateAndSanitizeSpawnGradeAggregator({
       studentIds,
-      testId,
+      testIds,
       academicYearId,
     });
     studentIds = spawnValue.studentIds;
-    testId = spawnValue.testId;
+    testIds = spawnValue.testIds;
     academicYearId = spawnValue.academicYearId;
 
     // *************** Load the hierarchy and the relevant grades
-    const hierarchy = await LoadCurriculumHierarchy(testId);
+    const hierarchy = await LoadCurriculumHierarchy(testIds[0]);
     const grades = await StudentGradeModel.find({
       test_id: { $in: hierarchy.testIds },
       academic_year_id: academicYearId,

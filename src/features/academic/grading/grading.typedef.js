@@ -17,10 +17,14 @@ const typeDefs = `#graphql
     score: Float!
   }
 
-  input SubmitTestGradesInput {
-    academic_year_id: ID!
+  input TestGradeInput {
     test_id: ID!
     grades: [StudentScoreInput!]!
+  }
+
+  input SubmitTestGradesInput {
+    academic_year_id: ID!
+    test_grades: [TestGradeInput!]!
   }
 
   type Mutation {

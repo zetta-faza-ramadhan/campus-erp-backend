@@ -83,13 +83,13 @@ async function HandleWorkerFailure(err) {
  * @returns {Promise<void>} Resolves once the aggregation has been reported.
  */
 async function Run() {
-  // *************** Decode the stringified payload into camelCase params
-  const { student_ids: studentIds, test_id: testId, academic_year_id: academicYearId } = JSON.parse(workerData);
+  // *************** Decode the stringified payload
+  const { student_ids: studentIds, test_ids: testIds, academic_year_id: academicYearId } = JSON.parse(workerData);
 
   await WaitForDatabaseConnection();
 
   // *************** Aggregate the standings for the graded students
-  await RunGradeAggregation({ studentIds, testId, academicYearId });
+  await RunGradeAggregation({ studentIds, testIds, academicYearId });
 
   parentPort.postMessage({ status: 'success' });
   // *************** Close the DB handle so the worker exits cleanly

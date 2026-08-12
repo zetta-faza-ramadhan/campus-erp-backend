@@ -8,6 +8,7 @@ const { Worker } = require('worker_threads');
 const AppError = require('../../../core/error');
 const logger = require('../../../core/logger');
 const TestModel = require('../curriculum/curriculum.model.test');
+const SubjectModel = require('../curriculum/curriculum.model.subject');
 const StudentModel = require('../../users/student/student.model');
 const StudentGradeModel = require('./student_grade.model');
 
@@ -20,74 +21,94 @@ const { ReThrowHelperError } = require('../../../core/helper_error');
 // *************** START: Grading Helper Function ***************
 
 /**
- * Validates a test and a batch of student references, then bulk-inserts
+ * Validates a batch of tests and student references, then bulk-inserts
  * the grades all at once, and finally spawns a background worker thread to
  * recompute the hierarchical standings without delaying the response.
  *
  * @param {Object} input - Raw grading payload.
  * @param {string} input.academicYearId - The ID of the academic year the grades belong to.
- * @param {string} input.testId - The ID of the test being graded.
- * @param {Array<Object>} input.grades - Array of grade entries.
- * @param {string} input.grades[].student_id - The ID of the graded student.
- * @param {number} input.grades[].score - The student's score on the test.
+ * @param {Array<Object>} input.testGrades - Array of test-grade groups.
+ * @param {string} input.testGrades[].testId - The ID of a test being graded.
+ * @param {Array<Object>} input.testGrades[].grades - Array of grade entries for that test.
+ * @param {string} input.testGrades[].grades[].student_id - The ID of the graded student.
+ * @param {number} input.testGrades[].grades[].score - The student's score on the test.
  * @returns {Promise<Array<Object>>} The inserted StudentGrade documents.
  * @throws {AppError} 404 - Test not found.
- * @throws {AppError} 400 - Payload contains invalid student references.
+ * @throws {AppError} 400 - Payload contains invalid student references or spans multiple blocks.
  */
-async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
+async function SubmitTestGradesHelper({ academicYearId, testGrades }) {
   try {
     // *************** Validate input
     const value = ValidateAndSanitizeSubmitTestGrades({
       academic_year_id: academicYearId,
-      test_id: testId,
-      grades,
+      test_grades: testGrades,
     });
 
     academicYearId = value.academic_year_id;
-    testId = value.test_id;
-    grades = value.grades;
+    testGrades = value.test_grades;
 
-    // *************** Verify the test exists
-    const test = await TestModel.findOne({
-      _id: testId,
+    // *************** Extract all test and student IDs into flat arrays
+    const testIds = testGrades.map((group) => group.test_id);
+    const studentIds = [...new Set(testGrades.flatMap((group) => group.grades.map((grade) => grade.student_id)))];
+
+    // *************** Verify every test exists and resolve its owning subject
+    const tests = await TestModel.find({
+      _id: { $in: testIds },
       deleted_at: null,
-    }).lean();
-    if (!test) {
+    })
+      .select('subject_id')
+      .lean();
+    if (tests.length !== testIds.length) {
       throw new AppError('TEST_NOT_FOUND', 404, 'Test not found.');
     }
 
-    // *************** Extract all student IDs into a flat array
-    const extractedStudentIds = grades.map((grade) => grade.student_id);
+    // *************** Verify every test belongs to the same block
+    const subjectIds = [...new Set(tests.map((test) => String(test.subject_id)))];
+    const subjects = await SubjectModel.find({
+      _id: { $in: subjectIds },
+      deleted_at: null,
+    })
+      .select('block_id')
+      .lean();
+    if (subjects.length !== subjectIds.length) {
+      throw new AppError('CURRICULUM_ENTITY_NOT_FOUND', 404, 'Subject or block not found.');
+    }
+    const blockIds = [...new Set(subjects.map((subject) => String(subject.block_id)))];
+    if (blockIds.length !== 1) {
+      throw new AppError('CROSS_BLOCK_SUBMISSION', 400, 'All tests must belong to the same block.');
+    }
 
     // *************** Find all valid, non-deleted students in a single query
     const validStudentIds = await StudentModel.distinct('_id', {
-      _id: { $in: extractedStudentIds },
+      _id: { $in: studentIds },
       deleted_at: null,
     });
     const validStudentIdSet = new Set(validStudentIds.map(String));
 
     // *************** Validate that every student exists and is not deleted
-    for (const grade of grades) {
-      if (!validStudentIdSet.has(grade.student_id.toLowerCase())) {
+    for (const grade of studentIds) {
+      if (!validStudentIdSet.has(grade.toLowerCase())) {
         throw new AppError('INVALID_STUDENT_REFERENCE', 400, 'One or more student IDs are invalid or deleted.');
       }
     }
 
     // *************** Transform grades for Mongoose, injecting the year and test
-    const mappedGrades = grades.map((grade) => ({
-      student_id: grade.student_id,
-      test_id: testId,
-      academic_year_id: academicYearId,
-      score: grade.score,
-    }));
+    const mappedGrades = testGrades.flatMap((group) =>
+      group.grades.map((grade) => ({
+        student_id: grade.student_id,
+        test_id: group.test_id,
+        academic_year_id: academicYearId,
+        score: grade.score,
+      })),
+    );
 
     // *************** Bulk insert all grades (E11000 duplicate-key re-thrown unchanged)
     const insertedGrades = await StudentGradeModel.insertMany(mappedGrades);
 
     // *************** Spawn the aggregation worker, fire-and-forget
     SpawnGradeAggregator({
-      studentIds: extractedStudentIds,
-      testId,
+      studentIds,
+      testIds,
       academicYearId,
     });
 
@@ -104,25 +125,25 @@ async function SubmitTestGradesHelper({ academicYearId, testId, grades }) {
  *
  * @param {Object} params - The aggregation payload.
  * @param {Array<string>} params.studentIds - The IDs of the just-graded students.
- * @param {string} params.testId - The ID of the test that was just graded.
+ * @param {Array<string>} params.testIds - The IDs of the just-graded tests.
  * @param {string} params.academicYearId - The academic year of the submission.
  * @returns {void}
  */
-function SpawnGradeAggregator({ studentIds, testId, academicYearId }) {
+function SpawnGradeAggregator({ studentIds, testIds, academicYearId }) {
   try {
     // *************** Validate input
     const value = ValidateAndSanitizeSpawnGradeAggregator({
       studentIds,
-      testId,
+      testIds,
       academicYearId,
     });
     studentIds = value.studentIds;
-    testId = value.testId;
+    testIds = value.testIds;
     academicYearId = value.academicYearId;
 
     const payload = JSON.stringify({
       student_ids: studentIds,
-      test_id: testId,
+      test_ids: testIds,
       academic_year_id: academicYearId,
     });
 

@@ -25,8 +25,7 @@ function ValidateScorePrecision(value, helpers) {
 // *************** Rejects scores with more than 2 decimal places (precision drift)
 const ScoreSchema = Joi.number().min(0).max(100).custom(ValidateScorePrecision).required();
 
-const SubmitTestGradesSchema = Joi.object({
-  academic_year_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
+const TestGradeSchema = Joi.object({
   test_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
   grades: Joi.array()
     .items(
@@ -39,6 +38,11 @@ const SubmitTestGradesSchema = Joi.object({
     .min(1)
     .max(200)
     .required(),
+});
+
+const SubmitTestGradesSchema = Joi.object({
+  academic_year_id: Joi.string().regex(OBJECT_ID_PATTERN).required(),
+  test_grades: Joi.array().items(TestGradeSchema).unique('test_id').min(1).max(50).required(),
 });
 
 // *************** VALIDATE AND SANITIZE: GRADING ***************
@@ -58,7 +62,7 @@ function ValidateAndSanitizeSubmitTestGrades(input) {
 // *************** VALIDATION SCHEMA FOR SPAWN GRADE AGGREGATOR ***************
 const SpawnGradeAggregatorSchema = Joi.object({
   studentIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(500).required(),
-  testId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+  testIds: Joi.array().items(Joi.string().regex(OBJECT_ID_PATTERN).lowercase()).min(1).max(50).unique().required(),
   academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
 });
 
