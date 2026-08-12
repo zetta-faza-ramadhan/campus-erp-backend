@@ -21,13 +21,69 @@ const {
 } = require('./grading.validator');
 
 // *************** GLOBAL VARIABLES ***************
+
+/**
+ * Checks if a score strictly exceeds a threshold.
+ *
+ * @param {number} score - The student's numeric score.
+ * @param {number} threshold - The grading threshold.
+ * @returns {boolean} True when score > threshold.
+ */
+function IsGreaterThan(score, threshold) {
+  return score > threshold;
+}
+
+/**
+ * Checks if a score meets or exceeds a threshold.
+ *
+ * @param {number} score - The student's numeric score.
+ * @param {number} threshold - The grading threshold.
+ * @returns {boolean} True when score >= threshold.
+ */
+function IsGreaterThanOrEqual(score, threshold) {
+  return score >= threshold;
+}
+
+/**
+ * Checks if a score is strictly below a threshold.
+ *
+ * @param {number} score - The student's numeric score.
+ * @param {number} threshold - The grading threshold.
+ * @returns {boolean} True when score < threshold.
+ */
+function IsLessThan(score, threshold) {
+  return score < threshold;
+}
+
+/**
+ * Checks if a score is at or below a threshold.
+ *
+ * @param {number} score - The student's numeric score.
+ * @param {number} threshold - The grading threshold.
+ * @returns {boolean} True when score <= threshold.
+ */
+function IsLessThanOrEqual(score, threshold) {
+  return score <= threshold;
+}
+
+/**
+ * Checks if a score equals a threshold exactly.
+ *
+ * @param {number} score - The student's numeric score.
+ * @param {number} threshold - The grading threshold.
+ * @returns {boolean} True when score === threshold.
+ */
+function IsEqualTo(score, threshold) {
+  return score === threshold;
+}
+
 // *************** Operator -> comparator used to resolve grading tiers
 const OPERATOR_FUNCTIONS = {
-  '>': (score, threshold) => score > threshold,
-  '>=': (score, threshold) => score >= threshold,
-  '<': (score, threshold) => score < threshold,
-  '<=': (score, threshold) => score <= threshold,
-  '==': (score, threshold) => score === threshold,
+  '>': IsGreaterThan,
+  '>=': IsGreaterThanOrEqual,
+  '<': IsLessThan,
+  '<=': IsLessThanOrEqual,
+  '==': IsEqualTo,
 };
 
 // *************** Statuses accepted by the AcademicStanding schema

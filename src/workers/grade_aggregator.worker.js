@@ -20,6 +20,29 @@ if (!parentPort || !workerData) {
 // *************** WORKER FUNCTIONS ***************
 
 /**
+ * Resolves the connection promise when Mongoose reports 'connected'.
+ *
+ * @returns {void} Clears the timeout and resolves.
+ */
+function OnDatabaseConnected(resolve, timeout) {
+  clearTimeout(timeout);
+  resolve();
+}
+
+/**
+ * Rejects the connection promise with the underlying database error.
+ *
+ * @param {Function} reject - The Promise reject function.
+ * @param {NodeJS.Timeout} timeout - The timeout handle to clear.
+ * @param {Error} err - The database error.
+ * @returns {void} Clears the timeout and rejects.
+ */
+function OnDatabaseError(reject, timeout, err) {
+  clearTimeout(timeout);
+  reject(err);
+}
+
+/**
  * Waits for the auto-started Mongoose connection in this worker isolate.
  *
  * @returns {Promise<void>} Resolves once the connection is ready.
@@ -33,15 +56,22 @@ async function WaitForDatabaseConnection() {
       reject(new AppError('DB_CONNECTION_TIMEOUT', 500, 'Timed out waiting for the database connection.'));
     }, CONNECTION_TIMEOUT_MS);
 
-    databaseConnection.once('connected', () => {
-      clearTimeout(timeout);
-      resolve();
-    });
-    databaseConnection.once('error', (err) => {
-      clearTimeout(timeout);
-      reject(err);
-    });
+    databaseConnection.once('connected', () => OnDatabaseConnected(resolve, timeout));
+    databaseConnection.once('error', (err) => OnDatabaseError(reject, timeout, err));
   });
+}
+
+/**
+ * Handles an unhandled rejection from the worker entry point by
+ * reporting the failure to the main thread and closing the DB handle.
+ *
+ * @param {Error} err - The error that caused the worker to fail.
+ * @returns {Promise<void>} Resolves once the DB handle is closed.
+ */
+async function HandleWorkerFailure(err) {
+  parentPort.postMessage({ status: 'error', message: err.message });
+  process.exitCode = 1;
+  await databaseConnection.close();
 }
 
 // *************** WORKER ENTRY POINT ***************
@@ -66,8 +96,4 @@ async function Run() {
   await databaseConnection.close();
 }
 
-Run().catch(async (err) => {
-  parentPort.postMessage({ status: 'error', message: err.message });
-  process.exitCode = 1;
-  await databaseConnection.close();
-});
+Run().catch(HandleWorkerFailure);

@@ -38,6 +38,45 @@ const logger = pino({
 // *************** WORKER EVENT LISTENER HELPER ***************
 
 /**
+ * Handles the 'error' event from a worker thread by logging the crash.
+ *
+ * @param {string} operation - The operation label for log correlation.
+ * @param {Error} err - The error that caused the worker to crash.
+ * @returns {void}
+ */
+function HandleWorkerError(operation, err) {
+  logger.error({ operation, err }, `${operation} worker crashed`);
+}
+
+/**
+ * Handles the 'message' event from a worker thread by logging the outcome.
+ *
+ * @param {string} operation - The operation label for log correlation.
+ * @param {{ status?: string, message?: string }} message - The message payload from the worker.
+ * @returns {void}
+ */
+function HandleWorkerMessage(operation, message) {
+  if (message?.status === 'error') {
+    logger.error({ operation, message: message.message }, `${operation} worker failed`);
+    return;
+  }
+  logger.info({ operation }, `${operation} worker finished`);
+}
+
+/**
+ * Handles the 'exit' event from a worker thread by logging abnormal exits.
+ *
+ * @param {string} operation - The operation label for log correlation.
+ * @param {number} code - The exit code.
+ * @returns {void}
+ */
+function HandleWorkerExit(operation, code) {
+  if (code !== 0) {
+    logger.error({ operation, exit_code: code }, `${operation} worker exited abnormally`);
+  }
+}
+
+/**
  * Attaches standard error/message/exit listeners to a worker thread
  * that log via pino. Intentionally not awaited — fire-and-forget.
  *
@@ -45,23 +84,9 @@ const logger = pino({
  * @param {string} operation - Label for log correlation (e.g. "grade_aggregator").
  */
 function AttachWorkerListeners(worker, operation) {
-  worker.on('error', (err) => {
-    logger.error({ operation, err }, `${operation} worker crashed`);
-  });
-
-  worker.on('message', (message) => {
-    if (message?.status === 'error') {
-      logger.error({ operation, message: message.message }, `${operation} worker failed`);
-      return;
-    }
-    logger.info({ operation }, `${operation} worker finished`);
-  });
-
-  worker.on('exit', (code) => {
-    if (code !== 0) {
-      logger.error({ operation, exit_code: code }, `${operation} worker exited abnormally`);
-    }
-  });
+  worker.on('error', (err) => HandleWorkerError(operation, err));
+  worker.on('message', (message) => HandleWorkerMessage(operation, message));
+  worker.on('exit', (code) => HandleWorkerExit(operation, code));
 }
 
 // *************** EXPORT MODULE ***************
