@@ -8,6 +8,9 @@ const puppeteer = require('puppeteer');
 const AppError = require('../../core/error');
 const logger = require('../../core/logger');
 
+// *************** IMPORT HELPER FUNCTION ***************
+const { ReThrowHelperError } = require('../../core/helper_error');
+
 // *************** GLOBAL VARIABLES ***************
 let browserInstance = null;
 
@@ -22,12 +25,16 @@ let browserInstance = null;
  * @throws {Error} If the headless browser fails to launch.
  */
 async function InitializePDFService() {
-  if (browserInstance) {
+  try {
+    if (browserInstance) {
+      return browserInstance;
+    }
+    browserInstance = await puppeteer.launch({ headless: 'new' });
+    logger.info('Headless Chrome launched for PDF generation');
     return browserInstance;
+  } catch (err) {
+    ReThrowHelperError(err, 'initializing the PDF service');
   }
-  browserInstance = await puppeteer.launch({ headless: 'new' });
-  logger.info('Headless Chrome launched for PDF generation');
-  return browserInstance;
 }
 
 // *************** PAGE LIFECYCLE ***************
@@ -38,25 +45,34 @@ async function InitializePDFService() {
  *
  * @param {import('puppeteer').Page} page - The page to close once.
  * @returns {Function} An idempotent closer; later calls are no-ops.
+ * @throws {AppError} 400 - The page is missing or not a valid Puppeteer page.
  */
 function CreatePageCloser(page) {
-  let pageClosed = false;
-
-  /**
-   * Closes the page on the first call and swallows close errors (the page may
-   * already be gone if the browser crashed).
-   *
-   * @returns {void}
-   */
-  function ClosePage() {
-    if (pageClosed) {
-      return;
+  try {
+    if (!page || typeof page.close !== 'function') {
+      throw new AppError('INVALID_PDF_PAGE', 400, 'A valid Puppeteer page is required.');
     }
-    pageClosed = true;
-    page.close().catch(() => {});
-  }
 
-  return ClosePage;
+    let pageClosed = false;
+
+    /**
+     * Closes the page on the first call and swallows close errors (the page may
+     * already be gone if the browser crashed).
+     *
+     * @returns {void}
+     */
+    function ClosePage() {
+      if (pageClosed) {
+        return;
+      }
+      pageClosed = true;
+      page.close().catch(() => {});
+    }
+
+    return ClosePage;
+  } catch (err) {
+    ReThrowHelperError(err, 'creating the page closer');
+  }
 }
 
 // *************** GENERATE PDF STREAM ***************
@@ -67,10 +83,22 @@ function CreatePageCloser(page) {
  * @param {import('puppeteer').Page} page - The page to render with.
  * @param {string} htmlContent - Fully compiled HTML to convert to a PDF.
  * @returns {Promise<import('stream').Readable>} A readable PDF byte stream.
+ * @throws {AppError} 400 - The page or HTML content is invalid.
  */
 async function RenderPDFStream(page, htmlContent) {
-  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-  return Readable.fromWeb(await page.createPDFStream({ format: 'A4', printBackground: true }));
+  try {
+    if (!page || typeof page.setContent !== 'function') {
+      throw new AppError('INVALID_PDF_PAGE', 400, 'A valid Puppeteer page is required.');
+    }
+    if (typeof htmlContent !== 'string' || htmlContent.trim().length === 0) {
+      throw new AppError('INVALID_PDF_CONTENT', 400, 'PDF content must be a non-empty string.');
+    }
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    const pdfStream = Readable.fromWeb(await page.createPDFStream({ format: 'A4', printBackground: true }));
+    return pdfStream;
+  } catch (err) {
+    ReThrowHelperError(err, 'rendering the PDF stream');
+  }
 }
 
 /**
@@ -81,11 +109,22 @@ async function RenderPDFStream(page, htmlContent) {
  * @param {import('stream').Readable} stream - The PDF byte stream.
  * @param {Function} closePage - The idempotent page closer.
  * @returns {import('stream').Readable} The same stream, ready to be consumed.
+ * @throws {AppError} 400 - The stream or page closer is invalid.
  */
 function AttachPageCleanup(stream, closePage) {
-  stream.on('end', closePage);
-  stream.on('error', closePage);
-  return stream;
+  try {
+    if (!stream || typeof stream.on !== 'function') {
+      throw new AppError('INVALID_PDF_STREAM', 400, 'A valid PDF stream is required.');
+    }
+    if (typeof closePage !== 'function') {
+      throw new AppError('INVALID_PAGE_CLOSER', 400, 'A valid page closer is required.');
+    }
+    stream.on('end', closePage);
+    stream.on('error', closePage);
+    return stream;
+  } catch (err) {
+    ReThrowHelperError(err, 'attaching the page cleanup');
+  }
 }
 
 /**
@@ -96,33 +135,40 @@ function AttachPageCleanup(stream, closePage) {
  *
  * @param {string} htmlContent - Fully rendered HTML to convert to a PDF.
  * @returns {Promise<import('stream').Readable>} A readable PDF byte stream.
+ * @throws {AppError} 400 - The HTML content is invalid.
  * @throws {AppError} 500 - The PDF service was not initialized during boot.
- * @throws {Error} If the browser fails to render the HTML into a PDF.
  */
 async function GeneratePDFStream(htmlContent) {
-  if (!browserInstance) {
-    throw new AppError('PDF_SERVICE_NOT_INITIALIZED', 500, 'PDF service is not initialized. Call InitializePDFService() during boot.');
-  }
-
-  const page = await browserInstance.newPage();
-  const closePage = CreatePageCloser(page);
-  let pdfStream = null;
-
   try {
-    // *************** Render the PDF stream on the page
-    const renderedStream = await RenderPDFStream(page, htmlContent);
-    // *************** Wire the page closer to the stream lifecycle
-    pdfStream = AttachPageCleanup(renderedStream, closePage);
-    return pdfStream;
-  } catch (err) {
-    // *************** Rendering failed before a stream existed — close the page
-    closePage();
-    throw err;
-  } finally {
-    // *************** Guarantee page.close() when no stream was handed off
-    if (!pdfStream) {
-      closePage();
+    if (typeof htmlContent !== 'string' || htmlContent.trim().length === 0) {
+      throw new AppError('INVALID_PDF_CONTENT', 400, 'PDF content must be a non-empty string.');
     }
+    if (!browserInstance) {
+      throw new AppError('PDF_SERVICE_NOT_INITIALIZED', 500, 'PDF service is not initialized. Call InitializePDFService() during boot.');
+    }
+
+    const page = await browserInstance.newPage();
+    const closePage = CreatePageCloser(page);
+    let pdfStream = null;
+
+    try {
+      // *************** Render the PDF stream on the page
+      const renderedStream = await RenderPDFStream(page, htmlContent);
+      // *************** Wire the page closer to the stream lifecycle
+      pdfStream = AttachPageCleanup(renderedStream, closePage);
+      return pdfStream;
+    } catch (err) {
+      // *************** Rendering failed before a stream existed — close the page
+      closePage();
+      throw err;
+    } finally {
+      // *************** Guarantee page.close() when no stream was handed off
+      if (!pdfStream) {
+        closePage();
+      }
+    }
+  } catch (err) {
+    ReThrowHelperError(err, 'generating the PDF stream');
   }
 }
 
