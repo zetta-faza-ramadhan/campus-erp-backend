@@ -8,7 +8,15 @@ const TestModel = require('../curriculum/curriculum.model.test');
 const AcademicStandingModel = require('./academic_standing.model');
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAndSanitizeReportCardParams, ValidateAndSanitizeMapTestToTemplate, ValidateAndSanitizeMapSubjectToTemplate } = require('./grading.validator');
+const {
+  ValidateAndSanitizeReportCardParams,
+  ValidateAndSanitizeMapTestToTemplate,
+  ValidateAndSanitizeMapSubjectToTemplate,
+  ValidateAndSanitizeFormatReportDate,
+  ValidateAndSanitizeExtractId,
+  ValidateAndSanitizeExtractTestIdsFromSubject,
+  ValidateAndSanitizeBuildNameEntry,
+} = require('./grading.validator');
 
 // *************** IMPORT HELPER FUNCTION ***************
 const { ReThrowHelperError } = require('../../../core/helper_error');
@@ -23,8 +31,15 @@ const { ReThrowHelperError } = require('../../../core/helper_error');
  * @returns {string} The formatted issue date.
  */
 function FormatReportDate(date = new Date()) {
-  const formattedDate = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  return formattedDate;
+  try {
+    // *************** Validate input
+    const validDate = ValidateAndSanitizeFormatReportDate(date);
+    // *************** Format into a human-readable issue date
+    const formattedDate = validDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return formattedDate;
+  } catch (err) {
+    ReThrowHelperError(err, 'formatting the report date');
+  }
 }
 
 /**
@@ -36,8 +51,15 @@ function FormatReportDate(date = new Date()) {
  * @returns {import('mongoose').Types.ObjectId} The referenced entity id.
  */
 function ExtractId(entry, idField) {
-  const id = entry[idField];
-  return id;
+  try {
+    // *************** Validate input
+    const params = ValidateAndSanitizeExtractId({ entry, idField });
+    // *************** Extract the referenced entity id
+    const id = params.entry[params.idField];
+    return id;
+  } catch (err) {
+    ReThrowHelperError(err, 'extracting an entity id');
+  }
 }
 
 /**
@@ -48,8 +70,15 @@ function ExtractId(entry, idField) {
  * @returns {Array<import('mongoose').Types.ObjectId>} The test ids.
  */
 function ExtractTestIdsFromSubject(subject) {
-  const testIds = (subject.tests || []).map((test) => ExtractId(test, 'test_id'));
-  return testIds;
+  try {
+    // *************** Validate input
+    const params = ValidateAndSanitizeExtractTestIdsFromSubject({ subject });
+    // *************** Extract the per-test ids
+    const testIds = (params.subject.tests || []).map((test) => ExtractId(test, 'test_id'));
+    return testIds;
+  } catch (err) {
+    ReThrowHelperError(err, 'extracting test ids from a subject');
+  }
 }
 
 /**
@@ -62,8 +91,15 @@ function ExtractTestIdsFromSubject(subject) {
  * @returns {[string, string]} The [id, name] pair.
  */
 function BuildNameEntry(doc) {
-  const entry = [String(doc._id), doc.name];
-  return entry;
+  try {
+    // *************** Validate input
+    const params = ValidateAndSanitizeBuildNameEntry({ doc });
+    // *************** Build the [id, name] pair
+    const entry = [String(params.doc._id), params.doc.name];
+    return entry;
+  } catch (err) {
+    ReThrowHelperError(err, 'building a name map entry');
+  }
 }
 
 /**
@@ -75,13 +111,19 @@ function BuildNameEntry(doc) {
  * @returns {Object} The template test context.
  */
 function MapTestToTemplate(test, testNameById) {
-  const params = ValidateAndSanitizeMapTestToTemplate({ test, testNameById });
-  const templateTest = {
-    name: params.testNameById.get(String(params.test.test_id)),
-    total_mark: params.test.total_mark,
-    test_status: params.test.test_status,
-  };
-  return templateTest;
+  try {
+    // *************** Validate input
+    const params = ValidateAndSanitizeMapTestToTemplate({ test, testNameById });
+    // *************** Shape the template test context
+    const templateTest = {
+      name: params.testNameById.get(String(params.test.test_id)),
+      total_mark: params.test.total_mark,
+      test_status: params.test.test_status,
+    };
+    return templateTest;
+  } catch (err) {
+    ReThrowHelperError(err, 'mapping a test to the template');
+  }
 }
 
 /**
@@ -94,14 +136,20 @@ function MapTestToTemplate(test, testNameById) {
  * @returns {Object} The template subject context.
  */
 function MapSubjectToTemplate(subject, subjectNameById, testNameById) {
-  const params = ValidateAndSanitizeMapSubjectToTemplate({ subject, subjectNameById, testNameById });
-  const templateSubject = {
-    name: params.subjectNameById.get(String(params.subject.subject_id)),
-    subject_average: params.subject.subject_average,
-    subject_status: params.subject.subject_status,
-    tests: (params.subject.tests || []).map((test) => MapTestToTemplate(test, params.testNameById)),
-  };
-  return templateSubject;
+  try {
+    // *************** Validate input
+    const params = ValidateAndSanitizeMapSubjectToTemplate({ subject, subjectNameById, testNameById });
+    // *************** Shape the template subject context
+    const templateSubject = {
+      name: params.subjectNameById.get(String(params.subject.subject_id)),
+      subject_average: params.subject.subject_average,
+      subject_status: params.subject.subject_status,
+      tests: (params.subject.tests || []).map((test) => MapTestToTemplate(test, params.testNameById)),
+    };
+    return templateSubject;
+  } catch (err) {
+    ReThrowHelperError(err, 'mapping a subject to the template');
+  }
 }
 
 /**

@@ -264,6 +264,86 @@ function ValidateAndSanitizeMapSubjectToTemplate(input) {
   });
 }
 
+// *************** VALIDATION SCHEMA FOR FORMAT REPORT DATE ***************
+const FormatReportDateSchema = Joi.date().required();
+
+// *************** VALIDATE AND SANITIZE: FORMAT REPORT DATE ***************
+/**
+ * Validates and sanitizes FormatReportDate input.
+ *
+ * @param {Date} input - The date to format.
+ * @returns {Date} Sanitized and validated date.
+ */
+function ValidateAndSanitizeFormatReportDate(input) {
+  return ValidateInputWithJoi({
+    schema: FormatReportDateSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR EXTRACT ID ***************
+const ExtractIdSchema = Joi.object({
+  entry: Joi.object().required(),
+  idField: Joi.string().valid('subject_id', 'test_id').required(),
+});
+
+// *************** VALIDATE AND SANITIZE: EXTRACT ID ***************
+/**
+ * Validates and sanitizes ExtractId input.
+ *
+ * @param {Object} input - Raw extraction params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeExtractId(input) {
+  return ValidateInputWithJoi({
+    schema: ExtractIdSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR EXTRACT TEST IDS FROM SUBJECT ***************
+const ExtractTestIdsFromSubjectSchema = Joi.object({
+  subject: Joi.object({
+    tests: Joi.array().optional(),
+  }).required(),
+});
+
+// *************** VALIDATE AND SANITIZE: EXTRACT TEST IDS FROM SUBJECT ***************
+/**
+ * Validates and sanitizes ExtractTestIdsFromSubject input.
+ *
+ * @param {Object} input - Raw subject entry.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeExtractTestIdsFromSubject(input) {
+  return ValidateInputWithJoi({
+    schema: ExtractTestIdsFromSubjectSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR BUILD NAME ENTRY ***************
+const BuildNameEntrySchema = Joi.object({
+  doc: Joi.object({
+    _id: Joi.any().required(),
+    name: Joi.string().required(),
+  }).required(),
+});
+
+// *************** VALIDATE AND SANITIZE: BUILD NAME ENTRY ***************
+/**
+ * Validates and sanitizes BuildNameEntry input.
+ *
+ * @param {Object} input - Raw lean curriculum document.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeBuildNameEntry(input) {
+  return ValidateInputWithJoi({
+    schema: BuildNameEntrySchema,
+    payload: input,
+  });
+}
+
 // *************** VALIDATE AND SANITIZE: REPORT CARD PARAMS ***************
 /**
  * Validates and sanitizes the report-card route parameters for the REST
@@ -304,4 +384,12 @@ module.exports = {
   ValidateAndSanitizeMapTestToTemplate,
   MapSubjectToTemplateSchema,
   ValidateAndSanitizeMapSubjectToTemplate,
+  FormatReportDateSchema,
+  ValidateAndSanitizeFormatReportDate,
+  ExtractIdSchema,
+  ValidateAndSanitizeExtractId,
+  ExtractTestIdsFromSubjectSchema,
+  ValidateAndSanitizeExtractTestIdsFromSubject,
+  BuildNameEntrySchema,
+  ValidateAndSanitizeBuildNameEntry,
 };
