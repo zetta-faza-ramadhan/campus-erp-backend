@@ -31,7 +31,8 @@ const reportCardTemplatePath = path.join(__dirname, 'templates', 'report_card.hb
  */
 async function CompileReportCardTemplate(data) {
   const source = await fs.readFile(reportCardTemplatePath, 'utf8');
-  return Handlebars.compile(source)(data);
+  const compiledHtml = Handlebars.compile(source)(data);
+  return compiledHtml;
 }
 
 /**
@@ -42,7 +43,8 @@ async function CompileReportCardTemplate(data) {
  * @returns {string} The attachment filename (e.g. "ReportCard_507f1f77bcf86cd799439011.pdf").
  */
 function BuildReportCardFilename(studentId) {
-  return `ReportCard_${studentId}.pdf`;
+  const filename = `ReportCard_${studentId}.pdf`;
+  return filename;
 }
 
 /**

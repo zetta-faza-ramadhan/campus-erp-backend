@@ -214,6 +214,56 @@ const ReportCardParamsSchema = Joi.object({
   studentId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
 });
 
+// *************** VALIDATION SCHEMA FOR MAP TEST TO TEMPLATE ***************
+const MapTestToTemplateSchema = Joi.object({
+  test: Joi.object({
+    test_id: Joi.any().required(),
+    total_mark: Joi.number().allow(null).optional(),
+    test_status: Joi.string().allow(null).optional(),
+  }).required(),
+  testNameById: Joi.any().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: MAP TEST TO TEMPLATE ***************
+/**
+ * Validates and sanitizes MapTestToTemplate input.
+ *
+ * @param {Object} input - Raw template mapping params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeMapTestToTemplate(input) {
+  return ValidateInputWithJoi({
+    schema: MapTestToTemplateSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR MAP SUBJECT TO TEMPLATE ***************
+const MapSubjectToTemplateSchema = Joi.object({
+  subject: Joi.object({
+    subject_id: Joi.any().required(),
+    subject_average: Joi.number().allow(null).optional(),
+    subject_status: Joi.string().allow(null).optional(),
+    tests: Joi.array().optional(),
+  }).required(),
+  subjectNameById: Joi.any().required(),
+  testNameById: Joi.any().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: MAP SUBJECT TO TEMPLATE ***************
+/**
+ * Validates and sanitizes MapSubjectToTemplate input.
+ *
+ * @param {Object} input - Raw template mapping params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeMapSubjectToTemplate(input) {
+  return ValidateInputWithJoi({
+    schema: MapSubjectToTemplateSchema,
+    payload: input,
+  });
+}
+
 // *************** VALIDATE AND SANITIZE: REPORT CARD PARAMS ***************
 /**
  * Validates and sanitizes the report-card route parameters for the REST
@@ -250,4 +300,8 @@ module.exports = {
   ValidateAndSanitizeLoadCurriculumHierarchy,
   ReportCardParamsSchema,
   ValidateAndSanitizeReportCardParams,
+  MapTestToTemplateSchema,
+  ValidateAndSanitizeMapTestToTemplate,
+  MapSubjectToTemplateSchema,
+  ValidateAndSanitizeMapSubjectToTemplate,
 };
