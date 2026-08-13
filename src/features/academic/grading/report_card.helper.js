@@ -206,7 +206,7 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     const testNameById = new Map(tests.map(BuildNameEntry));
 
     // *************** Shape the template context from the fetched documents
-    return {
+    const reportCardContext = {
       student: {
         first_name: student.first_name,
         last_name: student.last_name,
@@ -220,6 +220,7 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
       generated_at: FormatReportDate(),
       subjects: standingSubjects.map((subject) => MapSubjectToTemplate(subject, subjectNameById, testNameById)),
     };
+    return reportCardContext;
   } catch (err) {
     ReThrowHelperError(err, 'building the report card');
   }
