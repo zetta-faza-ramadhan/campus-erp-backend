@@ -10,6 +10,9 @@ const Handlebars = require('handlebars');
 const logger = require('../../../core/logger');
 const { GeneratePDFStream } = require('../../../shared/services/pdf.service');
 
+// *************** IMPORT VALIDATOR ***************
+const { ValidateAndSanitizeReportCardParams } = require('./grading.validator');
+
 // *************** IMPORT HELPER FUNCTION ***************
 const { FetchReportCardDataHelper } = require('./report_card.helper');
 
@@ -71,10 +74,16 @@ function HandlePDFStreamError(res, err) {
  */
 router.get('/report-card/:academicYearId/:studentId', async (req, res, next) => {
   try {
-    // *************** Delegate to the business-logic helper with the route params
-    const data = await FetchReportCardDataHelper({
+    // *************** Validate and sanitize the route parameters at the transport boundary
+    const params = ValidateAndSanitizeReportCardParams({
       academicYearId: req.params.academicYearId,
       studentId: req.params.studentId,
+    });
+
+    // *************** Delegate to the business-logic helper with sanitized params
+    const data = await FetchReportCardDataHelper({
+      academicYearId: params.academicYearId,
+      studentId: params.studentId,
     });
 
     // *************** Compile the template and stream the PDF response
@@ -82,7 +91,7 @@ router.get('/report-card/:academicYearId/:studentId', async (req, res, next) => 
     const pdfStream = await GeneratePDFStream(compiledHtml);
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${BuildReportCardFilename(req.params.studentId)}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${BuildReportCardFilename(params.studentId)}"`);
     pdfStream.on('error', HandlePDFStreamError.bind(null, res));
     pdfStream.pipe(res);
   } catch (err) {
