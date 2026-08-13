@@ -67,8 +67,8 @@ function BuildNameEntry(doc) {
 }
 
 /**
- * Maps a standing test entry into its template context, preferring the
- * resolved curriculum name and falling back to the id string.
+ * Maps a standing test entry into its template context, resolving the
+ * curriculum name.
  *
  * @param {Object} test - A standing test entry.
  * @param {Map<string, string>} testNameById - Map of test id to test name.
@@ -77,7 +77,7 @@ function BuildNameEntry(doc) {
 function MapTestToTemplate(test, testNameById) {
   const params = ValidateAndSanitizeMapTestToTemplate({ test, testNameById });
   const templateTest = {
-    name: params.testNameById.get(String(params.test.test_id)) || String(params.test.test_id),
+    name: params.testNameById.get(String(params.test.test_id)),
     total_mark: params.test.total_mark,
     test_status: params.test.test_status,
   };
@@ -96,7 +96,7 @@ function MapTestToTemplate(test, testNameById) {
 function MapSubjectToTemplate(subject, subjectNameById, testNameById) {
   const params = ValidateAndSanitizeMapSubjectToTemplate({ subject, subjectNameById, testNameById });
   const templateSubject = {
-    name: params.subjectNameById.get(String(params.subject.subject_id)) || String(params.subject.subject_id),
+    name: params.subjectNameById.get(String(params.subject.subject_id)),
     subject_average: params.subject.subject_average,
     subject_status: params.subject.subject_status,
     tests: (params.subject.tests || []).map((test) => MapTestToTemplate(test, params.testNameById)),
@@ -165,8 +165,8 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
         email: student.email,
         student_number: student.student_number,
       },
-      academic_year: { name: academicYear?.name || String(standing.academic_year_id) },
-      block: { name: block?.name || String(standing.block_id) },
+      academic_year: { name: academicYear?.name },
+      block: { name: block?.name },
       block_average: standing.block_average,
       block_status: standing.block_status,
       generated_at: FormatReportDate(),
