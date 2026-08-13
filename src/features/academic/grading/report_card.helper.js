@@ -28,27 +28,16 @@ function FormatReportDate(date = new Date()) {
 }
 
 /**
- * Extracts the subject id from a standing subject entry.
+ * Extracts an entity id from a standing subject or test entry, using either
+ * the "subject_id" or "test_id" reference field.
  *
- * @param {Object} subject - A standing subject entry.
- * @param {import('mongoose').Types.ObjectId} subject.subject_id - The subject id.
- * @returns {import('mongoose').Types.ObjectId} The subject id.
+ * @param {Object} entry - A standing subject or test entry.
+ * @param {string} idField - The reference field name ("subject_id" | "test_id").
+ * @returns {import('mongoose').Types.ObjectId} The referenced entity id.
  */
-function ExtractSubjectId(subject) {
-  const subjectId = subject.subject_id;
-  return subjectId;
-}
-
-/**
- * Extracts a test id from a standing test entry.
- *
- * @param {Object} test - A standing test entry.
- * @param {import('mongoose').Types.ObjectId} test.test_id - The test id.
- * @returns {import('mongoose').Types.ObjectId} The test id.
- */
-function ExtractTestId(test) {
-  const testId = test.test_id;
-  return testId;
+function ExtractId(entry, idField) {
+  const id = entry[idField];
+  return id;
 }
 
 /**
@@ -59,33 +48,21 @@ function ExtractTestId(test) {
  * @returns {Array<import('mongoose').Types.ObjectId>} The test ids.
  */
 function ExtractTestIdsFromSubject(subject) {
-  const testIds = (subject.tests || []).map(ExtractTestId);
+  const testIds = (subject.tests || []).map((test) => ExtractId(test, 'test_id'));
   return testIds;
 }
 
 /**
- * Builds an id-to-name map entry from a lean subject document.
+ * Builds an id-to-name map entry from a lean curriculum document (subject or
+ * test), which both expose a "_id" and a "name" field.
  *
- * @param {Object} subject - A lean subject document.
- * @param {import('mongoose').Types.ObjectId} subject._id - The subject id.
- * @param {string} subject.name - The subject name.
+ * @param {Object} doc - A lean subject or test document.
+ * @param {import('mongoose').Types.ObjectId} doc._id - The entity id.
+ * @param {string} doc.name - The entity name.
  * @returns {[string, string]} The [id, name] pair.
  */
-function BuildSubjectNameEntry(subject) {
-  const entry = [String(subject._id), subject.name];
-  return entry;
-}
-
-/**
- * Builds an id-to-name map entry from a lean test document.
- *
- * @param {Object} test - A lean test document.
- * @param {import('mongoose').Types.ObjectId} test._id - The test id.
- * @param {string} test.name - The test name.
- * @returns {[string, string]} The [id, name] pair.
- */
-function BuildTestNameEntry(test) {
-  const entry = [String(test._id), test.name];
+function BuildNameEntry(doc) {
+  const entry = [String(doc._id), doc.name];
   return entry;
 }
 
@@ -164,7 +141,7 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
 
     // *************** Resolve the block, subject, and test names from the standing
     const standingSubjects = standing.subjects || [];
-    const subjectIds = standingSubjects.map(ExtractSubjectId);
+    const subjectIds = standingSubjects.map((subject) => ExtractId(subject, 'subject_id'));
     const testIds = standingSubjects.flatMap(ExtractTestIdsFromSubject);
 
     const [block, subjects, tests] = await Promise.all([
@@ -177,8 +154,8 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
         .lean(),
     ]);
 
-    const subjectNameById = new Map(subjects.map(BuildSubjectNameEntry));
-    const testNameById = new Map(tests.map(BuildTestNameEntry));
+    const subjectNameById = new Map(subjects.map(BuildNameEntry));
+    const testNameById = new Map(tests.map(BuildNameEntry));
 
     // *************** Shape the template context from the fetched documents
     return {
