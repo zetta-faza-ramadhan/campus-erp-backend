@@ -210,17 +210,30 @@ function ValidateAndSanitizeLoadCurriculumHierarchy(input) {
 
 // *************** VALIDATION SCHEMA FOR REPORT CARD PARAMS ***************
 const ReportCardParamsSchema = Joi.object({
-  academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).required(),
+  academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
   studentId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+});
+
+// *************** SHARED STANDING SUB-SCHEMAS ***************
+// Mirror the academic_standing model shapes (StandingTestSchema /
+// StandingSubjectSchema) so every standing-shaped validator validates the
+// same contract. subject_id/test_id are stored ObjectId instances, hence Joi.any().
+const StandingTestSchema = Joi.object({
+  test_id: Joi.any().required(),
+  total_mark: Joi.number().min(0).max(100).required(),
+  test_status: Joi.string().valid('PASS', 'FAIL', 'RETAKE').required(),
+});
+
+const StandingSubjectSchema = Joi.object({
+  subject_id: Joi.any().required(),
+  subject_average: Joi.number().min(0).max(100).required(),
+  subject_status: Joi.string().valid('PASS', 'FAIL', 'RETAKE').required(),
+  tests: Joi.array().items(StandingTestSchema).optional(),
 });
 
 // *************** VALIDATION SCHEMA FOR MAP TEST TO TEMPLATE ***************
 const MapTestToTemplateSchema = Joi.object({
-  test: Joi.object({
-    test_id: Joi.any().required(),
-    total_mark: Joi.number().allow(null).optional(),
-    test_status: Joi.string().allow(null).optional(),
-  }).required(),
+  test: StandingTestSchema,
   testNameById: Joi.any().required(),
 });
 
@@ -240,12 +253,7 @@ function ValidateAndSanitizeMapTestToTemplate(input) {
 
 // *************** VALIDATION SCHEMA FOR MAP SUBJECT TO TEMPLATE ***************
 const MapSubjectToTemplateSchema = Joi.object({
-  subject: Joi.object({
-    subject_id: Joi.any().required(),
-    subject_average: Joi.number().allow(null).optional(),
-    subject_status: Joi.string().allow(null).optional(),
-    tests: Joi.array().optional(),
-  }).required(),
+  subject: StandingSubjectSchema,
   subjectNameById: Joi.any().required(),
   testNameById: Joi.any().required(),
 });
@@ -303,9 +311,7 @@ function ValidateAndSanitizeExtractId(input) {
 
 // *************** VALIDATION SCHEMA FOR EXTRACT TEST IDS FROM SUBJECT ***************
 const ExtractTestIdsFromSubjectSchema = Joi.object({
-  subject: Joi.object({
-    tests: Joi.array().optional(),
-  }).required(),
+  subject: StandingSubjectSchema,
 });
 
 // *************** VALIDATE AND SANITIZE: EXTRACT TEST IDS FROM SUBJECT ***************
@@ -380,6 +386,8 @@ module.exports = {
   ValidateAndSanitizeLoadCurriculumHierarchy,
   ReportCardParamsSchema,
   ValidateAndSanitizeReportCardParams,
+  StandingTestSchema,
+  StandingSubjectSchema,
   MapTestToTemplateSchema,
   ValidateAndSanitizeMapTestToTemplate,
   MapSubjectToTemplateSchema,
