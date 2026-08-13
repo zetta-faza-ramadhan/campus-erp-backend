@@ -267,11 +267,11 @@ async function DeleteBlockHelper(_id) {
     if (!deleted) {
       throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
     }
-    const subjects = await SubjectModel.find({ block_id: _id, deleted_at: null }, { _id: 1 }).lean();
+    const subjectIds = await SubjectModel.distinct('_id', { block_id: _id, deleted_at: null });
     await SubjectModel.updateMany({ block_id: _id, deleted_at: null }, { deleted_at: now });
     await TestModel.updateMany(
       {
-        subject_id: { $in: subjects.map((subject) => subject._id) },
+        subject_id: { $in: subjectIds },
         deleted_at: null,
       },
       { deleted_at: now },
