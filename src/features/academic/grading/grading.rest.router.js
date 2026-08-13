@@ -32,17 +32,14 @@ async function CompileReportCardTemplate(data) {
 }
 
 /**
- * Builds the downloadable filename for a student's report card from their
- * profile name, stripping characters that are unsafe in file names.
+ * Builds the downloadable filename for a student's report card from the
+ * route parameter.
  *
- * @param {Object} student - The student template context.
- * @param {string} student.first_name - The student's first name.
- * @param {string} student.last_name - The student's last name.
- * @returns {string} The attachment filename (e.g. "ReportCard_Faza Zikri.pdf").
+ * @param {string} studentId - The student id from the route params.
+ * @returns {string} The attachment filename (e.g. "ReportCard_507f1f77bcf86cd799439011.pdf").
  */
-function BuildReportCardFilename(student) {
-  const name = `${student.first_name} ${student.last_name}`.trim().replace(/[\\/:*?"<>|]/g, '');
-  return `ReportCard_${name}.pdf`;
+function BuildReportCardFilename(studentId) {
+  return `ReportCard_${studentId}.pdf`;
 }
 
 /**
@@ -85,7 +82,7 @@ router.get('/report-card/:academicYearId/:studentId', async (req, res, next) => 
     const pdfStream = await GeneratePDFStream(compiledHtml);
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${BuildReportCardFilename(data.student)}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${BuildReportCardFilename(req.params.studentId)}"`);
     pdfStream.on('error', HandlePDFStreamError.bind(null, res));
     pdfStream.pipe(res);
   } catch (err) {
