@@ -74,7 +74,7 @@ function ExtractTestIdsFromSubject(subject) {
     // *************** Validate input
     const params = ValidateAndSanitizeExtractTestIdsFromSubject({ subject });
     // *************** Extract the per-test ids
-    const testIds = (params.subject.tests || []).map((test) => ExtractId(test, 'test_id'));
+    const testIds = (params.subject.tests || []).map(ExtractTestId);
     return testIds;
   } catch (err) {
     ReThrowHelperError(err, 'extracting test ids from a subject');
@@ -103,6 +103,123 @@ function BuildNameEntry(doc) {
 }
 
 /**
+ * Extracts the test_id from a standing test entry.
+ *
+ * @param {Object} test - A standing test entry.
+ * @param {import('mongoose').Types.ObjectId} test.test_id - The test id.
+ * @returns {import('mongoose').Types.ObjectId} The test id.
+ */
+function ExtractTestId(test) {
+  const result = ExtractId(test, 'test_id');
+  return result;
+}
+
+/**
+ * Checks whether a single id is absent from an id-to-name map.
+ *
+ * @param {string|import('mongoose').Types.ObjectId} id - The id to look up.
+ * @param {Map<string, string>} nameById - The id-to-name map.
+ * @returns {boolean} True when the id is missing from the map.
+ */
+function IsIdMissingFromMap(id, nameById) {
+  const result = !nameById.has(String(id));
+  return result;
+}
+
+/**
+ * Maps a standing test entry into its template context using a name map.
+ *
+ * @param {Object} test - A standing test entry.
+ * @param {Map<string, string>} testNameById - Map of test id to test name.
+ * @returns {Object} The template test context.
+ */
+function MapTestWithNames(test, testNameById) {
+  const result = MapTestToTemplate(test, testNameById);
+  return result;
+}
+
+/**
+ * Extracts the block_id from a standing entry.
+ *
+ * @param {Object} standing - An academic standing entry.
+ * @param {import('mongoose').Types.ObjectId} standing.block_id - The block id.
+ * @returns {import('mongoose').Types.ObjectId} The block id.
+ */
+function ExtractBlockId(standing) {
+  const result = ExtractId(standing, 'block_id');
+  return result;
+}
+
+/**
+ * Extracts all subject ids from a standing entry's subject list.
+ *
+ * @param {Object} standing - An academic standing entry.
+ * @param {Array<Object>} [standing.subjects] - The subject breakdown.
+ * @returns {Array<import('mongoose').Types.ObjectId>} The subject ids.
+ */
+function ExtractSubjectIdsFromStanding(standing) {
+  const result = (standing.subjects || []).map(ExtractSubjectId);
+  return result;
+}
+
+/**
+ * Extracts the subject_id from a standing subject entry.
+ *
+ * @param {Object} subject - A standing subject entry.
+ * @param {import('mongoose').Types.ObjectId} subject.subject_id - The subject id.
+ * @returns {import('mongoose').Types.ObjectId} The subject id.
+ */
+function ExtractSubjectId(subject) {
+  const result = ExtractId(subject, 'subject_id');
+  return result;
+}
+
+/**
+ * Extracts all test ids from a standing entry's nested subject breakdown.
+ *
+ * @param {Object} standing - An academic standing entry.
+ * @param {Array<Object>} [standing.subjects] - The subject breakdown.
+ * @returns {Array<import('mongoose').Types.ObjectId>} The test ids.
+ */
+function ExtractAllTestIdsFromStanding(standing) {
+  const result = (standing.subjects || []).flatMap(ExtractTestIdsFromSubject);
+  return result;
+}
+
+/**
+ * Maps a standing entry into its report-card block template context.
+ *
+ * @param {Object} standing - An academic standing entry.
+ * @param {Map<string, string>} blockNameById - Map of block id to block name.
+ * @param {Map<string, string>} subjectNameById - Map of subject id to subject name.
+ * @param {Map<string, string>} testNameById - Map of test id to test name.
+ * @returns {Object} The template block context with nested subjects.
+ */
+function MapStandingToReportCardBlock(standing, blockNameById, subjectNameById, testNameById) {
+  const standingSubjects = standing.subjects || [];
+  const reportCardBlock = {
+    name: blockNameById.get(String(standing.block_id)),
+    block_average: standing.block_average,
+    block_status: standing.block_status,
+    subjects: standingSubjects.map((subject) => MapSubjectWithNames(subject, subjectNameById, testNameById)),
+  };
+  return reportCardBlock;
+}
+
+/**
+ * Maps a standing subject entry into its template context using name maps.
+ *
+ * @param {Object} subject - A standing subject entry.
+ * @param {Map<string, string>} subjectNameById - Map of subject id to subject name.
+ * @param {Map<string, string>} testNameById - Map of test id to test name.
+ * @returns {Object} The template subject context.
+ */
+function MapSubjectWithNames(subject, subjectNameById, testNameById) {
+  const result = MapSubjectToTemplate(subject, subjectNameById, testNameById);
+  return result;
+}
+
+/**
  * Throws an AppError if any of the provided ids are not present in the map.
  *
  * @param {Array<string|import('mongoose').Types.ObjectId>} ids - The ids to check.
@@ -112,7 +229,7 @@ function BuildNameEntry(doc) {
  * @returns {void}
  */
 function GuardMissingIds(ids, nameById, code, message) {
-  const missing = ids.some((id) => !nameById.has(String(id)));
+  const missing = ids.some((id) => IsIdMissingFromMap(id, nameById));
   if (missing) {
     throw new AppError(code, 404, message);
   }
@@ -160,7 +277,7 @@ function MapSubjectToTemplate(subject, subjectNameById, testNameById) {
       name: params.subjectNameById.get(String(params.subject.subject_id)),
       subject_average: params.subject.subject_average,
       subject_status: params.subject.subject_status,
-      tests: (params.subject.tests || []).map((test) => MapTestToTemplate(test, params.testNameById)),
+      tests: (params.subject.tests || []).map((test) => MapTestWithNames(test, params.testNameById)),
     };
     return templateSubject;
   } catch (err) {
@@ -207,9 +324,9 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     }
 
     // *************** Resolve the block, subject, and test names from the standings
-    const blockIds = standings.map((standing) => ExtractId(standing, 'block_id'));
-    const subjectIds = standings.flatMap((standing) => (standing.subjects || []).map((subject) => ExtractId(subject, 'subject_id')));
-    const testIds = standings.flatMap((standing) => (standing.subjects || []).flatMap(ExtractTestIdsFromSubject));
+    const blockIds = standings.map(ExtractBlockId);
+    const subjectIds = standings.flatMap(ExtractSubjectIdsFromStanding);
+    const testIds = standings.flatMap(ExtractAllTestIdsFromStanding);
 
     const [blocks, subjects, tests] = await Promise.all([
       BlockModel.find({
@@ -241,16 +358,9 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     // }
 
     // *************** Shape the template context from the fetched documents
-    const reportCardBlocks = standings.map((standing) => {
-      const standingSubjects = standing.subjects || [];
-      const reportCardBlock = {
-        name: blockNameById.get(String(standing.block_id)),
-        block_average: standing.block_average,
-        block_status: standing.block_status,
-        subjects: standingSubjects.map((subject) => MapSubjectToTemplate(subject, subjectNameById, testNameById)),
-      };
-      return reportCardBlock;
-    });
+    const reportCardBlocks = standings.map((standing) =>
+      MapStandingToReportCardBlock(standing, blockNameById, subjectNameById, testNameById),
+    );
 
     const reportCardContext = {
       student: {
