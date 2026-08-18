@@ -1,6 +1,7 @@
 // *************** IMPORT CORE ***************
 const fs = require('fs/promises');
 const path = require('path');
+const { pipeline } = require('stream/promises');
 
 // *************** IMPORT LIBRARY ***************
 const express = require('express');
@@ -68,8 +69,10 @@ function BuildReportCardFilename(studentId) {
 }
 
 /**
- * Logs a mid-stream PDF failure and aborts the response. Invoked when the PDF
- * stream errors after the response headers have already been sent.
+ * Logs a PDF streaming failure and aborts the response. Invoked from the
+ * pipeline() catch when the source errors or the response closes before the
+ * PDF finished streaming (e.g. a client disconnect). Calling destroy() on an
+ * already-closed response is a no-op, so this is safe on abort paths.
  *
  * @param {Object} res - Express response object.
  * @param {Error} err - The streaming error.
@@ -95,7 +98,9 @@ function HandlePDFStreamError(res, err) {
  * Transport-only: delegates data fetching and shaping to the business-logic
  * helper, renders the Handlebars report-card template, and streams the
  * resulting PDF directly to the HTTP response (Content-Type: application/pdf).
- * No temporary file is ever written to disk.
+ * The response is streamed via pipeline() so a client disconnect destroys the
+ * PDF source and frees its Puppeteer page. No temporary file is ever written
+ * to disk.
  *
  * @param {Object} req - Express request.
  * @param {Object} res - Express response.
@@ -119,10 +124,16 @@ router.get('/report-card/:academicYearId/:studentId', async (req, res, next) => 
     const compiledHtml = await CompileReportCardTemplate(data);
     const pdfStream = await GeneratePDFStream(compiledHtml);
 
+    // *************** Stream the compiled PDF to the response
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${BuildReportCardFilename(params.studentId)}"`);
-    pdfStream.on('error', HandlePDFStreamError.bind(null, res));
-    pdfStream.pipe(res);
+
+    // *************** pipeline() ensures the PDF stream is properly piped to the response and handles errors gracefully
+    try {
+      await pipeline(pdfStream, res);
+    } catch (err) {
+      HandlePDFStreamError(res, err);
+    }
   } catch (err) {
     next(err);
   }

@@ -104,9 +104,10 @@ async function RenderPDFStream(page, htmlContent) {
 }
 
 /**
- * Attaches the idempotent page closer to the PDF stream's end and error events
- * so the page is freed exactly once when the stream finishes, whether it
- * completes or fails.
+ * Attaches the idempotent page closer to the PDF stream's end, error, and
+ * close events so the page is freed exactly once when the stream finishes —
+ * whether it completes, fails, or is destroyed early (e.g. the client
+ * disconnected and the transport aborted the source via pipeline()).
  *
  * @param {import('stream').Readable} stream - The PDF byte stream.
  * @param {Function} closePage - The idempotent page closer.
@@ -123,6 +124,7 @@ function AttachPageCleanup(stream, closePage) {
     }
     stream.on('end', closePage);
     stream.on('error', closePage);
+    stream.on('close', closePage);
     return stream;
   } catch (err) {
     ReThrowHelperError(err, 'attaching the page cleanup');
@@ -132,8 +134,9 @@ function AttachPageCleanup(stream, closePage) {
 /**
  * Renders fully-compiled HTML into a PDF stream.
  *
- * Guarantees the page is always closed — on stream end/error via the listeners,
- * or in the catch/finally when rendering fails before a stream is produced.
+ * Guarantees the page is always closed — on stream end/error/close via the
+ * listeners, or in the catch/finally when rendering fails before a stream is
+ * produced.
  *
  * @param {string} htmlContent - Fully rendered HTML to convert to a PDF.
  * @returns {Promise<import('stream').Readable>} A readable PDF byte stream.
