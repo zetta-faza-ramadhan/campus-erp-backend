@@ -103,6 +103,22 @@ function BuildNameEntry(doc) {
 }
 
 /**
+ * Throws an AppError if any of the provided ids are not present in the map.
+ *
+ * @param {Array<string|import('mongoose').Types.ObjectId>} ids - The ids to check.
+ * @param {Map<string, string>} nameById - The id-to-name map built from fetched docs.
+ * @param {string} code - The AppError code (e.g. 'BLOCK_NOT_FOUND').
+ * @param {string} message - The AppError description.
+ * @returns {void}
+ */
+function GuardMissingIds(ids, nameById, code, message) {
+  const missing = ids.some((id) => !nameById.has(String(id)));
+  if (missing) {
+    throw new AppError(code, 404, message);
+  }
+}
+
+/**
  * Maps a standing test entry into its template context, resolving the
  * curriculum name.
  *
@@ -214,11 +230,15 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     const subjectNameById = new Map(subjects.map(BuildNameEntry));
     const testNameById = new Map(tests.map(BuildNameEntry));
 
-    // *************** Guard against a missing block
-    const missingBlock = blockIds.some((blockId) => !blockNameById.has(String(blockId)));
-    if (missingBlock) {
-      throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
-    }
+    // // *************** Guard against missing curriculum entitities
+    GuardMissingIds(blockIds, blockNameById, 'BLOCK_NOT_FOUND', 'Block not found.');
+    GuardMissingIds(subjectIds, subjectNameById, 'SUBJECT_NOT_FOUND', 'Subject not found.');
+    GuardMissingIds(testIds, testNameById, 'TEST_NOT_FOUND', 'Test not found.');
+
+    // const missingBlock = blockIds.some((blockId) => !blockNameById.has(String(blockId)));
+    // if (missingBlock) {
+    //   throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
+    // }
 
     // *************** Shape the template context from the fetched documents
     const reportCardBlocks = standings.map((standing) => {
