@@ -161,7 +161,7 @@ function MapSubjectToTemplate(subject, subjectNameById, testNameById) {
  * @param {string} input.studentId - The student id.
  * @returns {Promise<Object>} The template context consumed by report_card.hbs.
  * @throws {AppError} 400 - Malformed academic year or student id.
- * @throws {AppError} 404 - Student or academic standing not found.
+ * @throws {AppError} 404 - Student, academic standing, academic year, or block not found.
  */
 async function FetchReportCardDataHelper({ academicYearId, studentId }) {
   try {
@@ -179,12 +179,15 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
       AcademicYearModel.findOne({ _id: academicYearId, deleted_at: null }).select('name').lean(),
     ]);
 
-    // *************** Guard against a missing student or academic standing
+    // *************** Guard against a missing student, standing, or academic year
     if (!student) {
       throw new AppError('STUDENT_NOT_FOUND', 404, 'Student not found.');
     }
     if (!standing) {
       throw new AppError('ACADEMIC_STANDING_NOT_FOUND', 404, 'Academic standing not found.');
+    }
+    if (!academicYear) {
+      throw new AppError('ACADEMIC_YEAR_NOT_FOUND', 404, 'Academic year not found.');
     }
 
     // *************** Resolve the block, subject, and test names from the standing
@@ -205,6 +208,11 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     const subjectNameById = new Map(subjects.map(BuildNameEntry));
     const testNameById = new Map(tests.map(BuildNameEntry));
 
+    // *************** Guard against a missing block
+    if (!block) {
+      throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
+    }
+
     // *************** Shape the template context from the fetched documents
     const reportCardContext = {
       student: {
@@ -213,8 +221,8 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
         email: student.email,
         student_number: student.student_number,
       },
-      academic_year: { name: academicYear?.name },
-      block: { name: block?.name },
+      academic_year: { name: academicYear.name },
+      block: { name: block.name },
       block_average: standing.block_average,
       block_status: standing.block_status,
       generated_at: FormatReportDate(),
