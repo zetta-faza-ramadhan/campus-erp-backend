@@ -40,11 +40,27 @@ async function InitializePDFService() {
 // *************** PAGE LIFECYCLE ***************
 
 /**
+ * Closes the page on the first call and swallows close errors (the page may
+ * already be gone if the browser crashed). Later calls are no-ops.
+ *
+ * @param {import('puppeteer').Page} page - The page to close once.
+ * @param {{ pageClosed: boolean }} state - Shared idempotency flag.
+ * @returns {void}
+ */
+function ClosePage(page, state) {
+  if (state.pageClosed) {
+    return;
+  }
+  state.pageClosed = true;
+  page.close().catch(() => {});
+}
+
+/**
  * Creates an idempotent page-closing function for a Puppeteer page, safe to
  * call from stream listeners and the try/catch/finally cleanup without racing.
  *
  * @param {import('puppeteer').Page} page - The page to close once.
- * @returns {Function} An idempotent closer; later calls are no-ops.
+ * @returns {Function} An idempotent closer; call it to close the page exactly once.
  * @throws {AppError} 400 - The page is missing or not a valid Puppeteer page.
  */
 function CreatePageCloser(page) {
@@ -53,23 +69,9 @@ function CreatePageCloser(page) {
       throw new AppError('INVALID_PDF_PAGE', 400, 'A valid Puppeteer page is required.');
     }
 
-    let pageClosed = false;
-
-    /**
-     * Closes the page on the first call and swallows close errors (the page may
-     * already be gone if the browser crashed).
-     *
-     * @returns {void}
-     */
-    function ClosePage() {
-      if (pageClosed) {
-        return;
-      }
-      pageClosed = true;
-      page.close().catch(() => {});
-    }
-
-    return ClosePage;
+    const state = { pageClosed: false };
+    const closePage = ClosePage.bind(null, page, state);
+    return closePage;
   } catch (err) {
     ReThrowHelperError(err, 'creating the page closer');
   }
