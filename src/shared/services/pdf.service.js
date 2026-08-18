@@ -29,7 +29,7 @@ async function InitializePDFService() {
     if (browserInstance) {
       return browserInstance;
     }
-    browserInstance = await puppeteer.launch({ headless: 'new' });
+    browserInstance = await puppeteer.launch({ headless: true });
     logger.info('Headless Chrome launched for PDF generation');
     return browserInstance;
   } catch (err) {
