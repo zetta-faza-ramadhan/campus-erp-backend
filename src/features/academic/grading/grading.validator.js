@@ -292,7 +292,7 @@ function ValidateAndSanitizeFormatReportDate(input) {
 // *************** VALIDATION SCHEMA FOR EXTRACT ID ***************
 const ExtractIdSchema = Joi.object({
   entry: Joi.object().required(),
-  idField: Joi.string().valid('subject_id', 'test_id').required(),
+  idField: Joi.string().valid('subject_id', 'test_id', 'block_id').required(),
 });
 
 // *************** VALIDATE AND SANITIZE: EXTRACT ID ***************

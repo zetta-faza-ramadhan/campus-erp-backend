@@ -78,6 +78,19 @@
         margin: 0 0 4px;
         color: #374151;
       }
+      .subject-row td {
+        font-weight: 600;
+        background: #f9fafb;
+        border-top: 2px solid #9ca3af;
+      }
+      .test-row td {
+        color: #4b5563;
+        font-size: 12px;
+      }
+      .test-row td:first-child {
+        padding-left: 20px;
+        border-left: 3px solid #bfdbfe;
+      }
       table {
         width: 100%;
         border-collapse: collapse;
@@ -124,38 +137,38 @@
         <div><span class='label'>Student Number:</span> {{student.student_number}}</div>
         <div><span class='label'>Email:</span> {{student.email}}</div>
         <div><span class='label'>Academic Year:</span> {{academic_year.name}}</div>
-        <div><span class='label'>Block:</span> {{block.name}}</div>
       </div>
-    </section>
-
-    <!-- *************** OVERALL STANDING *************** -->
-    <section class='summary'>
-      <h2>Overall Standing</h2>
-      <div>Block Average: <strong>{{block_average}}</strong> <span class='status'>{{block_status}}</span></div>
     </section>
 
     <!-- *************** CURRICULUM STANDING *************** -->
     <section class='standings'>
       <h2>Curriculum Standing</h2>
-      {{#each subjects}}
-        <div class='subject'>
+      {{#each blocks}}
+        <div class='block'>
           <h3>{{name}}</h3>
-          <p class='subject-meta'>Average: <strong>{{subject_average}}</strong> <span class='status'>{{subject_status}}</span></p>
+          <p class='block-meta'>Average: <strong>{{block_average}}</strong> <span class='status'>{{block_status}}</span></p>
           <table>
             <thead>
               <tr>
-                <th>Test</th>
-                <th>Score</th>
+                <th>Subject</th>
+                <th>Average</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {{#each tests}}
-                <tr>
+              {{#each subjects}}
+                <tr class='subject-row'>
                   <td>{{name}}</td>
-                  <td>{{total_mark}}</td>
-                  <td><span class='status'>{{test_status}}</span></td>
+                  <td>{{subject_average}}</td>
+                  <td><span class='status'>{{subject_status}}</span></td>
                 </tr>
+                {{#each tests}}
+                  <tr class='test-row'>
+                    <td>&nbsp;&nbsp;{{name}}</td>
+                    <td>{{total_mark}}</td>
+                    <td><span class='status'>{{test_status}}</span></td>
+                  </tr>
+                {{/each}}
               {{/each}}
             </tbody>
           </table>

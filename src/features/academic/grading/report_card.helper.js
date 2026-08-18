@@ -153,7 +153,7 @@ function MapSubjectToTemplate(subject, subjectNameById, testNameById) {
 }
 
 /**
- * Fetches the student profile and their academic standing, resolves the
+ * Fetches the student profile and their academic standings, resolves the
  * curriculum names, and shapes the complete report-card template context.
  *
  * @param {Object} input - The report-card route parameters.
@@ -170,10 +170,10 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     academicYearId = params.academicYearId;
     studentId = params.studentId;
 
-    // *************** Fetch the student profile, academic year, and standing
-    const [student, standing, academicYear] = await Promise.all([
+    // *************** Fetch the student profile, academic year, and standings
+    const [student, standings, academicYear] = await Promise.all([
       StudentModel.findOne({ _id: studentId, deleted_at: null }).select('first_name last_name email student_number').lean(),
-      AcademicStandingModel.findOne({ student_id: studentId, academic_year_id: academicYearId })
+      AcademicStandingModel.find({ student_id: studentId, academic_year_id: academicYearId })
         .select('block_id block_average block_status subjects')
         .lean(),
       AcademicYearModel.findOne({ _id: academicYearId, deleted_at: null }).select('name').lean(),
@@ -183,20 +183,25 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     if (!student) {
       throw new AppError('STUDENT_NOT_FOUND', 404, 'Student not found.');
     }
-    if (!standing) {
+    if (standings.length === 0) {
       throw new AppError('ACADEMIC_STANDING_NOT_FOUND', 404, 'Academic standing not found.');
     }
     if (!academicYear) {
       throw new AppError('ACADEMIC_YEAR_NOT_FOUND', 404, 'Academic year not found.');
     }
 
-    // *************** Resolve the block, subject, and test names from the standing
-    const standingSubjects = standing.subjects || [];
-    const subjectIds = standingSubjects.map((subject) => ExtractId(subject, 'subject_id'));
-    const testIds = standingSubjects.flatMap(ExtractTestIdsFromSubject);
+    // *************** Resolve the block, subject, and test names from the standings
+    const blockIds = standings.map((standing) => ExtractId(standing, 'block_id'));
+    const subjectIds = standings.flatMap((standing) => (standing.subjects || []).map((subject) => ExtractId(subject, 'subject_id')));
+    const testIds = standings.flatMap((standing) => (standing.subjects || []).flatMap(ExtractTestIdsFromSubject));
 
-    const [block, subjects, tests] = await Promise.all([
-      BlockModel.findOne({ _id: standing.block_id, deleted_at: null }).select('name').lean(),
+    const [blocks, subjects, tests] = await Promise.all([
+      BlockModel.find({
+        _id: { $in: blockIds },
+        deleted_at: null,
+      })
+        .select('name')
+        .lean(),
       SubjectModel.find({ _id: { $in: subjectIds }, deleted_at: null })
         .select('name')
         .lean(),
@@ -205,15 +210,28 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
         .lean(),
     ]);
 
+    const blockNameById = new Map(blocks.map(BuildNameEntry));
     const subjectNameById = new Map(subjects.map(BuildNameEntry));
     const testNameById = new Map(tests.map(BuildNameEntry));
 
     // *************** Guard against a missing block
-    if (!block) {
+    const missingBlock = blockIds.some((blockId) => !blockNameById.has(String(blockId)));
+    if (missingBlock) {
       throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
     }
 
     // *************** Shape the template context from the fetched documents
+    const reportCardBlocks = standings.map((standing) => {
+      const standingSubjects = standing.subjects || [];
+      const reportCardBlock = {
+        name: blockNameById.get(String(standing.block_id)),
+        block_average: standing.block_average,
+        block_status: standing.block_status,
+        subjects: standingSubjects.map((subject) => MapSubjectToTemplate(subject, subjectNameById, testNameById)),
+      };
+      return reportCardBlock;
+    });
+
     const reportCardContext = {
       student: {
         first_name: student.first_name,
@@ -222,11 +240,8 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
         student_number: student.student_number,
       },
       academic_year: { name: academicYear.name },
-      block: { name: block.name },
-      block_average: standing.block_average,
-      block_status: standing.block_status,
+      blocks: reportCardBlocks,
       generated_at: FormatReportDate(),
-      subjects: standingSubjects.map((subject) => MapSubjectToTemplate(subject, subjectNameById, testNameById)),
     };
     return reportCardContext;
   } catch (err) {
