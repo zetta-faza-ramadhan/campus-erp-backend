@@ -347,7 +347,7 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     const subjectNameById = new Map(subjects.map(BuildNameEntry));
     const testNameById = new Map(tests.map(BuildNameEntry));
 
-    // // *************** Guard against missing curriculum entities
+    // *************** Guard against missing curriculum entities
     GuardMissingIds(blockIds, blockNameById, 'BLOCK_NOT_FOUND', 'Block not found.');
     GuardMissingIds(subjectIds, subjectNameById, 'SUBJECT_NOT_FOUND', 'Subject not found.');
     GuardMissingIds(testIds, testNameById, 'TEST_NOT_FOUND', 'Test not found.');
