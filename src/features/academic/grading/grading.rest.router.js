@@ -11,9 +11,15 @@ const logger = require('../../../core/logger');
 const { GeneratePDFStream } = require('../../../shared/services/pdf.service');
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAndSanitizeReportCardParams } = require('./grading.validator');
+const {
+  ValidateAndSanitizeReportCardParams,
+  ValidateAndSanitizeCompileReportCardTemplate,
+  ValidateAndSanitizeBuildReportCardFilename,
+  ValidateAndSanitizeHandlePDFStreamError,
+} = require('./grading.validator');
 
 // *************** IMPORT HELPER FUNCTION ***************
+const { ReThrowHelperError } = require('../../../core/helper_error');
 const { FetchReportCardDataHelper } = require('./report_card.helper');
 
 // *************** GLOBAL VARIABLES ***************
@@ -30,9 +36,16 @@ const reportCardTemplatePath = path.join(__dirname, 'templates', 'report_card.hb
  * @returns {Promise<string>} The fully rendered HTML document.
  */
 async function CompileReportCardTemplate(data) {
-  const source = await fs.readFile(reportCardTemplatePath, 'utf8');
-  const compiledHtml = Handlebars.compile(source)(data);
-  return compiledHtml;
+  try {
+    // *************** Validate input
+    const params = ValidateAndSanitizeCompileReportCardTemplate({ data });
+    // *************** Load the template source and render the HTML markup
+    const source = await fs.readFile(reportCardTemplatePath, 'utf8');
+    const compiledHtml = Handlebars.compile(source)(params.data);
+    return compiledHtml;
+  } catch (err) {
+    ReThrowHelperError(err, 'compiling the report card template');
+  }
 }
 
 /**
@@ -43,8 +56,15 @@ async function CompileReportCardTemplate(data) {
  * @returns {string} The attachment filename (e.g. "ReportCard_507f1f77bcf86cd799439011.pdf").
  */
 function BuildReportCardFilename(studentId) {
-  const filename = `ReportCard_${studentId}.pdf`;
-  return filename;
+  try {
+    // *************** Validate input
+    const params = ValidateAndSanitizeBuildReportCardFilename({ studentId });
+    // *************** Build the deterministic attachment filename
+    const filename = `ReportCard_${params.studentId}.pdf`;
+    return filename;
+  } catch (err) {
+    ReThrowHelperError(err, 'building the report card filename');
+  }
 }
 
 /**
@@ -56,8 +76,15 @@ function BuildReportCardFilename(studentId) {
  * @returns {void}
  */
 function HandlePDFStreamError(res, err) {
-  logger.error({ err }, 'Failed to stream report card PDF');
-  res.destroy(err);
+  try {
+    // *************** Validate input
+    const params = ValidateAndSanitizeHandlePDFStreamError({ res, err });
+    // *************** Log the failure and abort the in-flight response
+    logger.error({ err: params.err }, 'Failed to stream report card PDF');
+    params.res.destroy(params.err);
+  } catch (err) {
+    ReThrowHelperError(err, 'handling the PDF stream error');
+  }
 }
 
 // *************** REPORT CARD ROUTE ***************

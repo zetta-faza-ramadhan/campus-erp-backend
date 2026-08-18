@@ -350,6 +350,64 @@ function ValidateAndSanitizeBuildNameEntry(input) {
   });
 }
 
+// *************** VALIDATION SCHEMA FOR COMPILE REPORT CARD TEMPLATE ***************
+const CompileReportCardTemplateSchema = Joi.object({
+  data: Joi.object().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: COMPILE REPORT CARD TEMPLATE ***************
+/**
+ * Validates and sanitizes CompileReportCardTemplate input.
+ *
+ * @param {Object} input - Raw template context.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeCompileReportCardTemplate(input) {
+  return ValidateInputWithJoi({
+    schema: CompileReportCardTemplateSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR BUILD REPORT CARD FILENAME ***************
+const BuildReportCardFilenameSchema = Joi.object({
+  studentId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: BUILD REPORT CARD FILENAME ***************
+/**
+ * Validates and sanitizes BuildReportCardFilename input.
+ *
+ * @param {Object} input - Raw filename params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeBuildReportCardFilename(input) {
+  return ValidateInputWithJoi({
+    schema: BuildReportCardFilenameSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR HANDLE PDF STREAM ERROR ***************
+const HandlePDFStreamErrorSchema = Joi.object({
+  res: Joi.object().required(),
+  err: Joi.any().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: HANDLE PDF STREAM ERROR ***************
+/**
+ * Validates and sanitizes HandlePDFStreamError input.
+ *
+ * @param {Object} input - Raw stream error params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeHandlePDFStreamError(input) {
+  return ValidateInputWithJoi({
+    schema: HandlePDFStreamErrorSchema,
+    payload: input,
+  });
+}
+
 // *************** VALIDATE AND SANITIZE: REPORT CARD PARAMS ***************
 /**
  * Validates and sanitizes the report-card route parameters for the REST
@@ -400,4 +458,10 @@ module.exports = {
   ValidateAndSanitizeExtractTestIdsFromSubject,
   BuildNameEntrySchema,
   ValidateAndSanitizeBuildNameEntry,
+  CompileReportCardTemplateSchema,
+  ValidateAndSanitizeCompileReportCardTemplate,
+  BuildReportCardFilenameSchema,
+  ValidateAndSanitizeBuildReportCardFilename,
+  HandlePDFStreamErrorSchema,
+  ValidateAndSanitizeHandlePDFStreamError,
 };
