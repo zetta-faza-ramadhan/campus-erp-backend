@@ -117,11 +117,11 @@ function ExtractTestId(test) {
 /**
  * Checks whether a single id is absent from an id-to-name map.
  *
- * @param {string|import('mongoose').Types.ObjectId} id - The id to look up.
  * @param {Map<string, string>} nameById - The id-to-name map.
+ * @param {string|import('mongoose').Types.ObjectId} id - The id to look up.
  * @returns {boolean} True when the id is missing from the map.
  */
-function IsIdMissingFromMap(id, nameById) {
+function IsIdMissingFromMap(nameById, id) {
   const result = !nameById.has(String(id));
   return result;
 }
@@ -129,11 +129,11 @@ function IsIdMissingFromMap(id, nameById) {
 /**
  * Maps a standing test entry into its template context using a name map.
  *
- * @param {Object} test - A standing test entry.
  * @param {Map<string, string>} testNameById - Map of test id to test name.
+ * @param {Object} test - A standing test entry.
  * @returns {Object} The template test context.
  */
-function MapTestWithNames(test, testNameById) {
+function MapTestWithNames(testNameById, test) {
   const result = MapTestToTemplate(test, testNameById);
   return result;
 }
@@ -187,36 +187,36 @@ function ExtractAllTestIdsFromStanding(standing) {
 }
 
 /**
+ * Maps a standing subject entry into its template context using name maps.
+ *
+ * @param {Map<string, string>} subjectNameById - Map of subject id to subject name.
+ * @param {Map<string, string>} testNameById - Map of test id to test name.
+ * @param {Object} subject - A standing subject entry.
+ * @returns {Object} The template subject context.
+ */
+function MapSubjectWithNames(subjectNameById, testNameById, subject) {
+  const result = MapSubjectToTemplate(subject, subjectNameById, testNameById);
+  return result;
+}
+
+/**
  * Maps a standing entry into its report-card block template context.
  *
- * @param {Object} standing - An academic standing entry.
  * @param {Map<string, string>} blockNameById - Map of block id to block name.
  * @param {Map<string, string>} subjectNameById - Map of subject id to subject name.
  * @param {Map<string, string>} testNameById - Map of test id to test name.
+ * @param {Object} standing - An academic standing entry.
  * @returns {Object} The template block context with nested subjects.
  */
-function MapStandingToReportCardBlock(standing, blockNameById, subjectNameById, testNameById) {
+function MapStandingToReportCardBlock(blockNameById, subjectNameById, testNameById, standing) {
   const standingSubjects = standing.subjects || [];
   const reportCardBlock = {
     name: blockNameById.get(String(standing.block_id)),
     block_average: standing.block_average,
     block_status: standing.block_status,
-    subjects: standingSubjects.map((subject) => MapSubjectWithNames(subject, subjectNameById, testNameById)),
+    subjects: standingSubjects.map(MapSubjectWithNames.bind(null, subjectNameById, testNameById)),
   };
   return reportCardBlock;
-}
-
-/**
- * Maps a standing subject entry into its template context using name maps.
- *
- * @param {Object} subject - A standing subject entry.
- * @param {Map<string, string>} subjectNameById - Map of subject id to subject name.
- * @param {Map<string, string>} testNameById - Map of test id to test name.
- * @returns {Object} The template subject context.
- */
-function MapSubjectWithNames(subject, subjectNameById, testNameById) {
-  const result = MapSubjectToTemplate(subject, subjectNameById, testNameById);
-  return result;
 }
 
 /**
@@ -229,7 +229,7 @@ function MapSubjectWithNames(subject, subjectNameById, testNameById) {
  * @returns {void}
  */
 function GuardMissingIds(ids, nameById, code, message) {
-  const missing = ids.some((id) => IsIdMissingFromMap(id, nameById));
+  const missing = ids.some(IsIdMissingFromMap.bind(null, nameById));
   if (missing) {
     throw new AppError(code, 404, message);
   }
@@ -277,7 +277,7 @@ function MapSubjectToTemplate(subject, subjectNameById, testNameById) {
       name: params.subjectNameById.get(String(params.subject.subject_id)),
       subject_average: params.subject.subject_average,
       subject_status: params.subject.subject_status,
-      tests: (params.subject.tests || []).map((test) => MapTestWithNames(test, params.testNameById)),
+      tests: (params.subject.tests || []).map(MapTestWithNames.bind(null, params.testNameById)),
     };
     return templateSubject;
   } catch (err) {
@@ -347,19 +347,14 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     const subjectNameById = new Map(subjects.map(BuildNameEntry));
     const testNameById = new Map(tests.map(BuildNameEntry));
 
-    // // *************** Guard against missing curriculum entitities
+    // // *************** Guard against missing curriculum entities
     GuardMissingIds(blockIds, blockNameById, 'BLOCK_NOT_FOUND', 'Block not found.');
     GuardMissingIds(subjectIds, subjectNameById, 'SUBJECT_NOT_FOUND', 'Subject not found.');
     GuardMissingIds(testIds, testNameById, 'TEST_NOT_FOUND', 'Test not found.');
 
-    // const missingBlock = blockIds.some((blockId) => !blockNameById.has(String(blockId)));
-    // if (missingBlock) {
-    //   throw new AppError('BLOCK_NOT_FOUND', 404, 'Block not found.');
-    // }
-
     // *************** Shape the template context from the fetched documents
-    const reportCardBlocks = standings.map((standing) =>
-      MapStandingToReportCardBlock(standing, blockNameById, subjectNameById, testNameById),
+    const reportCardBlocks = standings.map(
+      MapStandingToReportCardBlock.bind(null, blockNameById, subjectNameById, testNameById),
     );
 
     const reportCardContext = {
