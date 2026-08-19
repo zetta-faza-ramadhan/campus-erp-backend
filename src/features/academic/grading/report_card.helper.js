@@ -353,9 +353,7 @@ async function FetchReportCardDataHelper({ academicYearId, studentId }) {
     GuardMissingIds(testIds, testNameById, 'TEST_NOT_FOUND', 'Test not found.');
 
     // *************** Shape the template context from the fetched documents
-    const reportCardBlocks = standings.map(
-      MapStandingToReportCardBlock.bind(null, blockNameById, subjectNameById, testNameById),
-    );
+    const reportCardBlocks = standings.map(MapStandingToReportCardBlock.bind(null, blockNameById, subjectNameById, testNameById));
 
     const reportCardContext = {
       student: {

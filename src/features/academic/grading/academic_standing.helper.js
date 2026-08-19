@@ -100,51 +100,29 @@ const STANDING_PRECEDENCE = { FAIL: 0, RETAKE: 1, PASS: 2 };
 // *************** START: Academic Standing Helper ***************
 
 /**
- * Extracts the id from a lean subject document.
+ * Extracts the id from a lean curriculum document (subject or test), which
+ * both expose a "_id" field.
  *
- * @param {Object} subjectDoc - A lean subject document.
- * @returns {Object} The subject id.
+ * @param {Object} doc - A lean subject or test document.
+ * @returns {import('mongoose').Types.ObjectId} The entity id.
  */
-function ExtractSubjectId(subjectDoc) {
-  return subjectDoc._id;
+function ExtractDocumentId(doc) {
+  const result = doc._id;
+  return result;
 }
 
 /**
- * Extracts the id from a lean test document.
+ * Sums a numeric field across a list of entries (e.g. total marks across a
+ * subject's tests, or subject averages that roll up into the block average).
  *
- * @param {Object} testDoc - A lean test document.
- * @returns {Object} The test id.
+ * @param {Array<Object>} entries - The entries to sum over.
+ * @param {string} field - The numeric field name to sum ("total_mark" | "subject_average").
+ * @returns {number} The summed values.
  */
-function ExtractTestId(testDoc) {
-  return testDoc._id;
-}
-
-/**
- * Sums the total marks across a subject's graded tests.
- *
- * @param {Array<Object>} tests - The subject's graded test entries.
- * @param {number} tests[].total_mark - The mark earned on a test.
- * @returns {number} The summed total marks.
- */
-function SumTotalMarks(tests) {
+function SumField(entries, field) {
   let sum = 0;
-  for (const test of tests) {
-    sum += test.total_mark;
-  }
-  return sum;
-}
-
-/**
- * Sums the subject averages that roll up into the block average.
- *
- * @param {Array<Object>} subjects - The student's subject standing entries.
- * @param {number} subjects[].subject_average - A subject's rounded average.
- * @returns {number} The summed subject averages.
- */
-function SumSubjectAverages(subjects) {
-  let sum = 0;
-  for (const subject of subjects) {
-    sum += subject.subject_average;
+  for (const entry of entries) {
+    sum += entry[field];
   }
   return sum;
 }
@@ -361,7 +339,7 @@ async function LoadCurriculumHierarchy(testId) {
       .select('_id grading_rules')
       .lean();
     const tests = await TestModel.find({
-      subject_id: { $in: subjects.map(ExtractSubjectId) },
+      subject_id: { $in: subjects.map(ExtractDocumentId) },
       deleted_at: null,
     })
       .select('_id subject_id grading_rules')
@@ -383,7 +361,7 @@ async function LoadCurriculumHierarchy(testId) {
     const hierarchy = {
       block,
       subjects: hierarchySubjects,
-      testIds: tests.map(ExtractTestId),
+      testIds: tests.map(ExtractDocumentId),
     };
     return hierarchy;
   } catch (err) {
@@ -438,7 +416,7 @@ function BuildStudentStanding({ studentId, academicYearId, hierarchy, gradeByKey
       // *************** Skip subjects the student has no grades for
       if (tests.length === 0) continue;
 
-      const totalMarks = SumTotalMarks(tests);
+      const totalMarks = SumField(tests, 'total_mark');
       const subjectAverage = RoundToTwoDecimals(totalMarks / tests.length);
       subjects.push({
         subject_id: subject._id,
@@ -455,7 +433,7 @@ function BuildStudentStanding({ studentId, academicYearId, hierarchy, gradeByKey
     if (subjects.length === 0) return null;
 
     // *************** Roll subject averages into the block average
-    const subjectAverages = SumSubjectAverages(subjects);
+    const subjectAverages = SumField(subjects, 'subject_average');
     const blockAverage = RoundToTwoDecimals(subjectAverages / subjects.length);
 
     // *************** Return the nested standing payload
@@ -477,14 +455,18 @@ function BuildStudentStanding({ studentId, academicYearId, hierarchy, gradeByKey
 }
 
 /**
- * Builds the bulkWrite operations (one upsert per student).
+ * Builds the bulkWrite operations (one upsert per student) and collects the
+ * computed standings payloads so the caller can push them to the warehouse
+ * webhook after persistence.
  *
  * @param {Object} params - The aggregation inputs.
  * @param {Array<string>} params.studentIds - The students to compute standings for.
  * @param {string} params.academicYearId - The academic year of the submission.
  * @param {Object} params.hierarchy - The loaded curriculum hierarchy.
  * @param {Array<Object>} params.grades - All grades for the block in the year.
- * @returns {Array<{ updateOne: { filter: Object, update: Object, upsert: boolean } }>} The bulkWrite operations.
+ * @returns {Object} The bulkWrite operations and the computed standings.
+ * @returns {Array<{ updateOne: { filter: Object, update: Object, upsert: boolean } }>} returns.operations - The bulkWrite operations.
+ * @returns {Array<Object>} returns.standings - The fully-mapped computed standings (averages, statuses, per-subject breakdowns).
  */
 function BuildBulkWriteOperations({ studentIds, academicYearId, hierarchy, grades }) {
   try {
@@ -505,6 +487,7 @@ function BuildBulkWriteOperations({ studentIds, academicYearId, hierarchy, grade
 
     // *************** Build one upsert operation per student with a standing
     const operations = [];
+    const standings = [];
     for (const studentId of studentIds) {
       const standing = BuildStudentStanding({
         studentId,
@@ -515,8 +498,10 @@ function BuildBulkWriteOperations({ studentIds, academicYearId, hierarchy, grade
       // *************** Skip students with no computable standing in this block
       if (standing === null) continue;
       operations.push(BuildUpsertOperation(standing));
+      standings.push(standing);
     }
-    return operations;
+    const result = { operations, standings };
+    return result;
   } catch (err) {
     ReThrowHelperError(err, 'building bulk write operations');
   }
@@ -530,7 +515,7 @@ function BuildBulkWriteOperations({ studentIds, academicYearId, hierarchy, grade
  * @param {Array<string>} params.studentIds - The IDs of the graded students.
  * @param {string} params.testId - The ID of the test that was just graded.
  * @param {string} params.academicYearId - The academic year of the submission.
- * @returns {Promise<void>} Resolves once the standings have been written.
+ * @returns {Promise<Array<Object>>} The persisted standings payloads (empty when no standing was computable).
  */
 async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
   try {
@@ -555,7 +540,7 @@ async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
       .lean();
 
     // *************** Persist every standing in a single round-trip
-    const operations = BuildBulkWriteOperations({
+    const { operations, standings } = BuildBulkWriteOperations({
       studentIds,
       academicYearId,
       hierarchy,
@@ -564,6 +549,7 @@ async function RunGradeAggregation({ studentIds, testId, academicYearId }) {
     if (operations.length > 0) {
       await AcademicStandingModel.bulkWrite(operations);
     }
+    return standings;
   } catch (err) {
     ReThrowHelperError(err, 'running grade aggregation');
   }
