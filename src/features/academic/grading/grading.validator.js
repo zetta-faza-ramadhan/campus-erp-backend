@@ -1,6 +1,9 @@
 // *************** IMPORT LIBRARY ***************
 const Joi = require('joi');
 
+// *************** IMPORT MODULE ***************
+const AppError = require('../../../core/error');
+
 // *************** IMPORT VALIDATOR ***************
 const { OBJECT_ID_PATTERN } = require('../../../core/validators');
 const { ValidateInputWithJoi } = require('../../../shared/validator/joi.validator');
@@ -205,6 +208,226 @@ function ValidateAndSanitizeLoadCurriculumHierarchy(input) {
   });
 }
 
+// *************** VALIDATION SCHEMA FOR REPORT CARD PARAMS ***************
+const ReportCardParamsSchema = Joi.object({
+  academicYearId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+  studentId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+});
+
+// *************** SHARED STANDING SUB-SCHEMAS ***************
+// Mirror the academic_standing model shapes (StandingTestSchema /
+// StandingSubjectSchema) so every standing-shaped validator validates the
+// same contract. subject_id/test_id are stored ObjectId instances, hence Joi.any().
+const StandingTestSchema = Joi.object({
+  test_id: Joi.any().required(),
+  total_mark: Joi.number().min(0).max(100).required(),
+  test_status: Joi.string().valid('PASS', 'FAIL', 'RETAKE').required(),
+});
+
+const StandingSubjectSchema = Joi.object({
+  subject_id: Joi.any().required(),
+  subject_average: Joi.number().min(0).max(100).required(),
+  subject_status: Joi.string().valid('PASS', 'FAIL', 'RETAKE').required(),
+  tests: Joi.array().items(StandingTestSchema).optional(),
+});
+
+// *************** VALIDATION SCHEMA FOR MAP TEST TO TEMPLATE ***************
+const MapTestToTemplateSchema = Joi.object({
+  test: StandingTestSchema,
+  testNameById: Joi.any().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: MAP TEST TO TEMPLATE ***************
+/**
+ * Validates and sanitizes MapTestToTemplate input.
+ *
+ * @param {Object} input - Raw template mapping params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeMapTestToTemplate(input) {
+  return ValidateInputWithJoi({
+    schema: MapTestToTemplateSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR MAP SUBJECT TO TEMPLATE ***************
+const MapSubjectToTemplateSchema = Joi.object({
+  subject: StandingSubjectSchema,
+  subjectNameById: Joi.any().required(),
+  testNameById: Joi.any().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: MAP SUBJECT TO TEMPLATE ***************
+/**
+ * Validates and sanitizes MapSubjectToTemplate input.
+ *
+ * @param {Object} input - Raw template mapping params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeMapSubjectToTemplate(input) {
+  return ValidateInputWithJoi({
+    schema: MapSubjectToTemplateSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR FORMAT REPORT DATE ***************
+const FormatReportDateSchema = Joi.date().required();
+
+// *************** VALIDATE AND SANITIZE: FORMAT REPORT DATE ***************
+/**
+ * Validates and sanitizes FormatReportDate input.
+ *
+ * @param {Date} input - The date to format.
+ * @returns {Date} Sanitized and validated date.
+ */
+function ValidateAndSanitizeFormatReportDate(input) {
+  return ValidateInputWithJoi({
+    schema: FormatReportDateSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR EXTRACT ID ***************
+const ExtractIdSchema = Joi.object({
+  entry: Joi.object().required(),
+  idField: Joi.string().valid('subject_id', 'test_id', 'block_id').required(),
+});
+
+// *************** VALIDATE AND SANITIZE: EXTRACT ID ***************
+/**
+ * Validates and sanitizes ExtractId input.
+ *
+ * @param {Object} input - Raw extraction params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeExtractId(input) {
+  return ValidateInputWithJoi({
+    schema: ExtractIdSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR EXTRACT TEST IDS FROM SUBJECT ***************
+const ExtractTestIdsFromSubjectSchema = Joi.object({
+  subject: StandingSubjectSchema,
+});
+
+// *************** VALIDATE AND SANITIZE: EXTRACT TEST IDS FROM SUBJECT ***************
+/**
+ * Validates and sanitizes ExtractTestIdsFromSubject input.
+ *
+ * @param {Object} input - Raw subject entry.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeExtractTestIdsFromSubject(input) {
+  return ValidateInputWithJoi({
+    schema: ExtractTestIdsFromSubjectSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR BUILD NAME ENTRY ***************
+const BuildNameEntrySchema = Joi.object({
+  doc: Joi.object({
+    _id: Joi.any().required(),
+    name: Joi.string().required(),
+  }).required(),
+});
+
+// *************** VALIDATE AND SANITIZE: BUILD NAME ENTRY ***************
+/**
+ * Validates and sanitizes BuildNameEntry input.
+ *
+ * @param {Object} input - Raw lean curriculum document.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeBuildNameEntry(input) {
+  return ValidateInputWithJoi({
+    schema: BuildNameEntrySchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR COMPILE REPORT CARD TEMPLATE ***************
+const CompileReportCardTemplateSchema = Joi.object({
+  data: Joi.object().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: COMPILE REPORT CARD TEMPLATE ***************
+/**
+ * Validates and sanitizes CompileReportCardTemplate input.
+ *
+ * @param {Object} input - Raw template context.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeCompileReportCardTemplate(input) {
+  return ValidateInputWithJoi({
+    schema: CompileReportCardTemplateSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR BUILD REPORT CARD FILENAME ***************
+const BuildReportCardFilenameSchema = Joi.object({
+  studentId: Joi.string().regex(OBJECT_ID_PATTERN).lowercase().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: BUILD REPORT CARD FILENAME ***************
+/**
+ * Validates and sanitizes BuildReportCardFilename input.
+ *
+ * @param {Object} input - Raw filename params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeBuildReportCardFilename(input) {
+  return ValidateInputWithJoi({
+    schema: BuildReportCardFilenameSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATION SCHEMA FOR HANDLE PDF STREAM ERROR ***************
+const HandlePDFStreamErrorSchema = Joi.object({
+  res: Joi.object().required(),
+  err: Joi.any().required(),
+});
+
+// *************** VALIDATE AND SANITIZE: HANDLE PDF STREAM ERROR ***************
+/**
+ * Validates and sanitizes HandlePDFStreamError input.
+ *
+ * @param {Object} input - Raw stream error params.
+ * @returns {Object} Sanitized and validated input.
+ */
+function ValidateAndSanitizeHandlePDFStreamError(input) {
+  return ValidateInputWithJoi({
+    schema: HandlePDFStreamErrorSchema,
+    payload: input,
+  });
+}
+
+// *************** VALIDATE AND SANITIZE: REPORT CARD PARAMS ***************
+/**
+ * Validates and sanitizes the report-card route parameters for the REST
+ * endpoint. Unlike the GraphQL validators, failures surface as a 400
+ * AppError so the Express error path can respond without a GraphQL error.
+ *
+ * @param {Object} input - Raw route parameters from the request.
+ * @param {string} input.academicYearId - The academic year id.
+ * @param {string} input.studentId - The student id.
+ * @returns {Object} Sanitized and validated route parameters.
+ * @throws {AppError} 400 - Malformed academic year or student id.
+ */
+function ValidateAndSanitizeReportCardParams(input) {
+  const { error, value } = ReportCardParamsSchema.validate(input);
+  if (error) {
+    throw new AppError('INVALID_PARAMETER', 400, 'Invalid academic year or student id.');
+  }
+  return value;
+}
+
 // *************** EXPORT MODULE ***************
 module.exports = {
   MAX_AGGREGATION_STUDENTS,
@@ -219,4 +442,26 @@ module.exports = {
   ValidateAndSanitizeRoundToTwoDecimals,
   ValidateAndSanitizeBuildGradeKey,
   ValidateAndSanitizeLoadCurriculumHierarchy,
+  ReportCardParamsSchema,
+  ValidateAndSanitizeReportCardParams,
+  StandingTestSchema,
+  StandingSubjectSchema,
+  MapTestToTemplateSchema,
+  ValidateAndSanitizeMapTestToTemplate,
+  MapSubjectToTemplateSchema,
+  ValidateAndSanitizeMapSubjectToTemplate,
+  FormatReportDateSchema,
+  ValidateAndSanitizeFormatReportDate,
+  ExtractIdSchema,
+  ValidateAndSanitizeExtractId,
+  ExtractTestIdsFromSubjectSchema,
+  ValidateAndSanitizeExtractTestIdsFromSubject,
+  BuildNameEntrySchema,
+  ValidateAndSanitizeBuildNameEntry,
+  CompileReportCardTemplateSchema,
+  ValidateAndSanitizeCompileReportCardTemplate,
+  BuildReportCardFilenameSchema,
+  ValidateAndSanitizeBuildReportCardFilename,
+  HandlePDFStreamErrorSchema,
+  ValidateAndSanitizeHandlePDFStreamError,
 };

@@ -15,6 +15,8 @@ const gradingSchema = require('./features/academic/grading');
 const authSchema = require('./features/users/auth');
 const AuthMiddleware = require('./shared/middlewares/auth.middleware');
 const { InitializeGradeAuditorJob } = require('./jobs/missing_grades.job');
+const { InitializePDFService } = require('./shared/services/pdf.service');
+const gradingRestRouter = require('./features/academic/grading/grading.rest.router');
 
 // *************** INITIALIZE APPLICATION ***************
 const app = express();
@@ -53,6 +55,9 @@ async function StartServer() {
     InitializeGradeAuditorJob();
   });
 
+  // *************** Launch the singleton headless browser used for PDF rendering
+  await InitializePDFService();
+
   const graphqlMiddleware = await CreateApolloMiddleware({
     typeDefs: [
       systemSchema.typeDefs,
@@ -64,6 +69,8 @@ async function StartServer() {
     ],
     resolvers: MergeResolvers(systemSchema, curriculumSchema, studentSchema, enrollmentSchema, gradingSchema, authSchema),
   });
+  // *************** Mount the report-card REST route before the Apollo gateway
+  app.use('/api/academics', gradingRestRouter);
   app.use('/graphql', graphqlMiddleware);
 
   app.listen(config.port, () => {

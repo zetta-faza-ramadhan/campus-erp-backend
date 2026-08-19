@@ -63,6 +63,9 @@ async function EnrollStudentsHelper({ academicYearId, studentIds }) {
       { $addToSet: { student_ids: { $each: uniqueStudentIds } } },
       { returnDocument: 'after' },
     );
+    if (!updatedYear) {
+      throw new AppError('ACADEMIC_YEAR_NOT_FOUND', 404, 'Academic year not found.');
+    }
     // *************** Atomically link the year to each student
     await StudentModel.updateMany({ _id: { $in: uniqueStudentIds } }, { $addToSet: { academic_year_ids: academicYearId } });
     return updatedYear;
