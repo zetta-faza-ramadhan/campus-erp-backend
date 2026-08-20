@@ -41,6 +41,11 @@ module.exports = {
     from: process.env.SMTP_FROM || 'alert@campus.edu',
   },
   alertEmail: process.env.ALERT_EMAIL || 'alert@campus.edu',
+  // *************** Data-warehouse webhook; URL and API key optional, dispatch skipped when URL unset
+  webhook: {
+    warehouseUrl: process.env.WEBHOOK_WAREHOUSE_URL,
+    warehouseApiKey: process.env.WEBHOOK_WAREHOUSE_API_KEY,
+  },
 
   // *************** Run the missing-grade audit every minute
   auditCron: AUDIT_CRON,

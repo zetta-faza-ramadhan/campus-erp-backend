@@ -5,6 +5,9 @@ const { parentPort, workerData } = require('worker_threads');
 const AppError = require('../core/error');
 const databaseConnection = require('../core/db');
 
+// *************** IMPORT SERVICE ***************
+const { DispatchAcademicStandings } = require('../shared/services/webhook.service');
+
 // *************** IMPORT HELPER FUNCTION ***************
 const { RunGradeAggregation } = require('../features/academic/grading/academic_standing.helper');
 
@@ -109,7 +112,10 @@ async function Run() {
   await WaitForDatabaseConnection();
 
   // *************** Aggregate the standings for the graded students
-  await RunGradeAggregation({ studentIds, testId, academicYearId });
+  const standings = await RunGradeAggregation({ studentIds, testId, academicYearId });
+
+  // *************** Dispatch the recomputed standings to the warehouse webhook (fire-and-forget)
+  await DispatchAcademicStandings(standings);
 
   parentPort.postMessage({ status: 'success' });
   // *************** Close the DB handle so the worker exits cleanly
