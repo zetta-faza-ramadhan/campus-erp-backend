@@ -2,7 +2,7 @@
 const Joi = require('joi');
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateInputWithJoi } = require('../../shared/validator/joi.validator');
+const { ValidateInputWithJoi } = require('../../../shared/validator/joi.validator');
 const { StandingSubjectSchema } = require('./grading.validator');
 
 // *************** VALIDATION SCHEMA FOR WEBHOOK DISPATCH ***************
