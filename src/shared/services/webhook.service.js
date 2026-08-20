@@ -4,7 +4,7 @@ const config = require('../../core/config');
 const logger = require('../../core/logger');
 
 // *************** IMPORT VALIDATOR ***************
-const { ValidateAndSanitizeDispatchAcademicStandings } = require('../validator/webhook.validator');
+const { ValidateAndSanitizeDispatchAcademicStandings } = require('../../features/academic/grading/webhook.validator');
 
 // *************** GLOBAL VARIABLES ***************
 // *************** Cap how long a webhook dispatch may run; a hang must not stall the worker
